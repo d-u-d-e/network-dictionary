@@ -11,7 +11,7 @@ import java.util.BitSet;
 /**
  * This class manages the peer address, as hash of his phone number
  *
- * @author Luca Crema, Alessandra Tonin
+ * @author Luca Crema, Alessandra Tonin, Mariotto Marco
  */
 public class KADPeerAddress implements Peer<byte[]> {
 
@@ -26,7 +26,8 @@ public class KADPeerAddress implements Peer<byte[]> {
      * @param address a byte[] containing the peer address
      * @throws IllegalArgumentException
      */
-    public KADPeerAddress(byte[] address) throws IllegalArgumentException {
+    public KADPeerAddress(byte[] address) throws IllegalArgumentException
+    {
         if (address.length != BYTE_ADDRESS_LENGTH)
             throw new IllegalArgumentException("Byte address should be " + BYTE_ADDRESS_LENGTH + " bytes long");
         this.address = address;
@@ -38,7 +39,8 @@ public class KADPeerAddress implements Peer<byte[]> {
      * @param phoneAddress a String containing the peer phone number
      * @throws NoSuchAlgorithmException
      */
-    public KADPeerAddress(String phoneAddress) {
+    public KADPeerAddress(String phoneAddress)
+    {
         try {
             MessageDigest digestAlgorithm = MessageDigest.getInstance(HASH_ALGORITHM);
             address = new byte[BYTE_ADDRESS_LENGTH];
@@ -53,13 +55,9 @@ public class KADPeerAddress implements Peer<byte[]> {
      *
      * @param peer a network user
      */
-    public KADPeerAddress(SMSPeer peer) {
+    public KADPeerAddress(SMSPeer peer)
+    {
         this(peer.getAddress());
-    }
-
-    @Override
-    public String toString() {
-        return null;
     }
 
     @Override
@@ -71,25 +69,12 @@ public class KADPeerAddress implements Peer<byte[]> {
      * Calculates the first bit that differs starting from left
      *
      * @param otherAddress the address of another network user
-     * @return an int, as the position of the first bit different from mine
+     * @return the index of the first different bit between this address and otherAddress
+     * or -1 if no such index exists (i.e. the two addresses are equal)
      */
-    public int firstDifferentBitPosition(KADPeerAddress otherAddress) {
-        byte[] otherByteAddress = otherAddress.getAddress();
+    public int firstDifferentBit(KADPeerAddress otherAddress) {
         BitSet userBitSet = BitSet.valueOf(address);
-        BitSet otherBitSet = BitSet.valueOf(otherByteAddress);
-
-        int lastValueIndex = (BYTE_ADDRESS_LENGTH * Byte.SIZE) - 1;
-
-        for (int i = 0; i < otherByteAddress.length; i++) {
-            for (int bitCounter = 0; bitCounter < Byte.SIZE; bitCounter++) {
-                //You need to reverse the value of the pointer
-                int pointer = lastValueIndex - (i + bitCounter);
-                //System.out.println("First bit is: " + userBitSet.get(pointer) + " second bit is: " + otherBitSet.get(pointer)); //Testing purposes
-                if (userBitSet.get(pointer) != otherBitSet.get(pointer)) {
-                    return i + bitCounter;
-                }
-            }
-        }
-        return BYTE_ADDRESS_LENGTH * Byte.SIZE;
+        userBitSet.xor(BitSet.valueOf(otherAddress.getAddress()));
+        return userBitSet.nextSetBit(0);
     }
 }
