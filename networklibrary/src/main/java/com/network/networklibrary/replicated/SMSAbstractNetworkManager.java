@@ -132,11 +132,22 @@ public abstract class SMSAbstractNetworkManager implements NetworkManager<SMSPee
     private void spread(int requester, String text) {
         ArrayList<SMSPeer> users = dict.getAllUsers();
         int N = users.size();
+        if(N == 1) return;
         int myIndex = getMyIndex();
         /*
-         * node n sends to req + 2(n-req) + 1 and req + 2(n-req) + 2, that is:
-         * node 2n - req + 1 (+N) and 2n - req + 2 (+N) (mod N). If one of these nodes is the requester, we don't spread further.
+         * node n should send to req + 2(n-req) + 1 and req + 2(n-req) + 2, that is:
+         * node 2n - req + 1 (+N) and 2n - req + 2 (+N) (mod N). However, if
+         * (n - req + N (mod N)) > m, where m is such that 2m = N - 3, or 2m = N - 2, then we don't have to spread anything.
+         * To see why this works, note that if the requester is 0, then each node after node m such that 2m + 2 = N - 1 or
+         * 2m + 1 = N - 1 (i.e. m is the node capable of reaching the last node in the dictionary), should not spread.
+         * Now n - req + N (mod N) tells us the node corresponding to node n if 0 were the requester. For example, given the tree above, we
+         * see that m = 3 and (0-4+8 mod 8) = 4 and 4 > 3, so node 0 should not attempt to spread.
          */
+
+        int m;
+        if(N % 2 == 0) m = (N-2)/2;
+        else m = (N-3)/2;
+        if((myIndex - requester + N) % N > m) return;
 
         int first = (2 * myIndex - requester + N + 1) % N;
         for (int i = 0; i < 2 && i + first != requester; i++) {
