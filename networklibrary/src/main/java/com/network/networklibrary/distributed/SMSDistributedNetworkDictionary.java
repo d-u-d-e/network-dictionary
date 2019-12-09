@@ -15,14 +15,14 @@ import java.util.Map;
  * @param <RV> resource value
  * @author Luca Crema, Marco Mariotto
  */
-public class SMSDistributedNetworkDictionary<RK, RV> implements NetworkDictionary<KADPeerAddress, RK, RV> {
+public class SMSDistributedNetworkDictionary<RK, RV> implements NetworkDictionary<KADPeer, RK, RV> {
 
     /**
      * Maximum users per bucket
      */
-    public static final int MAX_USER_BUCKET_LENGTH = 5;
-    private KADPeerAddress mySelf; //address of current node holding this dictionary
-    private ArrayList<KADPeerAddress>[] buckets;
+    static final int MAX_USER_BUCKET_LENGTH = 5;
+    KADPeer mySelf; //address of current node holding this dictionary
+    private ArrayList<KADPeer>[] buckets;
     private HashMap<RK, RV> resourcesDict;
 
     /**
@@ -30,10 +30,10 @@ public class SMSDistributedNetworkDictionary<RK, RV> implements NetworkDictionar
      *
      * @param mySelf my current address
      */
-    public SMSDistributedNetworkDictionary(KADPeerAddress mySelf) {
+    public SMSDistributedNetworkDictionary(KADPeer mySelf) {
         this.mySelf = mySelf;
         //we have a bucket for each bit, so:
-        buckets = new ArrayList[KADPeerAddress.BYTE_ADDRESS_LENGTH * Byte.SIZE];
+        buckets = new ArrayList[KADPeer.BYTE_ADDRESS_LENGTH * Byte.SIZE];
     }
 
     /**
@@ -42,7 +42,7 @@ public class SMSDistributedNetworkDictionary<RK, RV> implements NetworkDictionar
      * @param newUser new network user. Must not be the current user.
      */
     @Override
-    public void addUser(KADPeerAddress newUser) {
+    public void addUser(KADPeer newUser) {
         //Calculate the distance (to understand what bucket you have to place him)
         int bucketIndex = mySelf.firstDifferentBit(newUser);
 
@@ -64,8 +64,8 @@ public class SMSDistributedNetworkDictionary<RK, RV> implements NetworkDictionar
      * @param users new network users
      */
     @Override
-    public void addAllUsers(Collection<KADPeerAddress> users) {
-        for (KADPeerAddress user : users) {
+    public void addAllUsers(Collection<KADPeer> users) {
+        for (KADPeer user : users) {
             addUser(user);
         }
     }
@@ -77,8 +77,8 @@ public class SMSDistributedNetworkDictionary<RK, RV> implements NetworkDictionar
      * @return a list of all users.
      */
     @Override
-    public ArrayList<KADPeerAddress> getAllUsers() {
-        ArrayList<KADPeerAddress> returnList = new ArrayList<>();
+    public ArrayList<KADPeer> getAllUsers() {
+        ArrayList<KADPeer> returnList = new ArrayList<>();
 
         for (int i = 0; i < buckets.length; i++) {
             if (buckets[i] != null)
@@ -88,7 +88,7 @@ public class SMSDistributedNetworkDictionary<RK, RV> implements NetworkDictionar
     }
 
     /**
-     * @param bucketIndex identifies each bucket, from 0 to N-1, where N = KADPeerAddress.BYTE_ADDRESS_LENGTH * Byte.SIZE.
+     * @param bucketIndex identifies each bucket, from 0 to N-1, where N = KADPeer.BYTE_ADDRESS_LENGTH * Byte.SIZE.
      *                    Note that if bucketIndex = i, then buckets[i] contains all known nodes of distance (XOR metric)
      *                    between 2^(N-i-1) inclusive and 2^(N-i) exclusive. For instance if i = 0, then we get all nodes
      *                    whose distance d from mySelf is >= 2^(N-1) and < 2^(N), meaning that the first significant bit is flipped.
@@ -97,7 +97,7 @@ public class SMSDistributedNetworkDictionary<RK, RV> implements NetworkDictionar
      *                    for the last bit which is flipped.
      * @return an ArrayList of users in that particular bucket, empty ArrayList if there is none
      */
-    public ArrayList<KADPeerAddress> getUsersInBucket(int bucketIndex) {
+    public ArrayList<KADPeer> getUsersInBucket(int bucketIndex) {
         if (buckets[bucketIndex] != null)
             return new ArrayList<>(buckets[bucketIndex]);
         return new ArrayList<>();
@@ -109,7 +109,7 @@ public class SMSDistributedNetworkDictionary<RK, RV> implements NetworkDictionar
      * @param user registered user
      */
     @Override
-    public void removeUser(KADPeerAddress user) {
+    public void removeUser(KADPeer user) {
         int bucketIndex = mySelf.firstDifferentBit(user);
         if (bucketIndex == -1)
             throw new IllegalArgumentException("Cannot remove itself");
@@ -125,8 +125,8 @@ public class SMSDistributedNetworkDictionary<RK, RV> implements NetworkDictionar
      * @param users registered users
      */
     @Override
-    public void removeAllUsers(Collection<KADPeerAddress> users) {
-        for (KADPeerAddress user : users) {
+    public void removeAllUsers(Collection<KADPeer> users) {
+        for (KADPeer user : users) {
             removeUser(user);
         }
     }

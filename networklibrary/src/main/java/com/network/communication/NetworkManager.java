@@ -1,6 +1,6 @@
 package com.network.communication;
 
-import com.eis.communication.Peer;
+import com.network.networklibrary.distributed.KADPeer;
 
 /**
  * @param <U>  Peer for users in the network
@@ -9,7 +9,7 @@ import com.eis.communication.Peer;
  * @author Marco Mariotto
  */
 
-public interface NetworkManager<U extends Peer, RK, RV> {
+public interface NetworkManager<U extends KADPeer, RK, RV> {
     /**
      * send an invitation message to a user to let him join this network
      *

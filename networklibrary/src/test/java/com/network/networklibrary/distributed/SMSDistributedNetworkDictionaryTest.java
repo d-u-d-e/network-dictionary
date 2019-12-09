@@ -7,8 +7,8 @@ import org.junit.Test;
 public class SMSDistributedNetworkDictionaryTest {
 
     private static String DEFAULT_TELEPHONE_NUMBER = "+393343343332";
-    private static KADPeerAddress DEFAULT_USER_ADDRESS = new KADPeerAddress(DEFAULT_TELEPHONE_NUMBER);
-    private static KADPeerAddress OTHER_USER_ADDRESS = new KADPeerAddress(DEFAULT_TELEPHONE_NUMBER + "3");
+    private static KADPeer DEFAULT_USER_ADDRESS = new KADPeer(DEFAULT_TELEPHONE_NUMBER);
+    private static KADPeer OTHER_USER_ADDRESS = new KADPeer(DEFAULT_TELEPHONE_NUMBER + "3");
     private static String DEFAULT_RESOURCE_KEY_1 = "Resource key number one";
     private static String DEFAULT_RESOURCE_VALUE_1 = "This is the value";
 

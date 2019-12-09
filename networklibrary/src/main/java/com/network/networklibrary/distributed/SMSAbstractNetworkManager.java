@@ -1,17 +1,52 @@
 package com.network.networklibrary.distributed;
 
 
+import com.eis.smslibrary.SMSHandler;
 import com.eis.smslibrary.SMSPeer;
 import com.eis.smslibrary.SMSMessage;
 import com.network.communication.NetworkManager;
 import com.network.communication.SerializableObject;
+
+import java.util.ArrayList;
 
 
 /**
  * This class is intended to be extended by the specific application. It is an implementation of NetworkManager.
  * @author Marco Mariotto
  */
-public abstract class SMSAbstractNetworkManager implements NetworkManager<SMSPeer, SerializableObject, SerializableObject> {
+public abstract class SMSAbstractNetworkManager implements NetworkManager<SMSKADPeer, SerializableObject, SerializableObject>
+{
+    /**
+     * SMS REQUESTS FORMATS
+     * JOIN proposal:      "JP_%netName"            netName is the name of the network the new node is asked to join
+     * PING request:       "PI_%(randomId)"         randomId is an identifier to match ping requests with replies
+     * STORE request:      "ST_%(key)_%(value)"
+     * FIND_NODE request:  "FN_%(KADPeerAddress)"   find the K-CLOSEST nodes to this address (we want to know their phone numbers)
+     * FIND_VALUE request: "FV_%(key)
+     */
+
+    private SMSDistributedNetworkDictionary dict;
+    //joinSent keeps track of JOIN_PROPOSAL requests still pending.
+    private ArrayList<SMSKADPeer> joinSent = new ArrayList<>();
+    protected String networkName;
+    //manager makes use of SMSHandler to send requests
+    private SMSHandler handler;
+    protected SMSPeer mySelf;
+
+    /**
+     * Sets up a new network
+     *
+     * @param handler     we set up a handler for sending requests
+     * @param networkName of the network being created
+     * @param mySelf      the current peer executing setup()
+     */
+    public void setup(SMSHandler handler, String networkName, SMSPeer mySelf) {
+        this.handler = handler;
+        this.networkName = networkName;
+        //mySelf is the current peer setting up the network
+        this.mySelf = mySelf;
+        dict = new SMSDistributedNetworkDictionary(new SMSKADPeer(mySelf));
+    }
 
     /**
      * Sends an invitation to the specified peer

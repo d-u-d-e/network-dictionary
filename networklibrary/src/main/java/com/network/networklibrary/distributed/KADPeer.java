@@ -13,7 +13,7 @@ import java.util.BitSet;
  *
  * @author Luca Crema, Alessandra Tonin, Mariotto Marco
  */
-public class KADPeerAddress implements Peer<byte[]> {
+public class KADPeer implements Peer<byte[]> {
 
     public static final String HASH_ALGORITHM = "SHA-256";
     public static final int BYTE_ADDRESS_LENGTH = 10;
@@ -26,7 +26,7 @@ public class KADPeerAddress implements Peer<byte[]> {
      * @param address a byte[] containing the peer address
      * @throws IllegalArgumentException
      */
-    public KADPeerAddress(byte[] address) throws IllegalArgumentException
+    public KADPeer(byte[] address) throws IllegalArgumentException
     {
         if (address.length != BYTE_ADDRESS_LENGTH)
             throw new IllegalArgumentException("Byte address should be " + BYTE_ADDRESS_LENGTH + " bytes long");
@@ -39,7 +39,7 @@ public class KADPeerAddress implements Peer<byte[]> {
      * @param phoneAddress a String containing the peer phone number
      * @throws NoSuchAlgorithmException
      */
-    public KADPeerAddress(String phoneAddress)
+    public KADPeer(String phoneAddress)
     {
         try {
             MessageDigest digestAlgorithm = MessageDigest.getInstance(HASH_ALGORITHM);
@@ -55,7 +55,7 @@ public class KADPeerAddress implements Peer<byte[]> {
      *
      * @param peer a network user
      */
-    public KADPeerAddress(SMSPeer peer)
+    public KADPeer(SMSPeer peer)
     {
         this(peer.getAddress());
     }
@@ -72,7 +72,7 @@ public class KADPeerAddress implements Peer<byte[]> {
      * @return the index of the first different bit between this address and otherAddress
      * or -1 if no such index exists (i.e. the two addresses are equal)
      */
-    public int firstDifferentBit(KADPeerAddress otherAddress) {
+    public int firstDifferentBit(KADPeer otherAddress) {
         BitSet userBitSet = BitSet.valueOf(address);
         userBitSet.xor(BitSet.valueOf(otherAddress.getAddress()));
         return userBitSet.nextSetBit(0);
