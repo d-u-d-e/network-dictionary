@@ -16,7 +16,7 @@ import java.util.ArrayList;
  */
 public abstract class SMSAbstractNetworkManager implements NetworkManager<SMSKADPeer, SerializableObject, SerializableObject>
 {
-    private final String SPLIT_CHAR = "_";
+    final static String SPLIT_CHAR = "_";
 
     enum Request{
         JOIN_PROPOSAL,
