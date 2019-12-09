@@ -1,4 +1,4 @@
-package com.network.networklibrary.replicated;
+package com.eis.networklibrary.replicated;
 
 /**
  * Test resource used in unit tests

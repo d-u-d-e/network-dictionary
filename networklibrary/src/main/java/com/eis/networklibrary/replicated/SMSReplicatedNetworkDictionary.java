@@ -1,8 +1,8 @@
-package com.network.networklibrary.replicated;
+package com.eis.networklibrary.replicated;
 
 
 import com.eis.smslibrary.SMSPeer;
-import com.network.communication.NetworkDictionary;
+import com.eis.communication.NetworkDictionary;
 
 import java.util.ArrayList;
 import java.util.Collection;

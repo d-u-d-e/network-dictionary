@@ -1,4 +1,4 @@
-package com.network.communication;
+package com.eis.communication;
 
 import androidx.annotation.NonNull;
 

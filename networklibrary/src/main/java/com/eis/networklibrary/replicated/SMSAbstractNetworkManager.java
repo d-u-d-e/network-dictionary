@@ -1,10 +1,10 @@
-package com.network.networklibrary.replicated;
+package com.eis.networklibrary.replicated;
 
 import com.eis.smslibrary.SMSHandler;
 import com.eis.smslibrary.SMSMessage;
 import com.eis.smslibrary.SMSPeer;
-import com.network.communication.NetworkManager;
-import com.network.communication.SerializableObject;
+import com.eis.communication.NetworkManager;
+import com.eis.communication.SerializableObject;
 
 import java.util.ArrayList;
 

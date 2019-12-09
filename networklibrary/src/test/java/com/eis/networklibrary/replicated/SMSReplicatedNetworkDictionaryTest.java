@@ -1,4 +1,4 @@
-package com.network.networklibrary.replicated;
+package com.eis.networklibrary.replicated;
 
 import com.eis.smslibrary.SMSPeer;
 
