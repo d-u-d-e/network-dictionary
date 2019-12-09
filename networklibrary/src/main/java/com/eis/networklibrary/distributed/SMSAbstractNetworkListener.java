@@ -1,6 +1,7 @@
 package com.eis.networklibrary.distributed;
 
 import com.eis.smslibrary.SMSMessage;
+import com.eis.smslibrary.SMSPeer;
 import com.eis.smslibrary.listeners.SMSReceivedServiceListener;
 
 
@@ -14,10 +15,12 @@ public abstract class SMSAbstractNetworkListener extends SMSReceivedServiceListe
     }
 
     /**
-     * This method is for handling a JoinProposal. It is up to the application to override it.
+     * This method is called when a join proposal is received. It should let the user
+     * know they has been invited to join the network, and let them decide if they want to join.
+     * {@link SMSAbstractNetworkListener#join} has to be called in order to join.
      *
-     * @param message as SMSMessage
+     * @param inviterPeer The peer who invited you to join the network
      */
-    public abstract void onJoinProposal(SMSMessage message);
+    public abstract void onJoinProposal(SMSPeer inviterPeer); //TODO: Should this be changed to SMSKADPeer?
 
 }
