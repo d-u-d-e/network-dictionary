@@ -1,13 +1,12 @@
-package com.network.networklibrary.distributed;
+package com.eis.networklibrary.distributed;
 
 
 import com.eis.smslibrary.SMSHandler;
 import com.eis.smslibrary.SMSPeer;
 import com.eis.smslibrary.SMSMessage;
-import com.network.communication.NetworkManager;
-import com.network.communication.SerializableObject;
+import com.eis.communication.NetworkManager;
+import com.eis.communication.SerializableObject;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 
 

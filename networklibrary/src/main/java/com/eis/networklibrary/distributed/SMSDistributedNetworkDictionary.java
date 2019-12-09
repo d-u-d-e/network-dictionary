@@ -1,6 +1,6 @@
-package com.network.networklibrary.distributed;
+package com.eis.networklibrary.distributed;
 
-import com.network.communication.NetworkDictionary;
+import com.eis.communication.NetworkDictionary;
 
 import java.util.ArrayList;
 import java.util.Collection;

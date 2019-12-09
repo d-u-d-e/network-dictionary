@@ -1,6 +1,4 @@
-package com.network.communication;
-
-import com.eis.communication.Peer;
+package com.eis.communication;
 
 import java.util.ArrayList;
 import java.util.Collection;

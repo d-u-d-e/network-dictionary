@@ -1,4 +1,4 @@
-package com.network.networklibrary.distributed;
+package com.eis.networklibrary.distributed;
 
 import org.junit.Assert;
 import org.junit.Before;

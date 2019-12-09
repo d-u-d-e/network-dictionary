@@ -1,4 +1,4 @@
-package com.network.networklibrary.distributed;
+package com.eis.networklibrary.distributed;
 
 import com.eis.smslibrary.SMSMessage;
 import com.eis.smslibrary.listeners.SMSReceivedServiceListener;
