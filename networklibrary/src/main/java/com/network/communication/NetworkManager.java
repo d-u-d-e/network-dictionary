@@ -11,14 +11,14 @@ import com.network.networklibrary.distributed.KADPeer;
 
 public interface NetworkManager<U extends KADPeer, RK, RV> {
     /**
-     * send an invitation message to a user to let him join this network
+     * sends an invitation message to a user to let him join this network
      *
      * @param user who receives the invitation
      */
     void invite(U user);
 
     /**
-     * set a key-value resource for the local dictionary
+     * sets a key-value resource, telling the k-closest nodes to store it
      *
      * @param key   resource key
      * @param value resource value
@@ -26,11 +26,25 @@ public interface NetworkManager<U extends KADPeer, RK, RV> {
     void setResource(RK key, RV value);
 
     /**
-     * remove a key-value resource from the local dictionary
+     * removes a key-value resource, telling the k-closest nodes who keep it to remove it
      *
      * @param key resource key
      */
     void removeResource(RK key);
+
+    /**
+     * republishes a valid key
+     *
+     * @param key resource key
+     */
+    void republishKey(RK key);
+
+    /**
+     * find the value of key
+     *
+     * @param key resource key
+     */
+    void findValue(RK key);
 
     //TODO how to handle disconnect()?
 }

@@ -9,7 +9,7 @@ public abstract class SMSAbstractNetworkListener extends SMSReceivedServiceListe
     @Override
     public void onMessageReceived(SMSMessage message){
                 /*TODO check if incoming request is valid: if it is a join req, call onJoinProposal(),
-                  TODO otherwise call processRequest() of SMSAbstractNetworkManager
+                  TODO otherwise call processMessage() of SMSAbstractNetworkManager
                 */
     }
 
