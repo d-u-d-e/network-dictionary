@@ -46,7 +46,6 @@ public abstract class SMSAbstractNetworkListener extends SMSReceivedServiceListe
             SMSAbstractNetworkManager.Reply.VALUE_FOUND, SMSAbstractNetworkManager.Reply.JOIN_AGREED};
     protected static final SMSAbstractNetworkManager.Request[] REQUESTS = {SMSAbstractNetworkManager.Request.JOIN_PROPOSAL, SMSAbstractNetworkManager.Request.PING,
             SMSAbstractNetworkManager.Request.STORE, SMSAbstractNetworkManager.Request.FIND_NODE, SMSAbstractNetworkManager.Request.FIND_VALUE};
-
     @Override
     public void onMessageReceived(SMSMessage message){
 
@@ -56,7 +55,7 @@ public abstract class SMSAbstractNetworkListener extends SMSReceivedServiceListe
         String command = message.getData().split(SMSAbstractNetworkManager.SPLIT_CHAR)[0];
         if ((!Arrays.asList(REQUESTS).contains(command)) && (!Arrays.asList(REPLIES).contains(command))) {
             throw new IllegalArgumentException("Unknown command received");
-        } else if (command.equals(SMSAbstractNetworkManager.Request.JOIN_PROPOSAL))
+        } else if (command.equals(SMSAbstractNetworkManager.Request.JOIN_PROPOSAL.toString()))
             onJoinProposal(message);
         else {
             if (manager == null)
