@@ -4,12 +4,12 @@ import com.eis.networklibrary.distributed.KADPeer;
 
 /**
  * @param <U>  Peer for users in the network
- * @param <RK> Key class identifier for the resource
  * @param <RV> Value class for the resource
  * @author Marco Mariotto
+ * @since 10/12/2019
  */
 
-public interface NetworkManager<U extends KADPeer, RK, RV> {
+public interface NetworkManager<U extends KADPeer, RK extends SerializableObject, RV extends SerializableObject> {
     /**
      * sends an invitation message to a user to let him join this network
      *

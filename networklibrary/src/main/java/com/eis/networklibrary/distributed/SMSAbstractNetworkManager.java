@@ -1,11 +1,11 @@
 package com.eis.networklibrary.distributed;
 
 
-import com.eis.smslibrary.SMSHandler;
-import com.eis.smslibrary.SMSPeer;
-import com.eis.smslibrary.SMSMessage;
 import com.eis.communication.NetworkManager;
 import com.eis.communication.SerializableObject;
+import com.eis.smslibrary.SMSHandler;
+import com.eis.smslibrary.SMSMessage;
+import com.eis.smslibrary.SMSPeer;
 
 import java.util.ArrayList;
 
@@ -90,7 +90,7 @@ public abstract class SMSAbstractNetworkManager implements NetworkManager<SMSKAD
         //TODO FIND THE K-CLOSEST NODES AND TELL THEM TO DELETE key, that is tell them to store (key, NULL)
     }
 
-    private void findClosestNodes(KADPeer peer){
+    private void findClosestNodes(KADAddress peer) {
         //TODO this only ask the k-closest nodes in our local dictionary to find closer nodes to peer.
     }
 
@@ -146,14 +146,14 @@ public abstract class SMSAbstractNetworkManager implements NetworkManager<SMSKAD
      * JOIN proposal:      "JP_%netName"            netName is the name of the network the new node is asked to join
      * PING request:       "PI_%(randomId)"         randomId is an identifier to match ping requests with replies
      * STORE request:      "ST_%(key)_%(value)"
-     * FIND_NODE request:  "FN_%(KADPeer)"          find the K-CLOSEST nodes to this KAD peer (we want to know their phone numbers)
+     * FIND_NODE request:  "FN_%(KADAddress)"          find the K-CLOSEST nodes to this KAD peer (we want to know their phone numbers)
      * FIND_VALUE request: "FV_%(key)
      *
      *
      * SMS REPLIES FORMATS
      * JOIN agreed:       "PJ_%netName" //we use the same notation to keep it consistent with NF and VF
      * PING reply:        "IP_%(matchingId)"
-     * NODE_FOUND reply:  "NF_%(phoneNumber)_%(KADPeer)"  TODO how many entries should we pack inside this reply?
+     * NODE_FOUND reply:  "NF_%(phoneNumber)_%(KADAddress)"  TODO how many entries should we pack inside this reply?
      * VALUE_FOUND reply: "VF_%(key)_(value)" TODO should send also key to mach with value? Or use a randomId like in PING?
      * */
 
