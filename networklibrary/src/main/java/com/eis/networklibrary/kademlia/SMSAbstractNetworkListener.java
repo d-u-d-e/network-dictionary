@@ -17,7 +17,7 @@ import java.util.Arrays;
 public abstract class SMSAbstractNetworkListener extends SMSReceivedServiceListener
 {
 
-    /**
+    /*
      * This listener needs an instance of manager in order to let it process incoming requests.
      * JOIN_PROPOSAL requests are handled by the application overriding onJoinProposal().
      * Other requests or replies are handled by the manager.
@@ -74,5 +74,6 @@ public abstract class SMSAbstractNetworkListener extends SMSReceivedServiceListe
      * @param inviterPeer The peer who invited you to join the network
      */
     public abstract void onJoinProposal(SMSPeer inviterPeer); //TODO: Should this be changed to SMSKADPeer?
+
 
 }

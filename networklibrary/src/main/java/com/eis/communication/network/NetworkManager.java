@@ -44,7 +44,7 @@ public interface NetworkManager<U extends KADPeer, RK extends SerializableObject
      *
      * @param key resource key
      */
-    void findValue(RK key);
+    RV findValue(RK key);
 
     //TODO how to handle disconnect()?
 }

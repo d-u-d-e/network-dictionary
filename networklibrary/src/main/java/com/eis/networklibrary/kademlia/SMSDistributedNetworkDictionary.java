@@ -177,7 +177,7 @@ public class SMSDistributedNetworkDictionary<RV> implements NetworkDictionary<SM
 
     /**
      * @param resourceKey identification for the resource
-     * @return the value of the giver resource key
+     * @return the value of the given resource key, null otherwise
      */
     @Override
     public RV getValue(KADAddress resourceKey) {
