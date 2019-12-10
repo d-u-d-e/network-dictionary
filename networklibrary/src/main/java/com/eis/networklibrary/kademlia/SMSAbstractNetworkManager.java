@@ -6,6 +6,7 @@ import com.eis.communication.network.kademlia.KADPeer;
 import com.eis.smslibrary.SMSHandler;
 import com.eis.smslibrary.SMSMessage;
 import com.eis.smslibrary.SMSPeer;
+import com.eis.networklibrary.kademlia.KADAddress;
 
 import java.util.ArrayList;
 
@@ -14,6 +15,8 @@ import java.util.ArrayList;
  * This class is intended to be extended by the specific application. It is an implementation of NetworkManager.
  *
  * @author Marco Mariotto
+ * @authore Alberto Ursino
+ * @author Alessandra Tonin
  */
 public abstract class SMSAbstractNetworkManager /*implements NetworkManager<SMSKADPeer, SerializableObject, SerializableObject>*/ {
     final static String SPLIT_CHAR = "_";
@@ -53,6 +56,10 @@ public abstract class SMSAbstractNetworkManager /*implements NetworkManager<SMSK
         handler.sendMessage(invMsg);
     }
 
+    /**
+     * //TODO
+     * @param invitation
+     */
 
     public void join(SMSMessage invitation){
 
@@ -67,8 +74,30 @@ public abstract class SMSAbstractNetworkManager /*implements NetworkManager<SMSK
     public void setResource(SerializableObject key, SerializableObject value) {
         //TODO Find the closest node and tell to it to store the (key, value) pair
         //TODO 1. Trovare il bucket in cui si trova la risorsa o, se non esiste, quello più vicino ad essa
-        //TODO 2. Confrontare gli indirizzi degli utenti di quel bucket con quello della risorsa e prendo il più vicino
+        //TODO 2. Confrontare gli indirizzi degli utenti di quel bucket con quello della risorsa e prendere il più vicino
         //TODO 3. Rendere responsabile della risorsa l'utente trovato al punto 2
+
+        /*
+         * Create the KADAddress of the resource
+         */
+        KADAddress resKadAddress = new KADAddress(key.toString());
+
+        /*
+         * Find the resource's bucket
+         * //TODO gestire il caso del bucket inesistente
+         */
+        int bucketIndex = mySelf.getNetworkAddress().firstDifferentBit(resKadAddress);
+
+        /*
+         * Get all users which are in the resource's bucket
+         */
+        ArrayList<SMSKADPeer> resCandidates = dict.getUsersInBucket(bucketIndex);
+
+        /*
+         * Compare users' addresses with resource's address to find the closest
+         */
+        
+
     }
 
     /**

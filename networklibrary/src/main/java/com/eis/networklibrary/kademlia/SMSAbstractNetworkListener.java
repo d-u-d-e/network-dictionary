@@ -11,7 +11,8 @@ import java.util.Arrays;
  * the network. It is abstract since an actual implementation requires an instance of SMSNetworkManager,
  * which is abstract (see the class for further explanation).
  *
- * @author Marco Mariotto, Alessandra Tonin
+ * @author Marco Mariotto
+ * @author Alessandra Tonin
  */
 public abstract class SMSAbstractNetworkListener extends SMSReceivedServiceListener {
 
