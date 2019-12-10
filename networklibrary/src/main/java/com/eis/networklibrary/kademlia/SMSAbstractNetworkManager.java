@@ -6,7 +6,6 @@ import com.eis.communication.network.kademlia.KADPeer;
 import com.eis.smslibrary.SMSHandler;
 import com.eis.smslibrary.SMSMessage;
 import com.eis.smslibrary.SMSPeer;
-import com.eis.networklibrary.kademlia.KADAddress;
 
 import java.util.ArrayList;
 
@@ -29,6 +28,21 @@ public abstract class SMSAbstractNetworkManager /*implements NetworkManager<SMSK
     private SMSHandler handler;
 
     private ReplyListener resourceListener;
+
+    protected static final String[] REPLIES = {
+            Reply.PING_ECHO.toString(),
+            Reply.NODE_FOUND.toString(),
+            Reply.VALUE_FOUND.toString(),
+            Reply.JOIN_AGREED.toString()
+    };
+
+    protected static final String[] REQUESTS = {
+            Request.JOIN_PROPOSAL.toString(),
+            Request.PING.toString(),
+            Request.STORE.toString(),
+            Request.FIND_NODE.toString(),
+            Request.FIND_VALUE.toString()
+    };
 
     /**
      * Sets up a new network
@@ -124,15 +138,6 @@ public abstract class SMSAbstractNetworkManager /*implements NetworkManager<SMSK
         return null;
     }
 
-    /**
-     * It processes every message: could be a reply or a request performing changes to the local dictionary.
-     * Invalid formats should not be received, now are silently discarded.
-     *
-     * @param message containing the request to be processed
-     */
-    void processMessage(SMSMessage message) {
-        //TODO can be either a reply or a request
-    }
 
     /**
      * Republishes a key to be retained in the network
@@ -140,7 +145,7 @@ public abstract class SMSAbstractNetworkManager /*implements NetworkManager<SMSK
      * @param key to be republished
      */
     public void republishKey(SerializableObject key) {
-        //TODO
+        //TODO 1. Serve praticamente chiamare di nuovo setResource
     }
 
     /**
@@ -204,28 +209,66 @@ public abstract class SMSAbstractNetworkManager /*implements NetworkManager<SMSK
         String requestStr = "";
         switch (req) {
             case JOIN_PROPOSAL:
-                requestStr = "JP_%s";
+                requestStr = Request.JOIN_PROPOSAL + SPLIT_CHAR + "%s";
                 break;
             case PING:
-                requestStr = "PI_%s";
+                requestStr = Request.PING + SPLIT_CHAR + "%s";
                 break;
             case FIND_NODE:
-                requestStr = "FN_%s";
+                requestStr = Request.FIND_NODE + SPLIT_CHAR + "%s";
                 break;
             case FIND_VALUE:
-                requestStr = "FV_%s";
+                requestStr = Request.FIND_VALUE + SPLIT_CHAR + "%s";
                 break;
             case STORE:
-                requestStr = "ST_%s_%s";
+                requestStr = Request.STORE + SPLIT_CHAR + "%s" + SPLIT_CHAR + "%s";
                 break;
         }
         return String.format(requestStr, args);
     }
 
-    private Reply parseReply(String messageData) {
-        String command = messageData.split(SMSAbstractNetworkManager.SPLIT_CHAR)[0];
-        //TODO
-        return Reply.JOIN_AGREED;
+    /**
+     * It processes every message: could be a reply or a request performing changes to the local dictionary.
+     * Invalid formats should not be received, now are silently discarded.
+     *
+     * @param message containing the request to be processed
+     */
+    void processMessage(SMSMessage message) {
+        String[] splitMessageContent = message.getData().split(SPLIT_CHAR, 2);
+        String messagePrefix = splitMessageContent[0];
+        for (Reply replyCommand : Reply.values()) {
+            if (replyCommand.toString().equals(messagePrefix)) {
+                processReply(replyCommand, splitMessageContent[1]);
+                return;
+            }
+        }
+        for (Request requestCommand : Request.values()) {
+            if (requestCommand.toString().equals(messagePrefix)) {
+                processRequest(requestCommand, splitMessageContent[1]);
+                return;
+            }
+        }
+        //SHOULD NEVER GET HERE
+        throw new IllegalStateException("Could not parse command prefix");
+    }
+
+    private void processRequest(Request req, String commandContent) {
+        switch (req) {
+            case JOIN_PROPOSAL:
+                //onJoinProposal(commandContext correctly processed)
+                //Even though it's already called from the listener
+                //TODO: remove this call from the listener, there should be another listener for this
+                break;
+        }
+    }
+
+    private void processReply(Reply reply, String commandContent) {
+        switch (reply) {
+            case JOIN_AGREED:
+                //onJoinAgreed()
+                break;
+            //TODO: Fill in with all the replies and call the right method
+        }
     }
 
 
