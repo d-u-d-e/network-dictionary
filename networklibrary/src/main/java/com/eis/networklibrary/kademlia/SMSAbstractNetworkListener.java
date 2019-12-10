@@ -7,15 +7,13 @@ import com.eis.smslibrary.listeners.SMSReceivedServiceListener;
 import java.util.Arrays;
 
 /**
- *
  * This listener receives messages from the broadcast receiver and looks for messages forwarded by
  * the network. It is abstract since an actual implementation requires an instance of SMSNetworkManager,
  * which is abstract (see the class for further explanation).
  *
  * @author Marco Mariotto, Alessandra Tonin
  */
-public abstract class SMSAbstractNetworkListener extends SMSReceivedServiceListener
-{
+public abstract class SMSAbstractNetworkListener extends SMSReceivedServiceListener {
 
     /*
      * This listener needs an instance of manager in order to let it process incoming requests.
@@ -27,32 +25,31 @@ public abstract class SMSAbstractNetworkListener extends SMSReceivedServiceListe
 
     /**
      * SPLIT_CHAR = '_' is used to split fields in each request or reply
-     *
+     * <p>
      * SMS REQUESTS FORMATS
      * JOIN proposal:      "JP_%netName"            netName is the name of the network the new node is asked to join
      * PING request:       "PI_%(randomId)"         randomId is an identifier to match ping requests with replies
      * STORE request:      "ST_%(key)_%(value)"
      * FIND_NODE request:  "FN_%(KADAddress)"          find the K-CLOSEST nodes to this KAD peer (we want to know their phone numbers)
      * FIND_VALUE request: "FV_%(key)
-     *
-     *
+     * <p>
+     * <p>
      * SMS REPLIES FORMATS
      * JOIN agreed:       "PJ_%netName" //we use the same notation to keep it consistent with NF and VF
      * PING reply:        "IP_%(matchingId)"
      * NODE_FOUND reply:  "NF_%(phoneNumber)_%(KADAddress)"  TODO how many entries should we pack inside this reply?
      * VALUE_FOUND reply: "VF_%(key)_(value)" TODO should send also key to mach with value? Or use a randomId like in PING?
-     * */
+     */
 
-    protected static final SMSAbstractNetworkManager.Reply[] REPLIES = {SMSAbstractNetworkManager.Reply.PING_ECHO, SMSAbstractNetworkManager.Reply.NODE_FOUND,
-            SMSAbstractNetworkManager.Reply.VALUE_FOUND, SMSAbstractNetworkManager.Reply.JOIN_AGREED};
-    protected static final SMSAbstractNetworkManager.Request[] REQUESTS = {SMSAbstractNetworkManager.Request.JOIN_PROPOSAL, SMSAbstractNetworkManager.Request.PING,
-            SMSAbstractNetworkManager.Request.STORE, SMSAbstractNetworkManager.Request.FIND_NODE, SMSAbstractNetworkManager.Request.FIND_VALUE};
+    //Per ora ho risolto facendo in modo brutto il toString() su ogni elemento dell'enum, io e Alberto abbiamo testato e funziona tutto.
+    //Quando avremo tempo miglioreremo questa parte.
+    protected static final String[] REPLIES = {SMSAbstractNetworkManager.Reply.PING_ECHO.toString(), SMSAbstractNetworkManager.Reply.NODE_FOUND.toString(),
+            SMSAbstractNetworkManager.Reply.VALUE_FOUND.toString(), SMSAbstractNetworkManager.Reply.JOIN_AGREED.toString()};
+    protected static final String[] REQUESTS = {SMSAbstractNetworkManager.Request.JOIN_PROPOSAL.toString(), SMSAbstractNetworkManager.Request.PING.toString(),
+            SMSAbstractNetworkManager.Request.STORE.toString(), SMSAbstractNetworkManager.Request.FIND_NODE.toString(), SMSAbstractNetworkManager.Request.FIND_VALUE.toString()};
+
     @Override
-    public void onMessageReceived(SMSMessage message){
-
-        /*TODO: solve String problem
-         * Is it better to use constants instead of enum, or to use toString() or similar methods to convert objects??
-         */
+    public void onMessageReceived(SMSMessage message) {
         String command = message.getData().split(SMSAbstractNetworkManager.SPLIT_CHAR)[0];
         if ((!Arrays.asList(REQUESTS).contains(command)) && (!Arrays.asList(REPLIES).contains(command))) {
             throw new IllegalArgumentException("Unknown command received");
