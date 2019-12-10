@@ -59,7 +59,10 @@ public abstract class SMSAbstractNetworkManager /*implements NetworkManager<SMSK
      * @param value resource value
      */
     public void setResource(SerializableObject key, SerializableObject value) {
-        //TODO FIND THE K-CLOSEST NODES AND TELL THEM TO STORE the (key, value) pair
+        //TODO Find the closest node and tell to it to store the (key, value) pair
+        //TODO 1. Trovare il bucket in cui si trova la risorsa o, se non esiste, quello più vicino ad essa
+        //TODO 2. Confronto gli indirizzi degli utenti di quel bucket con quello della risorsa e prendo il più vicino
+        //TODO 3. Rendo responsabile della risorsa l'utente trovato al punto 2
     }
 
     /**
@@ -68,7 +71,7 @@ public abstract class SMSAbstractNetworkManager /*implements NetworkManager<SMSK
      * @param key resource key
      */
     public void removeResource(SerializableObject key) {
-        //TODO FIND THE K-CLOSEST NODES AND TELL THEM TO DELETE key, that is tell them to store (key, NULL)
+        setResource(key, null);
     }
 
     private void findClosestNodes(KADAddress peer) {
