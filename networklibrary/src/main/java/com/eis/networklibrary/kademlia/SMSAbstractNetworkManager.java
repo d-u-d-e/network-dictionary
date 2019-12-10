@@ -2,6 +2,7 @@ package com.eis.networklibrary.kademlia;
 
 
 import com.eis.communication.network.SerializableObject;
+import com.eis.communication.network.kademlia.KADPeer;
 import com.eis.smslibrary.SMSHandler;
 import com.eis.smslibrary.SMSMessage;
 import com.eis.smslibrary.SMSPeer;
@@ -53,29 +54,40 @@ public abstract class SMSAbstractNetworkManager /*implements NetworkManager<SMSK
     }
 
     /**
-     * Sets a key-value resource for the local dictionary: this is called only if a STORE message is received
+     * Sets a (key, value) resource for the local dictionary: this is called only if a STORE message is received
      *
-     * @param key   resource key
-     * @param value resource value
+     * @param key   The resource key
+     * @param value The resource value
      */
     public void setResource(SerializableObject key, SerializableObject value) {
         //TODO Find the closest node and tell to it to store the (key, value) pair
         //TODO 1. Trovare il bucket in cui si trova la risorsa o, se non esiste, quello più vicino ad essa
-        //TODO 2. Confronto gli indirizzi degli utenti di quel bucket con quello della risorsa e prendo il più vicino
-        //TODO 3. Rendo responsabile della risorsa l'utente trovato al punto 2
+        //TODO 2. Confrontare gli indirizzi degli utenti di quel bucket con quello della risorsa e prendo il più vicino
+        //TODO 3. Rendere responsabile della risorsa l'utente trovato al punto 2
     }
 
     /**
      * Removes a key-value resource from the local dictionary: this is called if a STORE (key, NULL) message is received
      *
-     * @param key resource key
+     * @param key The Key for which to set the value to null
      */
     public void removeResource(SerializableObject key) {
         setResource(key, null);
     }
 
-    private void findClosestNodes(KADAddress peer) {
-        //TODO this only ask the k-closest nodes in our local dictionary to find closer nodes to peer.
+    /**
+     * Method used to finds the peer of the given KADAddress object
+     * If the given KADAddress doesn't exist then finds then peer of the closest (to the one given)
+     *
+     * @param kadAddress The KADAddress for which to find the peer
+     * @return the found peer
+     */
+    private KADPeer findAddressPeer(KADAddress kadAddress) {
+        //TODO this only ask the closest node in our local dictionary to find closer node to the given KADAddress
+        //TODO 1. Trovare il bucket in cui si trova il kadAddress o, se non esiste, quello più vicino ad esso
+        //TODO 2. Confrontare gli indirizzi degli utenti di quel bucket con quello del kadAddress e prendo il più vicino
+        //TODO 3. Estrapolare il peer dall'indirizzo trovato e ritornarlo
+        return null;
     }
 
     /**
