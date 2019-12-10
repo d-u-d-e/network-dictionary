@@ -84,19 +84,24 @@ public abstract class SMSAbstractNetworkManager /*implements NetworkManager<SMSK
 
         /*
          * Find the resource's bucket
-         * //TODO gestire il caso del bucket inesistente
+         * //TODO gestire il caso del bucket inesistente...ci sono bucket inesistenti?
          */
         int bucketIndex = mySelf.getNetworkAddress().firstDifferentBit(resKadAddress);
 
         /*
          * Get all users which are in the resource's bucket
          */
-        ArrayList<SMSKADPeer> resCandidates = dict.getUsersInBucket(bucketIndex);
+        ArrayList<SMSKADPeer> resCandidateList = dict.getUsersInBucket(bucketIndex);
 
         /*
          * Compare users' addresses with resource's address to find the closest
+         * Higher the distanceIndex closer the resource to the user
          */
-        
+        int minDistanceIndex = -1;
+        for(SMSKADPeer resCandidate : resCandidateList) {
+            int distanceIndexCandidate = resCandidate.networkAddress.firstDifferentBit(resKadAddress);
+            if(distanceIndexCandidate > minDistanceIndex) minDistanceIndex = distanceIndexCandidate;
+        }
 
     }
 
