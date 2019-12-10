@@ -1,6 +1,6 @@
-package com.eis.communication;
+package com.eis.communication.network;
 
-import com.eis.networklibrary.distributed.KADPeer;
+import com.eis.communication.network.kademlia.KADPeer;
 
 /**
  * @param <U>  Peer for users in the network

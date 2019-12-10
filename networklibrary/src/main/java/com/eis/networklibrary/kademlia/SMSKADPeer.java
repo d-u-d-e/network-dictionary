@@ -1,5 +1,6 @@
-package com.eis.networklibrary.distributed;
+package com.eis.networklibrary.kademlia;
 
+import com.eis.communication.network.kademlia.KADPeer;
 import com.eis.smslibrary.SMSPeer;
 import com.eis.smslibrary.exceptions.InvalidTelephoneNumberException;
 

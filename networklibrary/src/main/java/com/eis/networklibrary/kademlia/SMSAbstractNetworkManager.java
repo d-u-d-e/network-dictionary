@@ -1,8 +1,8 @@
-package com.eis.networklibrary.distributed;
+package com.eis.networklibrary.kademlia;
 
 
-import com.eis.communication.NetworkManager;
-import com.eis.communication.SerializableObject;
+import com.eis.communication.network.NetworkManager;
+import com.eis.communication.network.SerializableObject;
 import com.eis.smslibrary.SMSHandler;
 import com.eis.smslibrary.SMSMessage;
 import com.eis.smslibrary.SMSPeer;

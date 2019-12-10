@@ -1,6 +1,6 @@
-package com.eis.networklibrary.distributed;
+package com.eis.networklibrary.kademlia;
 
-import com.eis.communication.NetworkDictionary;
+import com.eis.communication.network.NetworkDictionary;
 
 import java.util.ArrayList;
 import java.util.Collection;

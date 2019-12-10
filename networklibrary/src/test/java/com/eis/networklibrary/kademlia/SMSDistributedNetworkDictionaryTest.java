@@ -1,4 +1,4 @@
-package com.eis.networklibrary.distributed;
+package com.eis.networklibrary.kademlia;
 
 import org.junit.Assert;
 import org.junit.Before;

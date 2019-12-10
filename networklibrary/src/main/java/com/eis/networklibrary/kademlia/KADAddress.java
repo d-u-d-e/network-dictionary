@@ -1,4 +1,4 @@
-package com.eis.networklibrary.distributed;
+package com.eis.networklibrary.kademlia;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -23,7 +23,7 @@ public class KADAddress {
     /**
      * Constructor
      *
-     * @param address a byte[] containing the object address
+     * @param address a byte array containing the object address
      * @throws IllegalArgumentException If the
      */
     public KADAddress(byte[] address) throws IllegalArgumentException {
