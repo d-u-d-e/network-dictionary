@@ -25,7 +25,7 @@ public abstract class SMSAbstractNetworkManager /*implements NetworkManager<SMSK
     //manager makes use of SMSHandler to send requests
     private SMSHandler handler;
 
-    private RobertoListener resourceListener;
+    private ReplyListener resourceListener;
 
     /**
      * Sets up a new network
@@ -48,7 +48,7 @@ public abstract class SMSAbstractNetworkManager /*implements NetworkManager<SMSK
      * @param peer who is asked to join the network
      */
     public void invite(SMSPeer peer) {
-        SMSMessage invMsg = new SMSMessage(peer, SMSCommandMapper.buildRequest(Request.JOIN_PROPOSAL, networkName));
+        SMSMessage invMsg = new SMSMessage(peer, buildRequest(Request.JOIN_PROPOSAL, networkName));
         joinSent.add(peer);
         handler.sendMessage(invMsg);
     }
@@ -120,7 +120,7 @@ public abstract class SMSAbstractNetworkManager /*implements NetworkManager<SMSK
      *
      * @param resourceKey of which we want to find the value
      */
-    public void findValue(SerializableObject resourceKey, RobertoListener listener) {
+    public void findValue(SerializableObject resourceKey, ReplyListener listener) {
         KADAddress key = new KADAddress(resourceKey.toString());
         SerializableObject value = dict.getValue(key);
         if (value != null) {
@@ -133,7 +133,7 @@ public abstract class SMSAbstractNetworkManager /*implements NetworkManager<SMSK
             return;
         }
         for (SMSKADPeer possiblePeer : peersThatMightHaveTheRes) {
-            SMSMessage invMsg = new SMSMessage(possiblePeer, SMSCommandMapper.buildRequest(Request.FIND_VALUE, resourceKey.toString()));
+            SMSMessage invMsg = new SMSMessage(possiblePeer, buildRequest(Request.FIND_VALUE, resourceKey.toString()));
             handler.sendMessage(invMsg);
         }
         resourceListener = listener;
@@ -170,6 +170,34 @@ public abstract class SMSAbstractNetworkManager /*implements NetworkManager<SMSK
      * NODE_FOUND reply:  "NF_%(phoneNumber)_%(KADAddress)"  TODO how many entries should we pack inside this reply?
      * VALUE_FOUND reply: "VF_%(key)_(value)" TODO should send also key to mach with value? Or use a randomId like in PING?
      */
+
+    private String buildRequest(Request req, String... args) {
+        String requestStr = "";
+        switch (req) {
+            case JOIN_PROPOSAL:
+                requestStr = "JP_%s";
+                break;
+            case PING:
+                requestStr = "PI_%s";
+                break;
+            case FIND_NODE:
+                requestStr = "FN_%s";
+                break;
+            case FIND_VALUE:
+                requestStr = "FV_%s";
+                break;
+            case STORE:
+                requestStr = "ST_%s_%s";
+                break;
+        }
+        return String.format(requestStr, args);
+    }
+
+    private Reply parseReply(String messageData) {
+        String command = messageData.split(SMSAbstractNetworkManager.SPLIT_CHAR)[0];
+        //TODO
+        return Reply.JOIN_AGREED;
+    }
 
 
     enum Request {

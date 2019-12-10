@@ -18,8 +18,6 @@ public interface NetworkManager<D, U extends Peer, RK extends SerializableObject
      */
     void invite(U user);
 
-    void join(Message<D, U> invitation);
-
     /**
      * sets a key-value resource, telling the k-closest nodes to store it
      *
@@ -34,13 +32,6 @@ public interface NetworkManager<D, U extends Peer, RK extends SerializableObject
      * @param key resource key
      */
     void removeResource(RK key);
-
-    /**
-     * republishes a valid key
-     *
-     * @param key resource key
-     */
-    void republishKey(RK key);
 
     /**
      * find the value of key
