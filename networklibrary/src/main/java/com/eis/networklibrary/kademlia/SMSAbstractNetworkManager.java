@@ -187,41 +187,23 @@ public abstract class SMSAbstractNetworkManager /*implements NetworkManager<SMSK
      */
     protected abstract SerializableObject getValueFromString(String value);
 
-    /**
-     * SPLIT_CHAR = '_' is used to split fields in each request or reply
-     * <p>
-     * SMS REQUESTS FORMATS
-     * JOIN proposal:      "JP_%netName"            netName is the name of the network the new node is asked to join
-     * PING request:       "PI_%(randomId)"         randomId is an identifier to match ping requests with replies
-     * STORE request:      "ST_%(key)_%(value)"
-     * FIND_NODE request:  "FN_%(KADAddress)"          find the K-CLOSEST nodes to this KAD peer (we want to know their phone numbers)
-     * FIND_VALUE request: "FV_%(key)
-     * <p>
-     * <p>
-     * SMS REPLIES FORMATS
-     * JOIN agreed:       "PJ_%netName" //we use the same notation to keep it consistent with NF and VF
-     * PING reply:        "IP_%(matchingId)"
-     * NODE_FOUND reply:  "NF_%(phoneNumber)_%(KADAddress)"  TODO how many entries should we pack inside this reply?
-     * VALUE_FOUND reply: "VF_%(key)_(value)" TODO should send also key to mach with value? Or use a randomId like in PING?
-     */
-
     private String buildRequest(Request req, String... args) {
         String requestStr = "";
         switch (req) {
             case JOIN_PROPOSAL:
-                requestStr = Request.JOIN_PROPOSAL + SPLIT_CHAR + "%s";
+                requestStr = Request.JOIN_PROPOSAL.toString() + SPLIT_CHAR + "%s";
                 break;
             case PING:
-                requestStr = Request.PING + SPLIT_CHAR + "%s";
+                requestStr = Request.PING.toString() + SPLIT_CHAR + "%s";
                 break;
             case FIND_NODE:
-                requestStr = Request.FIND_NODE + SPLIT_CHAR + "%s";
+                requestStr = Request.FIND_NODE.toString() + SPLIT_CHAR + "%s";
                 break;
             case FIND_VALUE:
-                requestStr = Request.FIND_VALUE + SPLIT_CHAR + "%s";
+                requestStr = Request.FIND_VALUE.toString() + SPLIT_CHAR + "%s";
                 break;
             case STORE:
-                requestStr = Request.STORE + SPLIT_CHAR + "%s" + SPLIT_CHAR + "%s";
+                requestStr = Request.STORE.toString() + SPLIT_CHAR + "%s" + SPLIT_CHAR + "%s";
                 break;
         }
         return String.format(requestStr, args);
@@ -257,7 +239,7 @@ public abstract class SMSAbstractNetworkManager /*implements NetworkManager<SMSK
             case JOIN_PROPOSAL:
                 //onJoinProposal(commandContext correctly processed)
                 //Even though it's already called from the listener
-                //TODO: remove this call from the listener, there should be another listener for this
+                //TODO: remove this call from the SMSAbstractNetworkListener, there should be another listener for this
                 break;
         }
     }
