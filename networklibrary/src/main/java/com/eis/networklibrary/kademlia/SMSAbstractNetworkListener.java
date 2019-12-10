@@ -38,15 +38,24 @@ public abstract class SMSAbstractNetworkListener extends SMSReceivedServiceListe
      * JOIN agreed:       "PJ_%netName" //we use the same notation to keep it consistent with NF and VF
      * PING reply:        "IP_%(matchingId)"
      * NODE_FOUND reply:  "NF_%(phoneNumber)_%(KADAddress)"  TODO how many entries should we pack inside this reply?
-     * VALUE_FOUND reply: "VF_%(key)_(value)" TODO should send also key to mach with value? Or use a randomId like in PING?
+     * VALUE_FOUND reply: "VF_%(key)_(value)" TODO should send also key to match with value? Or use a randomId like in PING?
      */
 
-    //Per ora ho risolto facendo in modo brutto il toString() su ogni elemento dell'enum, io e Alberto abbiamo testato e funziona tutto.
-    //Quando avremo tempo miglioreremo questa parte.
-    protected static final String[] REPLIES = {SMSAbstractNetworkManager.Reply.PING_ECHO.toString(), SMSAbstractNetworkManager.Reply.NODE_FOUND.toString(),
-            SMSAbstractNetworkManager.Reply.VALUE_FOUND.toString(), SMSAbstractNetworkManager.Reply.JOIN_AGREED.toString()};
-    protected static final String[] REQUESTS = {SMSAbstractNetworkManager.Request.JOIN_PROPOSAL.toString(), SMSAbstractNetworkManager.Request.PING.toString(),
-            SMSAbstractNetworkManager.Request.STORE.toString(), SMSAbstractNetworkManager.Request.FIND_NODE.toString(), SMSAbstractNetworkManager.Request.FIND_VALUE.toString()};
+    //TODO maybe change this?
+    protected static final String[] REPLIES = {
+            SMSAbstractNetworkManager.Reply.PING_ECHO.toString(),
+            SMSAbstractNetworkManager.Reply.NODE_FOUND.toString(),
+            SMSAbstractNetworkManager.Reply.VALUE_FOUND.toString(),
+            SMSAbstractNetworkManager.Reply.JOIN_AGREED.toString()
+    };
+
+    protected static final String[] REQUESTS = {
+            SMSAbstractNetworkManager.Request.JOIN_PROPOSAL.toString(),
+            SMSAbstractNetworkManager.Request.PING.toString(),
+            SMSAbstractNetworkManager.Request.STORE.toString(),
+            SMSAbstractNetworkManager.Request.FIND_NODE.toString(),
+            SMSAbstractNetworkManager.Request.FIND_VALUE.toString()
+    };
 
     @Override
     public void onMessageReceived(SMSMessage message) {
@@ -54,7 +63,7 @@ public abstract class SMSAbstractNetworkListener extends SMSReceivedServiceListe
         if ((!Arrays.asList(REQUESTS).contains(command)) && (!Arrays.asList(REPLIES).contains(command))) {
             throw new IllegalArgumentException("Unknown command received");
         } else if (command.equals(SMSAbstractNetworkManager.Request.JOIN_PROPOSAL.toString()))
-            onJoinProposal(message.getPeer());
+            onJoinProposal(message);
         else {
             if (manager == null)
                 throw new IllegalStateException("Message not expected: a manager has not been assigned for this network message");
@@ -66,11 +75,11 @@ public abstract class SMSAbstractNetworkListener extends SMSReceivedServiceListe
     /**
      * This method is called when a join proposal is received. It should let the user
      * know they has been invited to join the network, and let them decide if they want to join.
-     * {@link SMSAbstractNetworkListener#join} has to be called in order to join.
+     * {@link SMSAbstractNetworkManager#join} has to be called in order to join.
      *
-     * @param inviterPeer The peer who invited you to join the network
+     * @param message asking for a join
      */
-    public abstract void onJoinProposal(SMSPeer inviterPeer); //TODO: Should this be changed to SMSKADPeer?
+    public abstract void onJoinProposal(SMSMessage message); //TODO: Should this be changed to SMSKADPeer?
 
 
 }

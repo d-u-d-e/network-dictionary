@@ -30,7 +30,7 @@ class SMSCommandMapper {
 
     final static String SPLIT_CHAR = "_";
 
-    private String buildRequest(Request req, String... args) {
+    public static String buildRequest(Request req, String... args) {
         String requestStr = "";
         switch (req) {
             case JOIN_PROPOSAL:

@@ -1,6 +1,7 @@
 package com.eis.communication.network;
 
-import com.eis.communication.network.kademlia.KADPeer;
+import com.eis.communication.Message;
+import com.eis.communication.Peer;
 
 /**
  * @param <U>  Peer for users in the network
@@ -9,13 +10,15 @@ import com.eis.communication.network.kademlia.KADPeer;
  * @since 10/12/2019
  */
 
-public interface NetworkManager<U extends KADPeer, RK extends SerializableObject, RV extends SerializableObject> {
+public interface NetworkManager<D, U extends Peer, RK extends SerializableObject, RV extends SerializableObject> {
     /**
      * sends an invitation message to a user to let him join this network
      *
      * @param user who receives the invitation
      */
     void invite(U user);
+
+    void join(Message<D, U> invitation);
 
     /**
      * sets a key-value resource, telling the k-closest nodes to store it

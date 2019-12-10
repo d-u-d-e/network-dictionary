@@ -9,7 +9,7 @@ import com.eis.networklibrary.kademlia.KADAddress;
  * @author Marco Mariotto
  * @since 10/12/2019
  */
-public interface KADPeer {
+public interface KADPeer{
 
     /**
      * Calculates the peer unique address for Kademlia network
