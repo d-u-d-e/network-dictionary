@@ -113,14 +113,28 @@ public abstract class SMSAbstractNetworkManager implements NetworkManager<SMSKAD
         int bucketIndex = mySelf.getNetworkAddress().firstDifferentBit(resKadAddress);
 
         /*
-         * Get all users which are in the resource's bucket
+         * Get all users which are in the resource's bucket (possible candidates to handle it)
          */
         ArrayList<SMSKADPeer> resCandidates = dict.getUsersInBucket(bucketIndex);
 
         /*
          * Compare users' addresses with resource's address to find the closest
          */
-        //TODO
+        SMSKADPeer closestPeer = resCandidates.get(0);
+        int minDistance = closestPeer.getNetworkAddress().firstDifferentBit(resKadAddress);
+        for (SMSKADPeer possiblePeer : resCandidates) {
+            if(possiblePeer.getNetworkAddress().firstDifferentBit(resKadAddress) < minDistance)
+            {
+                minDistance = possiblePeer.getNetworkAddress().firstDifferentBit(resKadAddress);
+                closestPeer = possiblePeer;
+            }
+        }
+
+        /*
+         * Assign the resource to closest peer
+         */
+        mySelf = closestPeer;
+        dict.setResource(resKadAddress, value);
 
     }
 
