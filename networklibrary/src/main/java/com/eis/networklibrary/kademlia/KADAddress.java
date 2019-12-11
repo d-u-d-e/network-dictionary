@@ -21,10 +21,10 @@ public class KADAddress {
     protected byte[] address;
 
     /**
-     * Constructor
+     * TODO
      *
      * @param address a byte array containing the object address
-     * @throws IllegalArgumentException If the
+     * @throws IllegalArgumentException TODO
      */
     public KADAddress(byte[] address) throws IllegalArgumentException {
         if (address.length != BYTE_ADDRESS_LENGTH)
@@ -33,7 +33,7 @@ public class KADAddress {
     }
 
     /**
-     * Constructor
+     * TODO
      *
      * @param objectKey A String containing the key identifier for the object
      */
@@ -48,6 +48,9 @@ public class KADAddress {
         }
     }
 
+    /**
+     * @return a byte[] address
+     */
     public byte[] getAddress() {
         return address;
     }

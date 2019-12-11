@@ -1,7 +1,6 @@
 package com.eis.networklibrary.kademlia;
 
 import com.eis.smslibrary.SMSMessage;
-import com.eis.smslibrary.SMSPeer;
 import com.eis.smslibrary.listeners.SMSReceivedServiceListener;
 
 import java.util.Arrays;
@@ -43,20 +42,9 @@ public abstract class SMSAbstractNetworkListener extends SMSReceivedServiceListe
      */
 
     //TODO maybe change this?
-    protected static final String[] REPLIES = {
-            SMSAbstractNetworkManager.Reply.PING_ECHO.toString(),
-            SMSAbstractNetworkManager.Reply.NODE_FOUND.toString(),
-            SMSAbstractNetworkManager.Reply.VALUE_FOUND.toString(),
-            SMSAbstractNetworkManager.Reply.JOIN_AGREED.toString()
-    };
+    protected static final String[] REPLIES = SMSAbstractNetworkManager.REPLIES;
 
-    protected static final String[] REQUESTS = {
-            SMSAbstractNetworkManager.Request.JOIN_PROPOSAL.toString(),
-            SMSAbstractNetworkManager.Request.PING.toString(),
-            SMSAbstractNetworkManager.Request.STORE.toString(),
-            SMSAbstractNetworkManager.Request.FIND_NODE.toString(),
-            SMSAbstractNetworkManager.Request.FIND_VALUE.toString()
-    };
+    protected static final String[] REQUESTS = SMSAbstractNetworkManager.REQUESTS;
 
     @Override
     public void onMessageReceived(SMSMessage message) {
