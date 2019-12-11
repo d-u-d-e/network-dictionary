@@ -261,21 +261,13 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      * @param peer           who requested the node search
      * @param requestContent information about the node to find, must be parsed first
      */
-    /**
-     * Method called when a FIND_NODE request has been received. Sends a {@link Reply#NODE_FOUND} command back.
-     *
-     * @param peer           the peer who sent you the request
-     * @param requestContent the request received
-     */
     protected void onFindNodeRequest(SMSPeer peer, String requestContent) {
         //TODO 1. Translate the peer into a SMSKADPeer
         //TODO 2. Vedere se conosciamo quel peer
         //TODO 2.1 Se si mandiamo una risposta di Reply#NODE_FOUND
         //TODO 2.2 Altrimenti mandiamo indietro il primo dei peer di quel bucket sempre con Reply#NODE_FOUND
 
-        //splittare la richiesta e ricavare il peer da cercare
-        String[] splitRequest = requestContent.split(SPLIT_CHAR);
-        KADAddress peerToSearch = new KADAddress(splitRequest[1]);
+        KADAddress peerToSearch = new KADAddress(requestContent);
 
         //vedere se conosco il peer da cercare e se lo conosco mando NODE_FOUND
         int bucketIndex = mySelf.getNetworkAddress().firstDifferentBit(peerToSearch);
