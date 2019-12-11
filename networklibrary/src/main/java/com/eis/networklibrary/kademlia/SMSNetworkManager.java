@@ -248,13 +248,19 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     /**
      * Method called when a PING request has been received. Sends a {@link Reply#PING_ECHO) command back.
      *
-     * @param peer
+     * @param peer who requested a ping
      */
     protected void onPingRequest(SMSPeer peer) {
         //TODO should add a randomID to mach ping requests: take a look at sms formats requests
         SMSCommandMapper.sendReply(Reply.PING_ECHO, "", peer);
     }
 
+    /**
+     * Method called when a FIND_NODE request is received. Sends a {@link Reply#NODE_FOUND} command back.
+     *
+     * @param peer           who requested the node search
+     * @param requestContent information about the node to find, must be parsed first
+     */
     protected void onFindNodeRequest(SMSPeer peer, String requestContent) {
         //TODO 1. Translate the peer into a SMSKADPeer
         //TODO 2. Vedere se conosciamo quel peer
@@ -262,19 +268,36 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
         //TODO 2.2 Altrimenti mandiamo indietro il primo dei peer di quel bucket sempre con Reply#NODE_FOUND
     }
 
+    /**
+     * Method called when a FIND_VALUE request is received. Sends a {@link Reply#VALUE_FOUND} command back.
+     *
+     * @param peer           who requested the value
+     * @param requestContent information about the value to find, must be parsed first
+     */
     protected void onFindValueRequest(SMSPeer peer, String requestContent) {
 
     }
 
+    /**
+     * Method called when a STORE request is received.
+     *
+     * @param peer           who requested you to store data
+     * @param requestContent information about the key/value to store, must be parsed.
+     */
     protected void onStoreRequest(SMSPeer peer, String requestContent) {
         //THIS COMMAND IS RECEIVED ONLY AFTER SEARCHING FOR THE CLOSEST NODE
         //THIS AUTOMATICALLY MEANS I AM THE CLOSEST PEER TO the key specified
         //TODO 1. Splittare la stringa per il SPLIT_CHAR
-        //TODO 2. plit[0] è la chiave, key = KADAddress(split[0])
+        //TODO 2. split[0] è la chiave, key = KADAddress(split[0])
         //TODO 3. SerializableObject value = valueParser.parseString(split[1])
         //TODO 4. dict.setResource(key, value);
     }
 
+    /**
+     * Method called when a JOIN_AGREED reply is received.
+     *
+     * @param peer user that has just joined.
+     */
     protected void onJoinReply(SMSPeer peer) {
         //TODO 1. Controlliamo che questo lo abbiamo invitato noi cercando se è presente nella lista degli invitati
         //TODO 2. Gli mandiamo tutte le persone che conosciamo noi tranne noi stessi, poi sarà lui a bucketarli
@@ -282,16 +305,33 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
         //TODO 3. Aggiungiamo questo nuovo peer alla nostra lista dentro i bucket
     }
 
+    /**
+     * Method called when a PING_ECHO reply is received. We are sure this node is alive.
+     *
+     * @param peer user that replied to the ping.
+     */
     protected void onPingReply(SMSPeer peer) {
         //Method called when someone you pinged gives you an answer
         //TODO ci dovrebbe essere un listener per quando si fanno i ping, se è != null va chiamato
     }
 
+    /**
+     * Method called when a NODE_FOUND reply is received.
+     *
+     * @param peer         user that replied to the FIND_NODE.
+     * @param replyContent information about the node, must be parsed
+     */
     protected void onNodeFoundReply(SMSPeer peer, String replyContent) {
         //IT'S NOT ALWAYS THE NODE WE WERE LOOKING FOR! MIGHT BE A CLOSER ONE
 
     }
 
+    /**
+     * Method called when a VALUE_FOUND reply is received.
+     *
+     * @param peer         user that replied to FIND_VALUE
+     * @param replyContent information about the value, must be parsed
+     */
     protected void onValueFoundReply(SMSPeer peer, String replyContent) {
 
     }
