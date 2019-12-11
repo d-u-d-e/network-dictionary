@@ -1,7 +1,7 @@
 package com.eis.networklibrary.kademlia;
 
-import com.eis.networklibrary.kademlia.SMSAbstractNetworkManager.Reply;
-import com.eis.networklibrary.kademlia.SMSAbstractNetworkManager.Request;
+import com.eis.networklibrary.kademlia.SMSNetworkManager.Reply;
+import com.eis.networklibrary.kademlia.SMSNetworkManager.Request;
 import com.eis.smslibrary.SMSHandler;
 import com.eis.smslibrary.SMSMessage;
 import com.eis.smslibrary.SMSPeer;

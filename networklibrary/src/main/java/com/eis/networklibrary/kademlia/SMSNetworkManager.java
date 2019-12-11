@@ -12,7 +12,6 @@ import com.eis.smslibrary.listeners.SMSSentListener;
 
 import java.util.ArrayList;
 
-
 /**
  * This class is intended to be extended by the specific application. It is an implementation of NetworkManager.
  *
@@ -20,43 +19,32 @@ import java.util.ArrayList;
  * @author Alessandra Tonin
  * @author Alberto Ursino
  */
-public abstract class SMSAbstractNetworkManager implements NetworkManager<SMSKADPeer, SerializableObject, SerializableObject> {
+public class SMSNetworkManager implements NetworkManager<SMSKADPeer, SerializableObject, SerializableObject> {
 
-    protected static final String[] REPLIES = {
-            Reply.PING_ECHO.toString(),
-            Reply.NODE_FOUND.toString(),
-            Reply.VALUE_FOUND.toString(),
-            Reply.JOIN_AGREED.toString()
-    };
-    protected static final String[] REQUESTS = {
-            Request.JOIN_PROPOSAL.toString(),
-            Request.PING.toString(),
-            Request.STORE.toString(),
-            Request.FIND_NODE.toString(),
-            Request.FIND_VALUE.toString()
-    };
-    final static String SPLIT_CHAR = "_";
     protected String networkName;
     protected SMSKADPeer mySelf;
     private SMSDistributedNetworkDictionary<SerializableObject> dict;
     //joinSent keeps track of JOIN_PROPOSAL requests still pending.
     private ArrayList<SMSPeer> joinSent = new ArrayList<>();
-    //This class makes use of SMSHandler to send requests
-    private SMSHandler handler;
     private ReplyListener resourceListener;
+    protected SerializableObjectParser keyParser;
+    protected SerializableObjectParser valueParser;
+    protected SMSNetworkCallbackListener callbackListener;
 
     /**
      * Sets up a new network
      *
-     * @param handler     Handler to set for sending requests
      * @param networkName Name of the network being created
      * @param mySelf      The current peer executing setup()
      */
-    public void setup(SMSHandler handler, String networkName, SMSPeer mySelf) {
-        this.handler = handler;
+    public void setup(String networkName, SMSPeer mySelf, SerializableObjectParser keyParser, SerializableObjectParser valueParser, SMSNetworkCallbackListener callbackListener) {
         this.networkName = networkName;
         this.mySelf = new SMSKADPeer(mySelf);
         dict = new SMSDistributedNetworkDictionary(new SMSKADPeer(mySelf));
+        SMSHandler.getInstance().setReceivedListener(SMSNetworkListener.class);
+        this.keyParser = keyParser;
+        this.valueParser = valueParser;
+        this.callbackListener = callbackListener;
     }
 
     /**
@@ -130,11 +118,12 @@ public abstract class SMSAbstractNetworkManager implements NetworkManager<SMSKAD
             }
         }
 
+        //FIXME: controllare se closestPeer è realmente il nodo più vicino (devo chiedergli se nei suoi bucket ha nodi più vicini alla risorsa)
+        //       Per ora assegno la risorsa al nodo più vicino che conosco io
         /*
          * Assign the resource to closest peer
          */
-        mySelf = closestPeer;
-        dict.setResource(resKadAddress, value);
+        SMSCommandMapper.sendRequest(Request.STORE, key.toString() + SPLIT_CHAR + value.toString(), closestPeer);
 
     }
 
@@ -199,27 +188,13 @@ public abstract class SMSAbstractNetworkManager implements NetworkManager<SMSKAD
     }
 
     /**
-     * Construction of specific objects for resource keys cannot be done here. It is up to the application to override this method.
-     *
-     * @param key The string key
-     */
-    protected abstract SerializableObject getKeyFromString(String key);
-
-    /**
-     * Construction of specific objects for resource values cannot be done here. It is up to the application to override this method.
-     *
-     * @param value The string value
-     */
-    protected abstract SerializableObject getValueFromString(String value);
-
-    /**
-     * This method is called when a join proposal is received. It should let the user
-     * know they has been invited to join the network, and let them decide if they want to join.
-     * {@link SMSAbstractNetworkManager#join} has to be called in order to join.
+     * This method is called when a join proposal is received.
      *
      * @param message asking for a join
      */
-    public abstract void onJoinProposal(SMSMessage message); //TODO: Should this be changed to SMSKADPeer?
+    protected void onJoinProposal(SMSMessage message) {
+        callbackListener.onJoinRequest(message.getPeer());
+    }
 
 
     enum Request {

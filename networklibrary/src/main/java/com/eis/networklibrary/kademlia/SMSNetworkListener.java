@@ -13,7 +13,7 @@ import static com.eis.networklibrary.kademlia.SMSCommandMapper.SPLIT_CHAR;
  * @author Alessandra Tonin
  * @author Luca Crema
  */
-public class SMSNetworkListener extends SMSReceivedServiceListener {
+class SMSNetworkListener extends SMSReceivedServiceListener {
 
     /**
      * Checks if the received message is a command for the kad dictionary, check which command
@@ -30,14 +30,14 @@ public class SMSNetworkListener extends SMSReceivedServiceListener {
         }
         String messagePrefix = splitMessageContent[0];
         //Check if it's a reply
-        for (SMSAbstractNetworkManager.Reply replyCommand : SMSAbstractNetworkManager.Reply.values()) {
+        for (SMSNetworkManager.Reply replyCommand : SMSNetworkManager.Reply.values()) {
             if (replyCommand.toString().equals(messagePrefix)) {
                 SMSCommandMapper.processReply(replyCommand, splitMessageContent[1]);
                 return;
             }
         }
         //Check if it's a request
-        for (SMSAbstractNetworkManager.Request requestCommand : SMSAbstractNetworkManager.Request.values()) {
+        for (SMSNetworkManager.Request requestCommand : SMSNetworkManager.Request.values()) {
             if (requestCommand.toString().equals(messagePrefix)) {
                 SMSCommandMapper.processRequest(requestCommand, splitMessageContent[1]);
                 return;
