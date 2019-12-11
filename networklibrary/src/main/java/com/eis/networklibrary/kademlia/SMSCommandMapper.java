@@ -7,59 +7,122 @@ import com.eis.smslibrary.SMSMessage;
 import com.eis.smslibrary.SMSPeer;
 import com.eis.smslibrary.listeners.SMSSentListener;
 
+/**
+ * @author Luca Crema
+ * @author Marco Mariotto
+ */
+@SuppressWarnings({"WeakerAccess", "unused"})
 class SMSCommandMapper {
 
     final static String SPLIT_CHAR = "_";
     private static SMSHandler handler = SMSHandler.getInstance();
 
     public static void sendRequest(Request req, String content, SMSPeer peer, SMSSentListener sentListener) {
-        SMSMessage request = new SMSMessage(peer, buildRequest(req, content));
-        handler.sendMessage(request, sentListener);
+        SMSMessage messageRequest = new SMSMessage(peer, buildRequest(req, content));
+        handler.sendMessage(messageRequest, sentListener);
     }
 
     public static void sendRequest(Request req, String content, SMSPeer peer) {
         sendRequest(req, content, peer, null);
     }
 
+    public static void sendReply(Reply reply, String content, SMSPeer peer, SMSSentListener sentListener) {
+        SMSMessage messageReply = new SMSMessage(peer, buildReply(reply, content));
+        handler.sendMessage(messageReply, sentListener);
+    }
+
+    public static void sendReply(Reply reply, String content, SMSPeer peer) {
+        sendReply(reply, content, peer, null);
+    }
+
+    public static void sendReply(Reply reply, SMSPeer peer, SMSSentListener sentListener) {
+        SMSMessage messageReply = new SMSMessage(peer, buildReply(reply));
+        handler.sendMessage(messageReply, sentListener);
+    }
+
+    public static void sendReply(Reply reply, SMSPeer peer) {
+        sendReply(reply, peer, null);
+    }
+
     /**
-     * Builds a request
+     * Parses a request into a string to put into a message
      *
-     * @param req     The request name
-     * @param content TODO
-     * @return TODO
+     * @param req     The request
+     * @param content The content of the request
+     * @return The request parsed into a string ready to be sent
      */
     private static String buildRequest(Request req, String content) {
         return req.toString() + SPLIT_CHAR + content;
     }
 
     /**
-     * TODO
+     * Parses a reply into a string to put into a message
      *
-     * @param req            TODO
-     * @param commandContent TODO
+     * @param reply   The reply
+     * @param content The content of the reply
+     * @return The reply parsed into a string ready to be sent
      */
-    protected static void processRequest(Request req, String commandContent) {
+    private static String buildReply(Reply reply, String content) {
+        return reply.toString() + SPLIT_CHAR + content;
+    }
+
+    /**
+     * Parses a reply into a string to put into a message.
+     * This method is for those replies that don't use the content
+     *
+     * @param reply The reply
+     * @return The reply parsed into a string ready to be sent
+     */
+    private static String buildReply(Reply reply) {
+        return reply.toString();
+    }
+
+    /**
+     * Method called by {@link SMSNetworkListener} when a request command is received.
+     *
+     * @param req            The command received
+     * @param commandContent The content of the command, to pass to the correct handler of the request
+     */
+    protected static void processRequest(Request req, SMSPeer peer, String commandContent) {
         switch (req) {
             case JOIN_PROPOSAL:
-                //onJoinProposal(commandContext correctly processed)
-                //Even though it's already called from the listener
-                //TODO: remove this call from the SMSNetworkListener, there should be another listener for this
+                SMSNetworkManager.getInstance().onJoinProposal(peer);
+                break;
+            case PING:
+                SMSNetworkManager.getInstance().onPingRequest(peer);
+                break;
+            case FIND_NODE:
+                SMSNetworkManager.getInstance().onFindNodeRequest(peer, commandContent);
+                break;
+            case FIND_VALUE:
+                SMSNetworkManager.getInstance().onFindValueRequest(peer, commandContent);
+                break;
+            case STORE:
+                SMSNetworkManager.getInstance().onStoreRequest(peer, commandContent);
                 break;
         }
     }
 
     /**
-     * TODO
+     * Method called by {@link SMSNetworkListener} when a reply command is received.
      *
-     * @param reply          TODO
-     * @param commandContent TODO
+     * @param reply          The command received
+     * @param commandContent The content of the command, to pass to the correct handler of the reply
      */
-    protected static void processReply(Reply reply, String commandContent) {
+    protected static void processReply(Reply reply, SMSPeer peer, String commandContent) {
         switch (reply) {
             case JOIN_AGREED:
-                //onJoinAgreed()
+                SMSNetworkManager.getInstance().onJoinReply(peer);
                 break;
-            //TODO: Fill in with all the replies and call the right method
+            case PING_ECHO:
+                SMSNetworkManager.getInstance().onPingReply(peer);
+                break;
+            case NODE_FOUND:
+                SMSNetworkManager.getInstance().onNodeFoundReply(peer, commandContent);
+                break;
+            case VALUE_FOUND:
+                SMSNetworkManager.getInstance().onValueFoundReply(peer, commandContent);
+                break;
         }
     }
 

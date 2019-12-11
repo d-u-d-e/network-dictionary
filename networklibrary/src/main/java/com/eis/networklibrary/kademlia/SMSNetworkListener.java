@@ -32,14 +32,14 @@ class SMSNetworkListener extends SMSReceivedServiceListener {
         //Check if it's a reply
         for (SMSNetworkManager.Reply replyCommand : SMSNetworkManager.Reply.values()) {
             if (replyCommand.toString().equals(messagePrefix)) {
-                SMSCommandMapper.processReply(replyCommand, splitMessageContent[1]);
+                SMSCommandMapper.processReply(replyCommand, message.getPeer(), splitMessageContent[1]);
                 return;
             }
         }
         //Check if it's a request
         for (SMSNetworkManager.Request requestCommand : SMSNetworkManager.Request.values()) {
             if (requestCommand.toString().equals(messagePrefix)) {
-                SMSCommandMapper.processRequest(requestCommand, splitMessageContent[1]);
+                SMSCommandMapper.processRequest(requestCommand, message.getPeer(), splitMessageContent[1]);
                 return;
             }
         }

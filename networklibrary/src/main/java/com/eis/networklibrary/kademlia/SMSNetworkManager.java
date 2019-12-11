@@ -19,8 +19,10 @@ import java.util.ArrayList;
  * @author Alessandra Tonin
  * @author Alberto Ursino
  */
+@SuppressWarnings("WeakerAccess")
 public class SMSNetworkManager implements NetworkManager<SMSKADPeer, SerializableObject, SerializableObject> {
 
+    protected static SMSNetworkManager instance;
     protected String networkName;
     protected SMSKADPeer mySelf;
     private SMSDistributedNetworkDictionary<SerializableObject> dict;
@@ -30,6 +32,17 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     protected SerializableObjectParser keyParser;
     protected SerializableObjectParser valueParser;
     protected SMSNetworkCallbackListener callbackListener;
+    protected char SPLIT_CHAR = '_';
+
+    private SMSNetworkManager() {
+        //Private because of singleton
+    }
+
+    protected static SMSNetworkManager getInstance() {
+        if (instance == null)
+            instance = new SMSNetworkManager();
+        return instance;
+    }
 
     /**
      * Sets up a new network
@@ -40,7 +53,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     public void setup(String networkName, SMSPeer mySelf, SerializableObjectParser keyParser, SerializableObjectParser valueParser, SMSNetworkCallbackListener callbackListener) {
         this.networkName = networkName;
         this.mySelf = new SMSKADPeer(mySelf);
-        dict = new SMSDistributedNetworkDictionary(new SMSKADPeer(mySelf));
+        dict = new SMSDistributedNetworkDictionary<>(new SMSKADPeer(mySelf));
         SMSHandler.getInstance().setReceivedListener(SMSNetworkListener.class);
         this.keyParser = keyParser;
         this.valueParser = valueParser;
@@ -190,12 +203,48 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     /**
      * This method is called when a join proposal is received.
      *
-     * @param message asking for a join
+     * @param peer who invited you
      */
-    protected void onJoinProposal(SMSMessage message) {
-        callbackListener.onJoinRequest(message.getPeer());
+    protected void onJoinProposal(SMSPeer peer) {
+        callbackListener.onJoinRequest(peer);
     }
 
+    /**
+     * Method called when a PING request has been received. Sends a {@link Reply#PING_ECHO) command back.
+     *
+     * @param peer
+     */
+    protected void onPingRequest(SMSPeer peer) {
+        SMSCommandMapper.sendReply(Reply.PING_ECHO, "", peer);
+    }
+
+    protected void onFindNodeRequest(SMSPeer peer, String requestContent) {
+
+    }
+
+    protected void onFindValueRequest(SMSPeer peer, String requestContent) {
+
+    }
+
+    protected void onStoreRequest(SMSPeer peer, String requestContent) {
+
+    }
+
+    protected void onJoinReply(SMSPeer peer) {
+
+    }
+
+    protected void onPingReply(SMSPeer peer) {
+        //Method called when someone you pinged gives you an answer
+    }
+
+    protected void onNodeFoundReply(SMSPeer peer, String replyContent) {
+
+    }
+
+    protected void onValueFoundReply(SMSPeer peer, String replyContent) {
+
+    }
 
     enum Request {
         JOIN_PROPOSAL,
