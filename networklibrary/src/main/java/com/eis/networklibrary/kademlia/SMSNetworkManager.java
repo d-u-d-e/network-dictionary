@@ -165,9 +165,37 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
         //TODO this only asks the closest nodes in our local dictionary to find closer nodes to the given KADAddress
         //TODO 1. Trovare il bucket in cui si trova il kadAddress o, se non esiste, quello più vicino ad esso
         //TODO 2. Confrontare gli indirizzi degli utenti di quel bucket con quello del kadAddress e prendo il più vicino
-        //TODO 3. Estrapolare il peer dall'indirizzo trovato e inviare una richiesta di find dell'indirizzo a questo.
+        //TODO 3. Estrapolare il peer dall'indirizzo trovato e inviargli una richiesta di find dell'indirizzo.
         //TODO 4. Procedere in modo ricorsivo sino a quando ricevo il numero di telefono del peer più vicino in assoluto a kadAddress
-        return null;
+
+
+        //Find the user's bucket
+        //TODO gestire il caso del bucket inesistente -> ovvero andare a cercare nel bucket di indice precedente e via cosi
+        int userBucket = mySelf.getNetworkAddress().firstDifferentBit(kadAddress);
+
+        //Create an array with all the bucket users
+        ArrayList<SMSKADPeer> bucketUsers = dict.getUsersInBucket(userBucket);
+
+        //Control if in the bucket there is the given address, if yes return it
+        for (SMSKADPeer possibleUser : bucketUsers) {
+            if (possibleUser.getNetworkAddress().firstDifferentBit(kadAddress) == -1)
+                return possibleUser;
+        }
+
+        //If the the user associated with the given KADAddress doesn't exist in the bucket then return the KADAddress peer of the closest user address
+        SMSKADPeer closestPeer = bucketUsers.get(0);
+        int closestBucketIndex = closestPeer.getNetworkAddress().firstDifferentBit(kadAddress);
+        for (SMSKADPeer possiblePeer : bucketUsers) {
+            int index = possiblePeer.getNetworkAddress().firstDifferentBit(kadAddress);
+            if (index > closestBucketIndex) {
+                closestBucketIndex = index;
+                closestPeer = possiblePeer;
+            }
+        }
+
+        //TODO SMSCommandMapper.sendRequest(Request.FIND_NODE, ???????????);
+
+        return closestPeer;
     }
 
 
