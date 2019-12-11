@@ -269,19 +269,17 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
 
         KADAddress peerToSearch = new KADAddress(requestContent);
 
-        //vedere se conosco il peer da cercare e se lo conosco mando NODE_FOUND
         int bucketIndex = mySelf.getNetworkAddress().firstDifferentBit(peerToSearch);
         ArrayList<SMSKADPeer> knownPeers = dict.getUsersInBucket(bucketIndex);
 
         for (SMSKADPeer possible : knownPeers) {
-            //TODO: controllare se la condizione dell'if è corretta
-            if ((possible.getNetworkAddress()).equals(peerToSearch)) {
+            if (((possible.getNetworkAddress()).firstDifferentBit(peerToSearch)) == -1) {
                 SMSCommandMapper.sendReply(Reply.NODE_FOUND, peer);
                 return;
             }
         }
 
-        //mando il primo nodo del bucket --> TODO: CONTROLLARE IL CONTENT DELLA REPLY
+        //TODO: CONTROLLARE IL CONTENT DELLA REPLY
         SMSCommandMapper.sendReply(Reply.NODE_FOUND, knownPeers.get(0).toString(), peer);
     }
 
