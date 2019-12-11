@@ -215,7 +215,10 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     }
 
     protected void onFindNodeRequest(SMSPeer peer, String requestContent) {
-
+        //TODO 1. Translate the peer into a SMSKADPeer
+        //TODO 2. Vedere se conosciamo quel peer
+        //TODO 2.1 Se si mandiamo una risposta di Reply#NODE_FOUND
+        //TODO 2.2 Altrimenti mandiamo indietro il primo dei peer di quel bucket sempre con Reply#NODE_FOUND
     }
 
     protected void onFindValueRequest(SMSPeer peer, String requestContent) {
@@ -223,18 +226,27 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     }
 
     protected void onStoreRequest(SMSPeer peer, String requestContent) {
-
+        //THIS COMMAND IS RECEIVED ONLY AFTER SEARCHING FOR THE CLOSEST NODE
+        //TODO 1. Splittare la stringa per il SPLIT_CHAR
+        //TODO 2. Chiamare split[0] è la chiave, key = KADAddress(split[0])
+        //TODO 3. Chaiamare SerializableObject value = valueParser.parseString(split[1])
+        //TODO 4. dict.setResource(key, value);
     }
 
     protected void onJoinReply(SMSPeer peer) {
-
+        //TODO 1. Controlliamo che questo lo abbiamo invitato noi cercando se è presente nella lista degli invitati
+        //TODO 2. Gli mandiamo tutte le persone che conosciamo noi tranne noi stessi, poi sarà lui a bucketarli
+        //TODO    Il comando da usare non è ancora stato definito, sarebbe da definire un reuqest REGISTER_NODE
+        //TODO 3. Aggiungiamo questo nuovo peer alla nostra lista dentro i bucket
     }
 
     protected void onPingReply(SMSPeer peer) {
         //Method called when someone you pinged gives you an answer
+        //TODO ci dovrebbe essere un listener per quando si fanno i ping, se è != null va chiamato
     }
 
     protected void onNodeFoundReply(SMSPeer peer, String replyContent) {
+        //IT'S NOT ALWAYS THE NODE WE WERE LOOKING FOR! MIGHT BE A CLOSER ONE
 
     }
 
