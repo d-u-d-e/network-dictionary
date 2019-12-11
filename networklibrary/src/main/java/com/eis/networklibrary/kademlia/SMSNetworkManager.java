@@ -21,6 +21,7 @@ import java.util.ArrayList;
  * @author Marco Mariotto
  * @author Alessandra Tonin
  * @author Alberto Ursino
+ * @author Luca Crema
  */
 @SuppressWarnings("WeakerAccess")
 public class SMSNetworkManager implements NetworkManager<SMSKADPeer, SerializableObject, SerializableObject> {
@@ -111,7 +112,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
         KADAddress resKadAddress = new KADAddress(key.toString());
 
         //Find the resource's bucket
-        //TODO gestire il caso del bucket inesistente
+        //TODO gestire il caso del bucket inesistente -> ovvero andare a cercare nel bucket di indice precedente e via cosi
         int bucketIndex = mySelf.getNetworkAddress().firstDifferentBit(resKadAddress);
 
 
@@ -119,11 +120,15 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
         ArrayList<SMSKADPeer> resCandidates = dict.getUsersInBucket(bucketIndex);
 
         //Compare users' addresses with resource's address to find the closest
+
+        //TODO here we should use findAddressPeer
+
         SMSKADPeer closestPeer = resCandidates.get(0);
-        int minDistance = closestPeer.getNetworkAddress().firstDifferentBit(resKadAddress);
+        int closestBucketIndex = closestPeer.getNetworkAddress().firstDifferentBit(resKadAddress);
         for (SMSKADPeer possiblePeer : resCandidates) {
-            if (possiblePeer.getNetworkAddress().firstDifferentBit(resKadAddress) < minDistance) {
-                minDistance = possiblePeer.getNetworkAddress().firstDifferentBit(resKadAddress);
+            int index = possiblePeer.getNetworkAddress().firstDifferentBit(resKadAddress);
+            if (index > closestBucketIndex) {
+                closestBucketIndex = index;
                 closestPeer = possiblePeer;
             }
         }
@@ -143,7 +148,10 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      */
     @Override
     public void removeResource(SerializableObject key) {
-        setResource(key, null);
+        //TODO this call crashes because value is referenced (value.toString()) in setResource(key , value)
+        //TODO we should break setResource in two parts: 1) we first find the closest node to a key using findAddressPeer, 2) and then we send the store request
+        //TODO so we can then use 1) to find the owner of key, and then simply call something like sendRequest(STORE, key.toString()  + "_" + "NULL", closestPeer)
+        //setResource(key, null);
     }
 
     /**
@@ -154,10 +162,11 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      * @return an {@link KADAddress} object
      */
     private KADPeer findAddressPeer(KADAddress kadAddress) {
-        //TODO this only ask the closest node in our local dictionary to find closer node to the given KADAddress
+        //TODO this only asks the closest nodes in our local dictionary to find closer nodes to the given KADAddress
         //TODO 1. Trovare il bucket in cui si trova il kadAddress o, se non esiste, quello più vicino ad esso
         //TODO 2. Confrontare gli indirizzi degli utenti di quel bucket con quello del kadAddress e prendo il più vicino
-        //TODO 3. Estrapolare il peer dall'indirizzo trovato e ritornarlo
+        //TODO 3. Estrapolare il peer dall'indirizzo trovato e inviare una richiesta di find dell'indirizzo a questo.
+        //TODO 4. Procedere in modo ricorsivo sino a quando ricevo il numero di telefono del peer più vicino in assoluto a kadAddress
         return null;
     }
 
@@ -168,8 +177,8 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      * @param key The key to be republished
      */
     public void republishKey(SerializableObject key) {
-        //TODO Take a look to this method
-        setResource(key, dict.getValue(new KADAddress(key.toString())));
+        //TODO Take a look at this method
+        //setResource(key, dict.getValue(new KADAddress(key.toString())));
     }
 
     /**
@@ -185,15 +194,18 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
             listener.onValueReceived(value);
             return;
         }
+
+        //TODO this is similar to findAddressPeer, except that when the value is found it is immediately returned
+
         ArrayList<SMSKADPeer> peersThatMightHaveTheRes = dict.getUsersInBucket(key.firstDifferentBit(mySelf.networkAddress));
         if (peersThatMightHaveTheRes.size() == 0) {
             listener.onValueNotFound();
             return;
         }
+        resourceListener = listener;
         for (SMSKADPeer possiblePeer : peersThatMightHaveTheRes) {
             SMSCommandMapper.sendRequest(Request.FIND_VALUE, resourceKey.toString(), possiblePeer);
         }
-        resourceListener = listener;
     }
 
     /**
@@ -211,6 +223,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      * @param peer
      */
     protected void onPingRequest(SMSPeer peer) {
+        //TODO should add a randomID to mach ping requests: take a look at sms formats requests
         SMSCommandMapper.sendReply(Reply.PING_ECHO, "", peer);
     }
 
@@ -227,16 +240,17 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
 
     protected void onStoreRequest(SMSPeer peer, String requestContent) {
         //THIS COMMAND IS RECEIVED ONLY AFTER SEARCHING FOR THE CLOSEST NODE
+        //THIS AUTOMATICALLY MEANS I AM THE CLOSEST PEER TO the key specified
         //TODO 1. Splittare la stringa per il SPLIT_CHAR
-        //TODO 2. Chiamare split[0] è la chiave, key = KADAddress(split[0])
-        //TODO 3. Chaiamare SerializableObject value = valueParser.parseString(split[1])
+        //TODO 2. plit[0] è la chiave, key = KADAddress(split[0])
+        //TODO 3. SerializableObject value = valueParser.parseString(split[1])
         //TODO 4. dict.setResource(key, value);
     }
 
     protected void onJoinReply(SMSPeer peer) {
         //TODO 1. Controlliamo che questo lo abbiamo invitato noi cercando se è presente nella lista degli invitati
         //TODO 2. Gli mandiamo tutte le persone che conosciamo noi tranne noi stessi, poi sarà lui a bucketarli
-        //TODO    Il comando da usare non è ancora stato definito, sarebbe da definire un reuqest REGISTER_NODE
+        //TODO    Il comando da usare non è ancora stato definito, sarebbe da definire un request REGISTER_NODE
         //TODO 3. Aggiungiamo questo nuovo peer alla nostra lista dentro i bucket
     }
 

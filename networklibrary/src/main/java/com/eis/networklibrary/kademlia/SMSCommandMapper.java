@@ -10,7 +10,26 @@ import com.eis.smslibrary.listeners.SMSSentListener;
 /**
  * @author Luca Crema
  * @author Marco Mariotto
- */
+ *
+ *     /**
+ *      * SPLIT_CHAR = '_' is used to split fields in each request or reply
+ *      * <p>
+ *      * SMS REQUESTS FORMATS
+ *      * JOIN proposal:      "JP_%netName"            netName is the name of the network the new node is asked to join
+ *      * PING request:       "PI_%(randomId)"         randomId is an identifier to match ping requests with replies
+ *      * STORE request:      "ST_%(key)_%(value)"
+ *      * FIND_NODE request:  "FN_%(KADAddress)"          find the K-CLOSEST nodes to this KAD peer (we want to know their phone numbers)
+ *      * FIND_VALUE request: "FV_%(key)
+ *      * <p>
+ *      * <p>
+ *      * SMS REPLIES FORMATS
+ *      * JOIN agreed:       "PJ_%netName" //we use the same notation to keep it consistent with NF and VF
+ *      * PING reply:        "IP_%(matchingId)"
+ *      * NODE_FOUND reply:  "NF_%(phoneNumber)_%(KADAddress)"  TODO how many entries should we pack inside this reply?
+ *      * VALUE_FOUND reply: "VF_%(key)_(value)" TODO should send also key to match with value? Or use a randomId like in PING?
+ *      */
+
+
 @SuppressWarnings({"WeakerAccess", "unused"})
 class SMSCommandMapper {
 
