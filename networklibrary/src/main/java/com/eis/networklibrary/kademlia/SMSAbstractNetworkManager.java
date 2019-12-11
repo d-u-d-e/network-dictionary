@@ -1,11 +1,14 @@
 package com.eis.networklibrary.kademlia;
 
+import androidx.annotation.NonNull;
+
 import com.eis.communication.network.NetworkManager;
 import com.eis.communication.network.SerializableObject;
 import com.eis.communication.network.kademlia.KADPeer;
 import com.eis.smslibrary.SMSHandler;
 import com.eis.smslibrary.SMSMessage;
 import com.eis.smslibrary.SMSPeer;
+import com.eis.smslibrary.listeners.SMSSentListener;
 
 import java.util.ArrayList;
 
@@ -19,6 +22,19 @@ import java.util.ArrayList;
  */
 public abstract class SMSAbstractNetworkManager implements NetworkManager<SMSKADPeer, SerializableObject, SerializableObject> {
 
+    protected static final String[] REPLIES = {
+            Reply.PING_ECHO.toString(),
+            Reply.NODE_FOUND.toString(),
+            Reply.VALUE_FOUND.toString(),
+            Reply.JOIN_AGREED.toString()
+    };
+    protected static final String[] REQUESTS = {
+            Request.JOIN_PROPOSAL.toString(),
+            Request.PING.toString(),
+            Request.STORE.toString(),
+            Request.FIND_NODE.toString(),
+            Request.FIND_VALUE.toString()
+    };
     final static String SPLIT_CHAR = "_";
     protected String networkName;
     protected SMSKADPeer mySelf;
@@ -27,23 +43,7 @@ public abstract class SMSAbstractNetworkManager implements NetworkManager<SMSKAD
     private ArrayList<SMSPeer> joinSent = new ArrayList<>();
     //This class makes use of SMSHandler to send requests
     private SMSHandler handler;
-
     private ReplyListener resourceListener;
-
-    protected static final String[] REPLIES = {
-            Reply.PING_ECHO.toString(),
-            Reply.NODE_FOUND.toString(),
-            Reply.VALUE_FOUND.toString(),
-            Reply.JOIN_AGREED.toString()
-    };
-
-    protected static final String[] REQUESTS = {
-            Request.JOIN_PROPOSAL.toString(),
-            Request.PING.toString(),
-            Request.STORE.toString(),
-            Request.FIND_NODE.toString(),
-            Request.FIND_VALUE.toString()
-    };
 
     /**
      * Sets up a new network
@@ -65,10 +65,13 @@ public abstract class SMSAbstractNetworkManager implements NetworkManager<SMSKAD
      * @param peer The peer of the user to invite
      */
     @Override
-    public void invite(SMSKADPeer peer) {
-        SMSMessage invitation = new SMSMessage(peer, buildRequest(Request.JOIN_PROPOSAL, networkName));
-        joinSent.add(peer);
-        handler.sendMessage(invitation);
+    public void invite(@NonNull final SMSKADPeer peer) {
+        SMSCommandMapper.sendRequest(Request.JOIN_PROPOSAL, networkName, peer, new SMSSentListener() {
+            @Override
+            public void onSMSSent(SMSMessage message, SMSMessage.SentState sentState) {
+                joinSent.add(peer);
+            }
+        });
     }
 
     /**
@@ -78,7 +81,11 @@ public abstract class SMSAbstractNetworkManager implements NetworkManager<SMSKAD
      */
     public void join(SMSMessage invitation) {
         //TODO Take a look to this method
+        //TODO: 1. Aggiungere chi ci ha invitato al nostro dizionario
         dict.addUser(new SMSKADPeer(invitation.getPeer()));
+        //TODO: 2. Dirgli che ci vogliamo aggiungere alla rete
+
+        //TODO: 3. Aspettare che ci mandi la lista di peer (va fatto in un altro metodo tipo onJoinAccomplished)
     }
 
     /**
@@ -172,8 +179,7 @@ public abstract class SMSAbstractNetworkManager implements NetworkManager<SMSKAD
             return;
         }
         for (SMSKADPeer possiblePeer : peersThatMightHaveTheRes) {
-            SMSMessage invMsg = new SMSMessage(possiblePeer, buildRequest(Request.FIND_VALUE, resourceKey.toString()));
-            handler.sendMessage(invMsg);
+            SMSCommandMapper.sendRequest(Request.FIND_VALUE, resourceKey.toString(), possiblePeer);
         }
         resourceListener = listener;
     }
@@ -193,89 +199,14 @@ public abstract class SMSAbstractNetworkManager implements NetworkManager<SMSKAD
     protected abstract SerializableObject getValueFromString(String value);
 
     /**
-     * Builds a request
+     * This method is called when a join proposal is received. It should let the user
+     * know they has been invited to join the network, and let them decide if they want to join.
+     * {@link SMSAbstractNetworkManager#join} has to be called in order to join.
      *
-     * @param req  The request name
-     * @param args TODO
-     * @return TODO
+     * @param message asking for a join
      */
-    private String buildRequest(Request req, String... args) {
-        String requestStr = "";
-        switch (req) {
-            case JOIN_PROPOSAL:
-                requestStr = Request.JOIN_PROPOSAL.toString() + SPLIT_CHAR + "%s";
-                break;
-            case PING:
-                requestStr = Request.PING.toString() + SPLIT_CHAR + "%s";
-                break;
-            case FIND_NODE:
-                requestStr = Request.FIND_NODE.toString() + SPLIT_CHAR + "%s";
-                break;
-            case FIND_VALUE:
-                requestStr = Request.FIND_VALUE.toString() + SPLIT_CHAR + "%s";
-                break;
-            case STORE:
-                requestStr = Request.STORE.toString() + SPLIT_CHAR + "%s" + SPLIT_CHAR + "%s";
-                break;
-        }
-        return String.format(requestStr, args);
-    }
+    public abstract void onJoinProposal(SMSMessage message); //TODO: Should this be changed to SMSKADPeer?
 
-    /**
-     * It processes every message: could be a reply or a request performing changes to the local dictionary.
-     * Invalid formats should not be received, now are silently discarded.
-     *
-     * @param message containing the request to be processed
-     */
-    void processMessage(SMSMessage message) {
-        String[] splitMessageContent = message.getData().split(SPLIT_CHAR, 2);
-        String messagePrefix = splitMessageContent[0];
-        for (Reply replyCommand : Reply.values()) {
-            if (replyCommand.toString().equals(messagePrefix)) {
-                processReply(replyCommand, splitMessageContent[1]);
-                return;
-            }
-        }
-        for (Request requestCommand : Request.values()) {
-            if (requestCommand.toString().equals(messagePrefix)) {
-                processRequest(requestCommand, splitMessageContent[1]);
-                return;
-            }
-        }
-        //SHOULD NEVER GET HERE
-        throw new IllegalStateException("Could not parse command prefix");
-    }
-
-    /**
-     * TODO
-     *
-     * @param req            TODO
-     * @param commandContent TODO
-     */
-    private void processRequest(Request req, String commandContent) {
-        switch (req) {
-            case JOIN_PROPOSAL:
-                //onJoinProposal(commandContext correctly processed)
-                //Even though it's already called from the listener
-                //TODO: remove this call from the SMSAbstractNetworkListener, there should be another listener for this
-                break;
-        }
-    }
-
-    /**
-     * TODO
-     *
-     * @param reply          TODO
-     * @param commandContent TODO
-     */
-    private void processReply(Reply reply, String commandContent) {
-        switch (reply) {
-            case JOIN_AGREED:
-                //onJoinAgreed()
-                break;
-            //TODO: Fill in with all the replies and call the right method
-        }
-    }
 
     enum Request {
         JOIN_PROPOSAL,

@@ -41,34 +41,18 @@ public abstract class SMSAbstractNetworkListener extends SMSReceivedServiceListe
      * VALUE_FOUND reply: "VF_%(key)_(value)" TODO should send also key to match with value? Or use a randomId like in PING?
      */
 
-    //TODO maybe change this?
-    protected static final String[] REPLIES = SMSAbstractNetworkManager.REPLIES;
-
-    protected static final String[] REQUESTS = SMSAbstractNetworkManager.REQUESTS;
-
     @Override
     public void onMessageReceived(SMSMessage message) {
         String command = message.getData().split(SMSAbstractNetworkManager.SPLIT_CHAR)[0];
-        if ((!Arrays.asList(REQUESTS).contains(command)) && (!Arrays.asList(REPLIES).contains(command))) {
+        if ((!Arrays.asList(SMSAbstractNetworkManager.REQUESTS).contains(command)) && (!Arrays.asList(SMSAbstractNetworkManager.REPLIES).contains(command))) {
             throw new IllegalArgumentException("Unknown command received");
-        } else if (command.equals(SMSAbstractNetworkManager.Request.JOIN_PROPOSAL.toString()))
-            onJoinProposal(message);
+        }
         else {
             if (manager == null)
                 throw new IllegalStateException("Message not expected: a manager has not been assigned for this network message");
-            manager.processMessage(message);
+            SMSCommandMapper.processMessage(message);
         }
 
     }
-
-    /**
-     * This method is called when a join proposal is received. It should let the user
-     * know they has been invited to join the network, and let them decide if they want to join.
-     * {@link SMSAbstractNetworkManager#join} has to be called in order to join.
-     *
-     * @param message asking for a join
-     */
-    public abstract void onJoinProposal(SMSMessage message); //TODO: Should this be changed to SMSKADPeer?
-
 
 }
