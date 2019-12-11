@@ -13,7 +13,10 @@ import com.eis.smslibrary.listeners.SMSSentListener;
 import java.util.ArrayList;
 
 /**
- * This class is intended to be extended by the specific application. It is an implementation of NetworkManager.
+ * Singleton class that handles the Kademlia network.
+ * If you want to join a network you have to
+ * 1. Setup the manager with SMSNetworkManager.getInstance().setup(...)
+ * 2. Set a callback listener for events like join proposal with SMSNetworkManager.getInstance().setCallbackListener(...)
  *
  * @author Marco Mariotto
  * @author Alessandra Tonin
@@ -25,14 +28,14 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     protected static SMSNetworkManager instance;
     protected String networkName;
     protected SMSKADPeer mySelf;
-    private SMSDistributedNetworkDictionary<SerializableObject> dict;
-    //joinSent keeps track of JOIN_PROPOSAL requests still pending.
-    private ArrayList<SMSPeer> joinSent = new ArrayList<>();
-    private ReplyListener resourceListener;
     protected SerializableObjectParser keyParser;
     protected SerializableObjectParser valueParser;
     protected SMSNetworkCallbackListener callbackListener;
     protected char SPLIT_CHAR = '_';
+    private SMSDistributedNetworkDictionary<SerializableObject> dict;
+    //joinSent keeps track of JOIN_PROPOSAL requests still pending.
+    private ArrayList<SMSPeer> joinSent = new ArrayList<>();
+    private ReplyListener resourceListener;
 
     private SMSNetworkManager() {
         //Private because of singleton
@@ -50,13 +53,16 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      * @param networkName Name of the network being created
      * @param mySelf      The current peer executing setup()
      */
-    public void setup(String networkName, SMSPeer mySelf, SerializableObjectParser keyParser, SerializableObjectParser valueParser, SMSNetworkCallbackListener callbackListener) {
+    public void setup(String networkName, SMSPeer mySelf, SerializableObjectParser keyParser, SerializableObjectParser valueParser) {
         this.networkName = networkName;
         this.mySelf = new SMSKADPeer(mySelf);
         dict = new SMSDistributedNetworkDictionary<>(new SMSKADPeer(mySelf));
         SMSHandler.getInstance().setReceivedListener(SMSNetworkListener.class);
         this.keyParser = keyParser;
         this.valueParser = valueParser;
+    }
+
+    public void setCallbackListener(SMSNetworkCallbackListener callbackListener) {
         this.callbackListener = callbackListener;
     }
 
@@ -102,30 +108,21 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
         //TODO 2. Confrontare gli indirizzi degli utenti di quel bucket con quello della risorsa e prendere il più vicino
         //TODO 3. Rendere responsabile della risorsa l'utente trovato al punto 2
 
-        /*
-         * Create the KADAddress of the resource
-         */
         KADAddress resKadAddress = new KADAddress(key.toString());
 
-        /*
-         * Find the resource's bucket
-         * //TODO gestire il caso del bucket inesistente
-         */
+        //Find the resource's bucket
+        //TODO gestire il caso del bucket inesistente
         int bucketIndex = mySelf.getNetworkAddress().firstDifferentBit(resKadAddress);
 
-        /*
-         * Get all users which are in the resource's bucket (possible candidates to handle it)
-         */
+
+        //Get all users which are in the resource's bucket (possible candidates to handle it)
         ArrayList<SMSKADPeer> resCandidates = dict.getUsersInBucket(bucketIndex);
 
-        /*
-         * Compare users' addresses with resource's address to find the closest
-         */
+        //Compare users' addresses with resource's address to find the closest
         SMSKADPeer closestPeer = resCandidates.get(0);
         int minDistance = closestPeer.getNetworkAddress().firstDifferentBit(resKadAddress);
         for (SMSKADPeer possiblePeer : resCandidates) {
-            if(possiblePeer.getNetworkAddress().firstDifferentBit(resKadAddress) < minDistance)
-            {
+            if (possiblePeer.getNetworkAddress().firstDifferentBit(resKadAddress) < minDistance) {
                 minDistance = possiblePeer.getNetworkAddress().firstDifferentBit(resKadAddress);
                 closestPeer = possiblePeer;
             }
@@ -133,9 +130,8 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
 
         //FIXME: controllare se closestPeer è realmente il nodo più vicino (devo chiedergli se nei suoi bucket ha nodi più vicini alla risorsa)
         //       Per ora assegno la risorsa al nodo più vicino che conosco io
-        /*
-         * Assign the resource to closest peer
-         */
+
+        //Assign the resource to closest peer
         SMSCommandMapper.sendRequest(Request.STORE, key.toString() + SPLIT_CHAR + value.toString(), closestPeer);
 
     }
