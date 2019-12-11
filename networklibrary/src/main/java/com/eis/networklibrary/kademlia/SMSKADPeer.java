@@ -4,10 +4,16 @@ import com.eis.communication.network.kademlia.KADPeer;
 import com.eis.smslibrary.SMSPeer;
 import com.eis.smslibrary.exceptions.InvalidTelephoneNumberException;
 
+/**
+ * //TODO
+ */
 public class SMSKADPeer extends SMSPeer implements KADPeer {
+
     protected KADAddress networkAddress;
 
     /**
+     * TODO
+     *
      * @param telephoneNumber Address for the peer.
      * @throws InvalidTelephoneNumberException If telephoneNumber check is not {@link TelephoneNumberState#TELEPHONE_NUMBER_VALID}.
      */
@@ -16,6 +22,11 @@ public class SMSKADPeer extends SMSPeer implements KADPeer {
         networkAddress = new KADAddress(telephoneNumber);
     }
 
+    /**
+     * TODO
+     *
+     * @param smsPeer TODO
+     */
     public SMSKADPeer(SMSPeer smsPeer) {
         this(smsPeer.getAddress());
     }
