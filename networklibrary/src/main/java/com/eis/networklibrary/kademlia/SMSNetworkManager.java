@@ -121,7 +121,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
 
         //Compare users' addresses with resource's address to find the closest
 
-        //TODO here we should use findAddressPeer
+        //TODO here we should use findNode
 
         SMSKADPeer closestPeer = resCandidates.get(0);
         int closestBucketIndex = closestPeer.getNetworkAddress().firstDifferentBit(resKadAddress);
@@ -149,7 +149,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     @Override
     public void removeResource(SerializableObject key) {
         //TODO this call crashes because value is referenced (value.toString()) in setResource(key , value)
-        //TODO we should break setResource in two parts: 1) we first find the closest node to a key using findAddressPeer, 2) and then we send the store request
+        //TODO we should break setResource in two parts: 1) we first find the closest node to a key using findNode, 2) and then we send the store request
         //TODO so we can then use 1) to find the owner of key, and then simply call something like sendRequest(STORE, key.toString()  + "_" + "NULL", closestPeer)
         //setResource(key, null);
     }
@@ -161,7 +161,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      * @param kadAddress The KADAddress for which to find the peer
      * @return an {@link KADAddress} object
      */
-    private KADPeer findAddressPeer(KADAddress kadAddress) {
+    private SMSKADPeer findNode(KADAddress kadAddress) {
         //TODO this only asks the closest nodes in our local dictionary to find closer nodes to the given KADAddress
         //TODO 1. Trovare il bucket in cui si trova il kadAddress o, se non esiste, quello più vicino ad esso
         //TODO 2. Confrontare gli indirizzi degli utenti di quel bucket con quello del kadAddress e prendo il più vicino
@@ -169,33 +169,22 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
         //TODO 4. Procedere in modo ricorsivo sino a quando ricevo il numero di telefono del peer più vicino in assoluto a kadAddress
 
 
-        //Find the user's bucket
-        //TODO gestire il caso del bucket inesistente -> ovvero andare a cercare nel bucket di indice precedente e via cosi
-        int userBucket = mySelf.getNetworkAddress().firstDifferentBit(kadAddress);
 
-        //Create an array with all the bucket users
-        ArrayList<SMSKADPeer> bucketUsers = dict.getUsersInBucket(userBucket);
+        //check if we already know locally kadAddress
+        SMSKADPeer nodeFoundInLocalDict = dict.getSMSKADPeer(kadAddress);
+        if(nodeFoundInLocalDict != null) return nodeFoundInLocalDict;
 
-        //Control if in the bucket there is the given address, if yes return it
-        for (SMSKADPeer possibleUser : bucketUsers) {
-            if (possibleUser.getNetworkAddress().firstDifferentBit(kadAddress) == -1)
-                return possibleUser;
-        }
+        int bucketIndex = dict.getCloserNonEmptyBucketTo(kadAddress);
+        SMSKADPeer peer = dict.getUsersInBucket(bucketIndex).get(0);
+        //so we ask peer to tell us a closer node
+        //we should wait for peer response before returning
 
-        //If the the user associated with the given KADAddress doesn't exist in the bucket then return the KADAddress peer of the closest user address
-        SMSKADPeer closestPeer = bucketUsers.get(0);
-        int closestBucketIndex = closestPeer.getNetworkAddress().firstDifferentBit(kadAddress);
-        for (SMSKADPeer possiblePeer : bucketUsers) {
-            int index = possiblePeer.getNetworkAddress().firstDifferentBit(kadAddress);
-            if (index > closestBucketIndex) {
-                closestBucketIndex = index;
-                closestPeer = possiblePeer;
-            }
-        }
 
-        //TODO SMSCommandMapper.sendRequest(Request.FIND_NODE, ???????????);
 
-        return closestPeer;
+
+
+
+        return null;
     }
 
 
@@ -223,7 +212,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
             return;
         }
 
-        //TODO this is similar to findAddressPeer, except that when the value is found it is immediately returned
+        //TODO this is similar to findNode, except that when the value is found it is immediately returned
 
         ArrayList<SMSKADPeer> peersThatMightHaveTheRes = dict.getUsersInBucket(key.firstDifferentBit(mySelf.networkAddress));
         if (peersThatMightHaveTheRes.size() == 0) {
@@ -339,7 +328,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      * @param replyContent information about the node, must be parsed
      */
     protected void onNodeFoundReply(SMSPeer peer, String replyContent) {
-        //IT'S NOT ALWAYS THE NODE WE WERE LOOKING FOR! MIGHT BE A CLOSER ONE
+        //replyContent is a phone number
 
     }
 
@@ -352,6 +341,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     protected void onValueFoundReply(SMSPeer peer, String replyContent) {
 
     }
+
 
     enum Request {
         JOIN_PROPOSAL,
