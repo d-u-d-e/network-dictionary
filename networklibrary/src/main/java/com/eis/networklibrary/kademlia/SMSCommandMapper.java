@@ -33,45 +33,17 @@ class SMSCommandMapper {
     }
 
     /**
-     * It processes every message: could be a reply or a request performing changes to the local dictionary.
-     * Invalid formats should not be received because they are silently discarded.
-     *
-     * @param message containing the request to be processed
-     */
-    protected static void processMessage(SMSMessage message) {
-        String[] splitMessageContent = message.getData().split(SPLIT_CHAR, 2);
-        String messagePrefix = splitMessageContent[0];
-        //Check if it's a reply
-        for (Reply replyCommand : Reply.values()) {
-            if (replyCommand.toString().equals(messagePrefix)) {
-                processReply(replyCommand, splitMessageContent[1]);
-                return;
-            }
-        }
-        //Check if it's a request
-        for (Request requestCommand : Request.values()) {
-            if (requestCommand.toString().equals(messagePrefix)) {
-                processRequest(requestCommand, splitMessageContent[1]);
-                return;
-            }
-        }
-        //SHOULD NEVER GET HERE, CAN'T RECEIVE UNKNOWN COMMANDS
-        //TODO: Decide whether we should let this go and do nothing or throw an exception
-        throw new IllegalStateException("Could not parse command prefix");
-    }
-
-    /**
      * TODO
      *
      * @param req            TODO
      * @param commandContent TODO
      */
-    private static void processRequest(Request req, String commandContent) {
+    protected static void processRequest(Request req, String commandContent) {
         switch (req) {
             case JOIN_PROPOSAL:
                 //onJoinProposal(commandContext correctly processed)
                 //Even though it's already called from the listener
-                //TODO: remove this call from the SMSAbstractNetworkListener, there should be another listener for this
+                //TODO: remove this call from the SMSNetworkListener, there should be another listener for this
                 break;
         }
     }
@@ -82,7 +54,7 @@ class SMSCommandMapper {
      * @param reply          TODO
      * @param commandContent TODO
      */
-    private static void processReply(Reply reply, String commandContent) {
+    protected static void processReply(Reply reply, String commandContent) {
         switch (reply) {
             case JOIN_AGREED:
                 //onJoinAgreed()
