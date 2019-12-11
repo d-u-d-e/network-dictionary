@@ -5,7 +5,6 @@ import androidx.annotation.NonNull;
 import com.eis.communication.network.NetworkManager;
 import com.eis.communication.network.SerializableObject;
 import com.eis.communication.network.kademlia.KADPeer;
-import com.eis.smslibrary.SMSHandler;
 import com.eis.smslibrary.SMSMessage;
 import com.eis.smslibrary.SMSPeer;
 import com.eis.smslibrary.listeners.SMSSentListener;
@@ -22,38 +21,21 @@ import java.util.ArrayList;
  */
 public abstract class SMSAbstractNetworkManager implements NetworkManager<SMSKADPeer, SerializableObject, SerializableObject> {
 
-    protected static final String[] REPLIES = {
-            Reply.PING_ECHO.toString(),
-            Reply.NODE_FOUND.toString(),
-            Reply.VALUE_FOUND.toString(),
-            Reply.JOIN_AGREED.toString()
-    };
-    protected static final String[] REQUESTS = {
-            Request.JOIN_PROPOSAL.toString(),
-            Request.PING.toString(),
-            Request.STORE.toString(),
-            Request.FIND_NODE.toString(),
-            Request.FIND_VALUE.toString()
-    };
-    final static String SPLIT_CHAR = "_";
     protected String networkName;
     protected SMSKADPeer mySelf;
     private SMSDistributedNetworkDictionary<SerializableObject> dict;
     //joinSent keeps track of JOIN_PROPOSAL requests still pending.
     private ArrayList<SMSPeer> joinSent = new ArrayList<>();
     //This class makes use of SMSHandler to send requests
-    private SMSHandler handler;
     private ReplyListener resourceListener;
 
     /**
      * Sets up a new network
      *
-     * @param handler     Handler to set for sending requests
      * @param networkName Name of the network being created
      * @param mySelf      The current peer executing setup()
      */
-    public void setup(SMSHandler handler, String networkName, SMSPeer mySelf) {
-        this.handler = handler;
+    public void setup(String networkName, SMSPeer mySelf) {
         this.networkName = networkName;
         this.mySelf = new SMSKADPeer(mySelf);
         dict = new SMSDistributedNetworkDictionary(new SMSKADPeer(mySelf));
