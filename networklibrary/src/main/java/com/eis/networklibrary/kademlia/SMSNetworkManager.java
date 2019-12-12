@@ -4,7 +4,6 @@ import androidx.annotation.NonNull;
 
 import com.eis.communication.network.NetworkManager;
 import com.eis.communication.network.SerializableObject;
-import com.eis.communication.network.kademlia.KADPeer;
 import com.eis.smslibrary.SMSHandler;
 import com.eis.smslibrary.SMSMessage;
 import com.eis.smslibrary.SMSPeer;
@@ -113,8 +112,12 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
 
         //Find the resource's bucket
         //TODO gestire il caso del bucket inesistente -> ovvero andare a cercare nel bucket di indice precedente e via cosi
-        int bucketIndex = mySelf.getNetworkAddress().firstDifferentBit(resKadAddress);
 
+        //se la parte successiva è corretta, questa riga verrà eliminata
+        //int bucketIndex = mySelf.getNetworkAddress().firstDifferentBit(resKadAddress);
+
+        //TODO: check --> con questo dovrebbe essere apposto il caso dei bucket vuoti
+        int bucketIndex = dict.getCloserNonEmptyBucketTo(resKadAddress);
 
         //Get all users which are in the resource's bucket (possible candidates to handle it)
         ArrayList<SMSKADPeer> resCandidates = dict.getUsersInBucket(bucketIndex);
@@ -213,7 +216,8 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
         }
 
         //TODO this is similar to findNode, except that when the value is found it is immediately returned
-
+        //TODO: correggere questo metodo, se il bucket è vuoto non è detto che il valore non esista, bisogna cercarlo
+        //      nei bucket vicini!
         ArrayList<SMSKADPeer> peersThatMightHaveTheRes = dict.getUsersInBucket(key.firstDifferentBit(mySelf.networkAddress));
         if (peersThatMightHaveTheRes.size() == 0) {
             listener.onValueNotFound();

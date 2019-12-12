@@ -59,6 +59,11 @@ public class SMSDistributedNetworkDictionary<RV> implements NetworkDictionary<SM
         buckets[bucketIndex].add(newUser);
     }
 
+    /**
+     * TODO: specifications
+     * @param address
+     * @return
+     */
     int getBucketContaining(KADAddress address){
 
         //The bucket of node X which has index i contains nodes whose xor distance to X is between 2^i inclusive and 2^(i+1) exclusive.
@@ -124,6 +129,11 @@ public class SMSDistributedNetworkDictionary<RV> implements NetworkDictionary<SM
         return null;
     }
 
+    /**
+     * TODO: specifications
+     * @param address
+     * @return
+     */
     public int getCloserNonEmptyBucketTo(KADAddress address){
         BitSet b1 = BitSet.valueOf(mySelf.networkAddress.getAddress()); //a copy of mySelf kad address
         BitSet b2 = BitSet.valueOf(address.getAddress()); //a copy of address
