@@ -3,12 +3,9 @@ package com.eis.networklibrary.kademlia;
 import com.eis.communication.network.NetworkDictionary;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.BitSet;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 
@@ -126,7 +123,7 @@ public class SMSDistributedNetworkDictionary<RV> implements NetworkDictionary<SM
         return null;
     }
 
-    public ArrayList<SMSKADPeer> getAllUsersSortedByClosestTo(KADAddress address){
+    public ArrayList<SMSKADPeer> getNodesSortedByDistance(KADAddress address){
        ArrayList<SMSKADPeer> users = getAllUsers();
        users.add(mySelf); //TODO this is to simplify when we check if mySelf is the closest
        Collections.sort(users, new SMSKADPeer.KADComparator(address));

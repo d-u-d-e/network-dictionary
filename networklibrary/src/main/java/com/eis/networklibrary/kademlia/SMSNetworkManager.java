@@ -1,8 +1,6 @@
 package com.eis.networklibrary.kademlia;
 
-import android.app.VoiceInteractor;
-
-import androidx.annotation.NonNull;
+import android.os.CountDownTimer;
 
 import com.eis.communication.network.NetworkManager;
 import com.eis.communication.network.SerializableObject;
@@ -12,7 +10,6 @@ import com.eis.smslibrary.SMSPeer;
 import com.eis.smslibrary.listeners.SMSSentListener;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 
 /**
  * Singleton class that handles the Kademlia network.
@@ -36,6 +33,10 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     private SMSDistributedNetworkDictionary<SerializableObject> dict;
     //joinSent keeps track of JOIN_PROPOSAL requests still pending.
     private ArrayList<SMSPeer> joinSent = new ArrayList<>();
+    protected ArrayList<CountDownTimer> pendingTimers;
+
+    final static int TIMER = 60000; //timer is 1 minute, in millis
+    final static int INTERVAL = 1000; //timer ticks every second
 
     static final int ALPHA = 1;
 
@@ -142,13 +143,27 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
         if(nodeFoundInLocalDict != null) onNodeFoundReply(nodeFoundInLocalDict);
 
         //otherwise
-        ArrayList<SMSKADPeer> knownCloserNodes = dict.getAllUsersSortedByClosestTo(kadAddress);
+        ArrayList<SMSKADPeer> knownCloserNodes = dict.getNodesSortedByDistance(kadAddress);
         if(knownCloserNodes.get(0).equals(mySelf)) onNodeFoundReply(mySelf);
 
         for(int i = 0; i < ALPHA && i < knownCloserNodes.size(); i++){
             SMSKADPeer peer = knownCloserNodes.get(i);
-            //so we ask peer to tell us a closer node
+            SMSCommandMapper.sendRequest(RequestType.FIND_NODE, kadAddress.toString(), peer);
+            final CountDownTimer timer = new CountDownTimer(TIMER, INTERVAL) {
+                @Override
+                public void onTick(long millisUntilFinished) {
+
+                }
+
+                @Override
+                public void onFinish() {
+                    //pendingTimers.remove(timer); non so perchè ma dà errore sulla variabile timer
+                }
+            };
+            timer.start();
+            pendingTimers.add(timer);
         }
+        //la gestione della risposta va fatta col listener --> quando la ricevo devo chiamare timer.cancel()
 
 
     }
@@ -202,7 +217,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      */
     protected void onFindNodeRequest(SMSPeer peer, String requestContent) {
         KADAddress nodeToSearch = new KADAddress(requestContent);
-        ArrayList<SMSKADPeer> closerNodes = dict.getAllUsersSortedByClosestTo(nodeToSearch);
+        ArrayList<SMSKADPeer> closerNodes = dict.getNodesSortedByDistance(nodeToSearch);
         //TODO K != 1
         SMSKADPeer closerNode = closerNodes.get(0);
         SMSCommandMapper.sendReply(ReplyType.NODE_FOUND, closerNode.getAddress(), peer);
