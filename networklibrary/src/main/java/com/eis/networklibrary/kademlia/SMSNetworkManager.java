@@ -36,7 +36,8 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     private SMSDistributedNetworkDictionary<SerializableObject> dict;
     //joinSent keeps track of JOIN_PROPOSAL requests still pending.
     private ArrayList<SMSPeer> joinSent = new ArrayList<>();
-    private ReplyListener resourceListener;
+
+    private ConverseListener resourceListener;//////////////////////////////////////////////////////////////////////////////////
 
     static final int ALPHA = 1;
 
@@ -179,7 +180,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      * @param resourceKey The resource key of which we want to find the value
      */
     @Override
-    public void findValue(SerializableObject resourceKey, ReplyListener listener) {
+    public void findValue(SerializableObject resourceKey, ConverseListener listener) {
         KADAddress key = new KADAddress(resourceKey.toString());
         SerializableObject value = dict.getValue(key);
         if (value != null) {
@@ -195,7 +196,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
             listener.onValueNotFound();
             return;
         }
-        resourceListener = listener;
+        resourceListener = listener;//////////////////////////////////////////////////////////////////////////////////
         for (SMSKADPeer possiblePeer : peersThatMightHaveTheRes) {
             SMSCommandMapper.sendRequest(Request.FIND_VALUE, resourceKey.toString(), possiblePeer);
         }

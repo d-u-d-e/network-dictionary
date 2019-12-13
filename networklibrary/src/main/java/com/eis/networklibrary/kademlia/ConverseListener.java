@@ -2,7 +2,7 @@ package com.eis.networklibrary.kademlia;
 
 import com.eis.communication.network.SerializableObject;
 
-public interface ReplyListener {
+public interface ConverseListener {
 
     /**
      * Called when a resource is found
