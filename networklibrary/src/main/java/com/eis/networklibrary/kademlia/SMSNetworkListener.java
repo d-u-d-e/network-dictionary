@@ -73,7 +73,7 @@ class SMSNetworkListener extends SMSReceivedServiceListener {
                 SMSNetworkManager.getInstance().onFindValueRequest(peer, commandContent);
                 break;
             case STORE:
-                SMSNetworkManager.getInstance().onStoreRequest(peer, commandContent);
+                SMSNetworkManager.getInstance().onStoreRequest(commandContent);
                 break;
         }
     }
@@ -91,10 +91,11 @@ class SMSNetworkListener extends SMSReceivedServiceListener {
                 SMSNetworkManager.getInstance().onPingEchoReply(peer);
                 break;
             case NODE_FOUND:
-                SMSNetworkManager.getInstance().onNodeFoundReply(peer, commandContent);
+                SMSNetworkManager.getInstance().onNodeFoundReply(commandContent); //peer is not very useful to
+                // pass, because we already know him, since we asked him to give us the closest nodes he knows about
                 break;
             case VALUE_FOUND:
-                SMSNetworkManager.getInstance().onValueFoundReply(peer, commandContent);
+                listener.onValueFound(SMSNetworkManager.getInstance().valueParser.deSerialize(commandContent));
                 break;
         }
     }

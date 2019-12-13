@@ -25,7 +25,7 @@ import com.eis.smslibrary.listeners.SMSSentListener;
  * * SMS REPLIES FORMATS
  * * JOIN agreed:       "PJ_%netName" //we use the same notation to keep it consistent with NF and VF
  * * PING reply:        "IP_%(matchingId)"
- * * NODE_FOUND reply:  "NF_%(phoneNumber)"  TODO how many entries should we pack inside this reply?
+ * * NODE_FOUND reply:  "NF_%(key)_(phoneNumber1)_(phoneNumber2)..._(phoneNumber K)"  TODO how many entries should we pack inside this reply?
  * * VALUE_FOUND reply: "VF_%(key)_(value)" TODO should send also key to match with value? Or use a randomId like in PING?
  */
 
