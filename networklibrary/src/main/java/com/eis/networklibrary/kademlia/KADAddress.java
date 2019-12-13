@@ -7,6 +7,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.BitSet;
+import java.util.Comparator;
 
 /**
  * This class manages the peer address, as hash of his phone number

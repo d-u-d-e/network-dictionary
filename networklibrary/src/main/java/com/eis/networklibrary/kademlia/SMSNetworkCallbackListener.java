@@ -2,7 +2,7 @@ package com.eis.networklibrary.kademlia;
 
 import com.eis.smslibrary.SMSPeer;
 
-public interface SMSNetworkCallbackListener {
+interface SMSNetworkCallbackListener {
 
     /**
      * This method is called when a join proposal is received. It should let the user
@@ -13,5 +13,7 @@ public interface SMSNetworkCallbackListener {
      */
     void onJoinRequest(SMSPeer inviter);
 
+    void onValueFound();
 
+    void onNodeFound(SMSKADPeer peer);
 }

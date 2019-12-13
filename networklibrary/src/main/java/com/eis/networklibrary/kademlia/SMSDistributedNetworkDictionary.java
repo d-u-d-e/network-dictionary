@@ -3,9 +3,12 @@ package com.eis.networklibrary.kademlia;
 import com.eis.communication.network.NetworkDictionary;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 
@@ -20,7 +23,7 @@ public class SMSDistributedNetworkDictionary<RV> implements NetworkDictionary<SM
     /**
      * Maximum users per bucket
      */
-    static final int BUCKET_SIZE = 5; //TODO: Use this
+    static final int BUCKET_SIZE = 5; // this is KAD K constant TODO: Use this
     static final int NO_BUCKETS = KADAddress.BYTE_ADDRESS_LENGTH * Byte.SIZE; //we have a bucket for each bit
     SMSKADPeer mySelf; //address of current node holding this dictionary
     private ArrayList<SMSKADPeer>[] buckets;
@@ -59,11 +62,7 @@ public class SMSDistributedNetworkDictionary<RV> implements NetworkDictionary<SM
         buckets[bucketIndex].add(newUser);
     }
 
-    /**
-     * TODO: specifications
-     * @param address
-     * @return
-     */
+
     int getBucketContaining(KADAddress address){
 
         //The bucket of node X which has index i contains nodes whose xor distance to X is between 2^i inclusive and 2^(i+1) exclusive.
@@ -71,9 +70,7 @@ public class SMSDistributedNetworkDictionary<RV> implements NetworkDictionary<SM
         //even from a geometric point of view in the tree). The closer bucket of mySelf containing address is therefore:
 
         return NO_BUCKETS - 1 - mySelf.getNetworkAddress().firstDifferentBit(address);
-
         //returns NO_BUCKETS if address is equal to mySelf
-
     }
 
     /**
@@ -122,38 +119,17 @@ public class SMSDistributedNetworkDictionary<RV> implements NetworkDictionary<SM
         return new ArrayList<>();
     }
 
-    SMSKADPeer getSMSKADPeer(KADAddress address){
-        for(SMSKADPeer peer : buckets[getBucketContaining(address)])
-            if(peer.getNetworkAddress().equals(address))
+    SMSKADPeer getPeerFromAddress(KADAddress address) {
+        for (SMSKADPeer peer : buckets[getBucketContaining(address)])
+            if (peer.getNetworkAddress().equals(address))
                 return peer;
         return null;
     }
 
-    /**
-     * TODO: specifications
-     * @param address
-     * @return
-     */
-    public int getCloserNonEmptyBucketTo(KADAddress address){
-        BitSet b1 = BitSet.valueOf(mySelf.networkAddress.getAddress()); //a copy of mySelf kad address
-        BitSet b2 = BitSet.valueOf(address.getAddress()); //a copy of address
-        int lastBitIndex = KADAddress.BYTE_ADDRESS_LENGTH * Byte.SIZE - 1;
-        int closerNonEmptyBucketIndex = NO_BUCKETS; //this means no node in any bucket is closer to address than I am
-        b1.flip(lastBitIndex);
-        BitSet closerAddress = ((BitSet) b2.clone());
-        closerAddress.flip(0, lastBitIndex + 1); //node at max distance from b2
-
-        for(int currentBucketIndex = 0; currentBucketIndex < NO_BUCKETS; currentBucketIndex++){
-            if(!buckets[currentBucketIndex].isEmpty()){
-                b1.flip(lastBitIndex - currentBucketIndex); //a new valid address in the next bucket
-                BitSet b3 = KADAddress.closerToTarget(b1, closerAddress, b2);
-                if(b3.equals(b1)){
-                    closerAddress = b1;
-                    closerNonEmptyBucketIndex = currentBucketIndex;
-                }
-            }
-        }
-        return closerNonEmptyBucketIndex;
+    public ArrayList<SMSKADPeer> getAllUsersSortedByClosestTo(KADAddress address){
+       ArrayList<SMSKADPeer> users = getAllUsers();
+       Collections.sort(users, new SMSKADPeer.KADComparator(address));
+       return users;
     }
 
     /**

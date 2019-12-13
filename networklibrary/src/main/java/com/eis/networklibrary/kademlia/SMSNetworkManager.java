@@ -10,6 +10,7 @@ import com.eis.smslibrary.SMSPeer;
 import com.eis.smslibrary.listeners.SMSSentListener;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
 /**
  * Singleton class that handles the Kademlia network.
@@ -36,6 +37,8 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     //joinSent keeps track of JOIN_PROPOSAL requests still pending.
     private ArrayList<SMSPeer> joinSent = new ArrayList<>();
     private ReplyListener resourceListener;
+
+    static final int ALPHA = 1;
 
     private SMSNetworkManager() {
         //Private because of singleton
@@ -110,28 +113,6 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
 
         KADAddress resKadAddress = new KADAddress(key.toString());
 
-        int bucketIndex = dict.getCloserNonEmptyBucketTo(resKadAddress);
-
-        ArrayList<SMSKADPeer> resCandidates = dict.getUsersInBucket(bucketIndex);
-
-        //TODO here we should use findNode
-
-        SMSKADPeer closestPeer = resCandidates.get(0);
-        int closestBucketIndex = closestPeer.getNetworkAddress().firstDifferentBit(resKadAddress);
-        for (SMSKADPeer possiblePeer : resCandidates) {
-            int index = possiblePeer.getNetworkAddress().firstDifferentBit(resKadAddress);
-            if (index > closestBucketIndex) {
-                closestBucketIndex = index;
-                closestPeer = possiblePeer;
-            }
-        }
-
-        //FIXME: controllare se closestPeer è realmente il nodo più vicino (devo chiedergli se nei suoi bucket ha nodi più vicini alla risorsa)
-        //       Per ora assegno la risorsa al nodo più vicino che conosco io
-        //       DA FINIRE: BISOGNA MANDARE A closestPeer LA RICHIESTA DI FIND NODE, ASPETTARE CHE RISPONDA, E ANDARE AVANTI FINO A CHE NON MI RITORNA Sè STESSO
-
-        //Assign the resource to closest peer
-        SMSCommandMapper.sendRequest(Request.STORE, key.toString() + SPLIT_CHAR + value.toString(), closestPeer);
 
     }
 
@@ -156,35 +137,32 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      * @param kadAddress The KADAddress for which to find the peer
      * @return an {@link KADAddress} object
      */
-    private SMSKADPeer findNode(KADAddress kadAddress) {
-        //TODO this only asks the closest nodes in our local dictionary to find closer nodes to the given KADAddress
-        //TODO 1. Trovare il bucket in cui si trova il kadAddress o, se non esiste, quello più vicino ad esso
-        //TODO 2. Confrontare gli indirizzi degli utenti di quel bucket con quello del kadAddress e prendo il più vicino
-        //TODO 3. Estrapolare il peer dall'indirizzo trovato e inviargli una richiesta di find dell'indirizzo.
+    private void findNode(KADAddress kadAddress, SMSNetworkCallbackListener listener) {
+
         //TODO 4. Procedere in modo ricorsivo sino a quando ricevo il numero di telefono del peer più vicino in assoluto a kadAddress
 
 
-
         //check if we already know locally kadAddress
-        SMSKADPeer nodeFoundInLocalDict = dict.getSMSKADPeer(kadAddress);
-        if(nodeFoundInLocalDict != null) return nodeFoundInLocalDict;
+        SMSKADPeer nodeFoundInLocalDict = dict.getPeerFromAddress(kadAddress);
+        if(nodeFoundInLocalDict != null) listener.onNodeFound(nodeFoundInLocalDict);
 
-        int bucketIndex = dict.getCloserNonEmptyBucketTo(kadAddress);
-        SMSKADPeer peer = dict.getUsersInBucket(bucketIndex).get(0);
-        //so we ask peer to tell us a closer node
-        //we should wait for peer response before returning
+        ArrayList<SMSKADPeer> knownCloserNodes = dict.getAllUsersSortedByClosestTo(kadAddress);
 
-        SMSCommandMapper.sendRequest(Request.FIND_NODE, kadAddress.toString() , peer);
+        for(int i = 0; i < ALPHA && i < knownCloserNodes.size(); i++){
+            SMSKADPeer peer = knownCloserNodes.get(i);
+            //so we ask peer to tell us a closer node
+            SMSCommandMapper.sendRequest(Request.FIND_NODE, kadAddress.toString() , peer);
+        }
+
+
+
         //aspetto la risposta dal listener --> se reply è NODE_FOUND ho finito, altrimenti devo mandare una richiesta FIND_NODE al nodo che ricevo
         
 
 
 
 
-
-        return null;
     }
-
 
     /**
      * Republishes a key to be retained in the network
@@ -192,8 +170,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      * @param key The key to be republished
      */
     public void republishKey(SerializableObject key) {
-        //TODO Take a look at this method
-        //setResource(key, dict.getValue(new KADAddress(key.toString())));
+
     }
 
     /**
@@ -250,25 +227,11 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      * @param requestContent information about the node to find, must be parsed first
      */
     protected void onFindNodeRequest(SMSPeer peer, String requestContent) {
-        //TODO 1. Translate the peer into a SMSKADPeer
-        //TODO 2. Vedere se conosciamo quel peer
-        //TODO 2.1 Se si mandiamo una risposta di Reply#NODE_FOUND
-        //TODO 2.2 Altrimenti mandiamo indietro il primo dei peer di quel bucket sempre con Reply#NODE_FOUND
-
-        KADAddress peerToSearch = new KADAddress(requestContent);
-
-        int bucketIndex = dict.getCloserNonEmptyBucketTo(peerToSearch);
-        ArrayList<SMSKADPeer> knownPeers = dict.getUsersInBucket(bucketIndex);
-
-        for (SMSKADPeer possible : knownPeers) {
-            if (((possible.getNetworkAddress()).firstDifferentBit(peerToSearch)) == -1) {
-                SMSCommandMapper.sendReply(Reply.NODE_FOUND, peer);
-                return;
-            }
-        }
-
-        //restituisco il nodo più vicino tra quelli che conosco io
-        SMSCommandMapper.sendReply(Reply.NODE_FOUND, knownPeers.get(0).toString(), peer);
+        KADAddress nodeToSearch = new KADAddress(requestContent);
+        ArrayList<SMSKADPeer> closerNodes = dict.getAllUsersSortedByClosestTo(nodeToSearch);
+        //TODO K != 1
+        SMSKADPeer closerNode = closerNodes.get(0);
+        SMSCommandMapper.sendReply(Reply.NODE_FOUND, closerNode.networkAddress + "_" , peer);
     }
 
     /**
