@@ -15,4 +15,6 @@ public interface ReplyListener {
      * Called when value is not found
      */
     void onValueNotFound();
+
+    void onNodeFound(SMSKADPeer peer);
 }

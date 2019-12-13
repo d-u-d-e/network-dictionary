@@ -1,8 +1,11 @@
 package com.eis.networklibrary.kademlia;
 
+import androidx.annotation.Nullable;
+
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 import java.util.BitSet;
 
 /**
@@ -30,6 +33,12 @@ public class KADAddress {
         if (address.length != BYTE_ADDRESS_LENGTH)
             throw new IllegalArgumentException("Byte address should be " + BYTE_ADDRESS_LENGTH + " bytes long");
         this.address = address;
+    }
+
+    public KADAddress(BitSet bitset) throws IllegalArgumentException {
+        if (bitset.size()!= BYTE_ADDRESS_LENGTH * Byte.SIZE)
+            throw new IllegalArgumentException("Byte address should be " +  BYTE_ADDRESS_LENGTH * Byte.SIZE + " bytes long");
+        address = bitset.toByteArray();
     }
 
     /**
@@ -66,5 +75,29 @@ public class KADAddress {
         BitSet userBitSet = BitSet.valueOf(address);
         userBitSet.xor(BitSet.valueOf(otherAddress.getAddress()));
         return userBitSet.nextSetBit(0);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if(obj instanceof KADAddress){
+            return Arrays.equals(address, ((KADAddress) obj).address);
+        }
+        return false;
+    }
+
+    public static KADAddress closerToTarget(KADAddress a, KADAddress b, KADAddress target){
+        return new KADAddress(closerToTarget(BitSet.valueOf(a.getAddress()), BitSet.valueOf(b.getAddress()), BitSet.valueOf(target.getAddress())));
+    }
+
+    public static BitSet closerToTarget(BitSet a, BitSet b, BitSet target){
+        for(int i = 0; i < BYTE_ADDRESS_LENGTH * Byte.SIZE; i++){
+            boolean aBit = a.get(i);
+            boolean bBit = b.get(i);
+            if(aBit != bBit){
+                if(aBit == target.get(i)) return a;
+                else return b;
+            }
+        }
+        return a; //a == b
     }
 }

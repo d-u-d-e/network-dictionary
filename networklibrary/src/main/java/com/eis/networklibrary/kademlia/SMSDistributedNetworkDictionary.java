@@ -3,6 +3,7 @@ package com.eis.networklibrary.kademlia;
 import com.eis.communication.network.NetworkDictionary;
 
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -19,7 +20,8 @@ public class SMSDistributedNetworkDictionary<RV> implements NetworkDictionary<SM
     /**
      * Maximum users per bucket
      */
-    static final int MAX_USER_BUCKET_LENGTH = 5; //TODO: Use this
+    static final int BUCKET_SIZE = 5; //TODO: Use this
+    static final int NO_BUCKETS = KADAddress.BYTE_ADDRESS_LENGTH * Byte.SIZE; //we have a bucket for each bit
     SMSKADPeer mySelf; //address of current node holding this dictionary
     private ArrayList<SMSKADPeer>[] buckets;
     private HashMap<KADAddress, RV> resourcesDict;
@@ -31,8 +33,7 @@ public class SMSDistributedNetworkDictionary<RV> implements NetworkDictionary<SM
      */
     public SMSDistributedNetworkDictionary(SMSKADPeer mySelf) {
         this.mySelf = mySelf;
-        //we have a bucket for each bit, so:
-        buckets = new ArrayList[KADAddress.BYTE_ADDRESS_LENGTH * Byte.SIZE];
+        buckets = new ArrayList[NO_BUCKETS];
     }
 
     /**
@@ -42,19 +43,37 @@ public class SMSDistributedNetworkDictionary<RV> implements NetworkDictionary<SM
      */
     @Override
     public void addUser(SMSKADPeer newUser) {
-        //Calculate the distance (to understand what bucket you have to place him)
-        int bucketIndex = mySelf.getNetworkAddress().firstDifferentBit(newUser.getNetworkAddress());
 
-        //If it's actually the current user we don't add itself
-        if (bucketIndex == -1) return;
+        //bucketIndex is the closer bucket of mySelf containing newUser
+        int bucketIndex = getBucketContaining(newUser.getNetworkAddress());
+
+        //If it's actually the current user we don't add himself
+        if (bucketIndex == NO_BUCKETS) return;
 
         if (buckets[bucketIndex] == null)
             buckets[bucketIndex] = new ArrayList<>();
         else if (buckets[bucketIndex].contains(newUser))
             return;
 
-        //TODO each bucket should contain at most MAX_USER_BUCKET_LENGTH users: use an array?
+        //TODO each bucket should contain at most MAX_USER_BUCKET_LENGTH users: use an array? and add politics of queuing
         buckets[bucketIndex].add(newUser);
+    }
+
+    /**
+     * TODO: specifications
+     * @param address
+     * @return
+     */
+    int getBucketContaining(KADAddress address){
+
+        //The bucket of node X which has index i contains nodes whose xor distance to X is between 2^i inclusive and 2^(i+1) exclusive.
+        //For example, if i = 0, then bucket 0 contains the only node whose distance to X is 1 (thus it has the last bit flipped and it is the closer to X
+        //even from a geometric point of view in the tree). The closer bucket of mySelf containing address is therefore:
+
+        return NO_BUCKETS - 1 - mySelf.getNetworkAddress().firstDifferentBit(address);
+
+        //returns NO_BUCKETS if address is equal to mySelf
+
     }
 
     /**
@@ -79,7 +98,7 @@ public class SMSDistributedNetworkDictionary<RV> implements NetworkDictionary<SM
     public ArrayList<SMSKADPeer> getAllUsers() {
         ArrayList<SMSKADPeer> returnList = new ArrayList<>();
 
-        for (int i = 0; i < buckets.length; i++) {
+        for (int i = 0; i < NO_BUCKETS; i++) {
             if (buckets[i] != null)
                 returnList.addAll(buckets[i]);
         }
@@ -87,19 +106,54 @@ public class SMSDistributedNetworkDictionary<RV> implements NetworkDictionary<SM
     }
 
     /**
-     * @param bucketIndex identifies each bucket, from 0 to N-1, where N = KADAddress.BYTE_ADDRESS_LENGTH * Byte.SIZE.
-     *                    Note that if bucketIndex = i, then buckets[i] contains all known nodes of distance (XOR metric)
-     *                    between 2^(N-i-1) inclusive and 2^(N-i) exclusive. For instance if i = 0, then we get all nodes
-     *                    whose distance d from mySelf is >= 2^(N-1) and < 2^(N), meaning that the first significant bit is flipped.
-     *                    If otherwise i = N-1, then we get all nodes whose distant d from myself is >= 2^0 = 1 and < 2, that is d = 1.
-     *                    The only node satisfying this is the node having all first N-1 significant bits equal to those of mySelf, except
-     *                    for the last bit which is flipped.
+     * @param bucketIndex identifies each bucket, from 0 to N-1, where N = NO_BUCKETS.
+     *                    Note that if bucketIndex = i, for i between 0 and N-1, then buckets[i] contains all known nodes of distance (XOR metric)
+     *                    between 2^(i) inclusive and 2^(i+1) exclusive. For instance if i = 0,
+     *                    then we get all nodes whose distant d from myself is >= 2^0 = 1 and < 2, that is d = 1.
+     *                    then we get all nodes. The only node satisfying this is the node having all first N-1 significant bits equal to those of mySelf,
+     *                    except for the last bit which is flipped.
+     *                    If otherwise i = N-1, we get all nodes whose distance d from mySelf is >= 2^(N-1) and < 2^(N), meaning that the first significant bit is flipped.
+     *
      * @return an ArrayList of users in that particular bucket, empty ArrayList if there is none
      */
     public ArrayList<SMSKADPeer> getUsersInBucket(int bucketIndex) {
         if (buckets[bucketIndex] != null)
             return new ArrayList<>(buckets[bucketIndex]);
         return new ArrayList<>();
+    }
+
+    SMSKADPeer getSMSKADPeer(KADAddress address){
+        for(SMSKADPeer peer : buckets[getBucketContaining(address)])
+            if(peer.getNetworkAddress().equals(address))
+                return peer;
+        return null;
+    }
+
+    /**
+     * TODO: specifications
+     * @param address
+     * @return
+     */
+    public int getCloserNonEmptyBucketTo(KADAddress address){
+        BitSet b1 = BitSet.valueOf(mySelf.networkAddress.getAddress()); //a copy of mySelf kad address
+        BitSet b2 = BitSet.valueOf(address.getAddress()); //a copy of address
+        int lastBitIndex = KADAddress.BYTE_ADDRESS_LENGTH * Byte.SIZE - 1;
+        int closerNonEmptyBucketIndex = NO_BUCKETS; //this means no node in any bucket is closer to address than I am
+        b1.flip(lastBitIndex);
+        BitSet closerAddress = ((BitSet) b2.clone());
+        closerAddress.flip(0, lastBitIndex + 1); //node at max distance from b2
+
+        for(int currentBucketIndex = 0; currentBucketIndex < NO_BUCKETS; currentBucketIndex++){
+            if(!buckets[currentBucketIndex].isEmpty()){
+                b1.flip(lastBitIndex - currentBucketIndex); //a new valid address in the next bucket
+                BitSet b3 = KADAddress.closerToTarget(b1, closerAddress, b2);
+                if(b3.equals(b1)){
+                    closerAddress = b1;
+                    closerNonEmptyBucketIndex = currentBucketIndex;
+                }
+            }
+        }
+        return closerNonEmptyBucketIndex;
     }
 
     /**
@@ -109,8 +163,8 @@ public class SMSDistributedNetworkDictionary<RV> implements NetworkDictionary<SM
      */
     @Override
     public void removeUser(SMSKADPeer user) {
-        int bucketIndex = mySelf.getNetworkAddress().firstDifferentBit(user.getNetworkAddress());
-        if (bucketIndex == -1)
+        int bucketIndex =getBucketContaining(user.getNetworkAddress());
+        if (bucketIndex == NO_BUCKETS)
             throw new IllegalArgumentException("Cannot remove itself");
         if (buckets[bucketIndex] == null)
             throw new IllegalArgumentException("User is not actually present in the list");

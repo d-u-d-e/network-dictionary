@@ -31,6 +31,11 @@ public class SMSKADPeer extends SMSPeer implements KADPeer {
         this(smsPeer.getAddress());
     }
 
+    /**
+     * TODO
+     *
+     * @return the peer's network address
+     */
     @Override
     public KADAddress getNetworkAddress() {
         return networkAddress;
