@@ -130,25 +130,25 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      * If the given KADAddress doesn't exist then finds then peer of the closest (to the one given)
      *
      * @param kadAddress The KADAddress for which to find the peer
-     * @return an {@link KADAddress} object
+     * @return a {@link KADAddress} object
      */
-    private void findNode(KADAddress kadAddress) {
+    private KADAddress findNode(KADAddress kadAddress) {
 
         //TODO 4. Procedere in modo ricorsivo sino a quando ricevo il numero di telefono del peer più vicino in assoluto a kadAddress
 
+        //Checks if we are the finding node
         if(kadAddress.equals(mySelf.getNetworkAddress())) onNodeFoundReply(mySelf);
 
-        //check if we already know locally kadAddress
+        //Checks if we already know the kadAddress
         SMSKADPeer nodeFoundInLocalDict = dict.getPeerFromAddress(kadAddress);
         if(nodeFoundInLocalDict != null) onNodeFoundReply(nodeFoundInLocalDict);
 
-        //otherwise
+        //Creates an ArrayList with the known closest nodes
         ArrayList<SMSKADPeer> knownCloserNodes = dict.getNodesSortedByDistance(kadAddress);
-        if(knownCloserNodes.get(0).equals(mySelf)) onNodeFoundReply(mySelf);
 
+        //Sends a FIND_NODE request to the peers in the ArrayList
         for(int i = 0; i < ALPHA && i < knownCloserNodes.size(); i++){
-            SMSKADPeer peer = knownCloserNodes.get(i);
-            SMSCommandMapper.sendRequest(RequestType.FIND_NODE, kadAddress.toString(), peer);
+            SMSCommandMapper.sendRequest(RequestType.FIND_NODE, kadAddress.toString(), knownCloserNodes.get(i));
             final CountDownTimer timer = new CountDownTimer(TIMER, INTERVAL) {
                 @Override
                 public void onTick(long millisUntilFinished) {
@@ -165,7 +165,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
         }
         //la gestione della risposta va fatta col listener --> quando la ricevo devo chiamare timer.cancel()
 
-
+        return null;
     }
 
     /**
@@ -264,6 +264,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     protected void onNodeFoundReply(String content) {
         String[] splitStr = content.split(SMSCommandMapper.SPLIT_CHAR);
         //to call after content has been parsed: onNodeFound(SMSKADPeer) if k = 1
+        //TODO mandare una richiesta di FIND_NODE al nodo più vicino ricevuto
     }
 
     protected void onNodeFoundReply(SMSKADPeer closestReceived){
