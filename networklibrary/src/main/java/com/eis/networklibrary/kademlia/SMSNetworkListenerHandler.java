@@ -10,8 +10,8 @@ import java.util.Map;
  */
 public class SMSNetworkListenerHandler {
 
-    private Map<SMSNetworkManager.Request, ConverseListener> waitingRequestListeners
-    private Map<SMSNetworkManager.Reply, ConverseListener> waitingReplyListeners;
+    private Map<SMSNetworkManager.RequestType, ConverseListener> waitingRequestListeners;
+    private Map<SMSNetworkManager.ReplyType, ConverseListener> waitingReplyListeners;
 
     /**
      * Adds the request and listener to the waiting list
@@ -19,7 +19,7 @@ public class SMSNetworkListenerHandler {
      * @param request
      * @param listener
      */
-    protected void setRequestListener(SMSNetworkManager.Request request, ConverseListener listener) {
+    protected void setRequestListener(SMSNetworkManager.RequestType request, ConverseListener listener) {
         waitingRequestListeners.put(request, listener);
     }
 
@@ -29,7 +29,7 @@ public class SMSNetworkListenerHandler {
      * @param reply
      * @param listener
      */
-    protected void setReplyListener(SMSNetworkManager.Reply reply, ConverseListener listener) {
+    protected void setReplyListener(SMSNetworkManager.ReplyType reply, ConverseListener listener) {
         waitingReplyListeners.put(reply, listener);
     }
 

@@ -2,8 +2,8 @@ package com.eis.networklibrary.kademlia;
 
 import androidx.annotation.NonNull;
 
-import com.eis.networklibrary.kademlia.SMSNetworkManager.Reply;
-import com.eis.networklibrary.kademlia.SMSNetworkManager.Request;
+import com.eis.networklibrary.kademlia.SMSNetworkManager.ReplyType;
+import com.eis.networklibrary.kademlia.SMSNetworkManager.RequestType;
 import com.eis.smslibrary.SMSHandler;
 import com.eis.smslibrary.SMSMessage;
 import com.eis.smslibrary.SMSPeer;
@@ -46,7 +46,7 @@ class SMSCommandMapper {
      * @param peer         the recipient of the request.
      * @param sentListener callback for when the message is sent.
      */
-    public static void sendRequest(@NonNull final Request req, @NonNull final String content, @NonNull final SMSPeer peer, @NonNull final SMSSentListener sentListener) {
+    public static void sendRequest(RequestType req, String content, SMSPeer peer, SMSSentListener sentListener) {
         SMSMessage messageRequest = new SMSMessage(peer, buildRequest(req, content));
         handler.sendMessage(messageRequest, sentListener);
     }
@@ -58,7 +58,7 @@ class SMSCommandMapper {
      * @param content the data of the request.
      * @param peer    the recipient of the request.
      */
-    public static void sendRequest(@NonNull final Request req, @NonNull final String content, @NonNull final SMSPeer peer) {
+    public static void sendRequest(@NonNull final RequestType req, @NonNull final String content, @NonNull final SMSPeer peer) {
         sendRequest(req, content, peer, null);
     }
 
@@ -70,7 +70,7 @@ class SMSCommandMapper {
      * @param peer         the recipient of the reply.
      * @param sentListener callback for when message is sent.
      */
-    public static void sendReply(@NonNull final Reply reply, @NonNull final String content, @NonNull final SMSPeer peer, @NonNull final SMSSentListener sentListener) {
+    public static void sendReply(@NonNull final ReplyType reply, @NonNull final String content, @NonNull final SMSPeer peer, @NonNull final SMSSentListener sentListener) {
         SMSMessage messageReply = new SMSMessage(peer, buildReply(reply, content));
         handler.sendMessage(messageReply, sentListener);
     }
@@ -82,7 +82,7 @@ class SMSCommandMapper {
      * @param content the data of the reply.
      * @param peer    the recipient of the reply.
      */
-    public static void sendReply(@NonNull final Reply reply, @NonNull final String content, @NonNull final SMSPeer peer) {
+    public static void sendReply(@NonNull final ReplyType reply, @NonNull final String content, @NonNull final SMSPeer peer) {
         sendReply(reply, content, peer, null);
     }
 
@@ -93,7 +93,7 @@ class SMSCommandMapper {
      * @param peer         the recipient of the reply.
      * @param sentListener callback for when message is sent.
      */
-    public static void sendReply(@NonNull final Reply reply, @NonNull final SMSPeer peer, @NonNull final SMSSentListener sentListener) {
+    public static void sendReply(@NonNull final ReplyType reply, @NonNull final SMSPeer peer, @NonNull final SMSSentListener sentListener) {
         SMSMessage messageReply = new SMSMessage(peer, buildReply(reply));
         handler.sendMessage(messageReply, sentListener);
     }
@@ -104,7 +104,7 @@ class SMSCommandMapper {
      * @param reply the reply type.
      * @param peer  the recipient of the reply.
      */
-    public static void sendReply(@NonNull final Reply reply, @NonNull final SMSPeer peer) {
+    public static void sendReply(@NonNull final ReplyType reply, @NonNull final SMSPeer peer) {
         sendReply(reply, peer, null);
     }
 
@@ -115,7 +115,7 @@ class SMSCommandMapper {
      * @param content The content of the request.
      * @return The request parsed into a string ready to be sent.
      */
-    private static String buildRequest(@NonNull final Request req, @NonNull final String content) {
+    private static String buildRequest(@NonNull final RequestType req, @NonNull final String content) {
         return req.toString() + SPLIT_CHAR + content;
     }
 
@@ -126,7 +126,7 @@ class SMSCommandMapper {
      * @param content The content of the reply.
      * @return The reply parsed into a string ready to be sent. Can't be null, if you don't have content use {@link #buildReply(Reply)}
      */
-    private static String buildReply(@NonNull final Reply reply, @NonNull final String content) {
+    private static String buildReply(@NonNull final ReplyType reply, @NonNull final String content) {
         return reply.toString() + SPLIT_CHAR + content;
     }
 
@@ -137,7 +137,7 @@ class SMSCommandMapper {
      * @param reply The reply.
      * @return The reply parsed into a string ready to be sent.
      */
-    private static String buildReply(@NonNull final Reply reply) {
+    private static String buildReply(@NonNull final ReplyType reply) {
         return reply.toString();
     }
 
@@ -147,7 +147,7 @@ class SMSCommandMapper {
      * @param req            The command received.
      * @param commandContent The content of the command without the command prefix, can be empty.
      */
-    protected static void processRequest(@NonNull final Request req, @NonNull final SMSPeer peer, @NonNull final String commandContent) {
+    protected static void processRequest(@NonNull final RequestType req, @NonNull final SMSPeer peer, @NonNull final String commandContent) {
         switch (req) {
             case JOIN_PROPOSAL:
                 SMSNetworkManager.getInstance().onJoinProposal(peer);
@@ -173,7 +173,7 @@ class SMSCommandMapper {
      * @param reply          The command received.
      * @param commandContent The content of the command without the command prefix, can be empty.
      */
-    protected static void processReply(@NonNull final Reply reply, @NonNull final SMSPeer peer, @NonNull final String commandContent) {
+    protected static void processReply(@NonNull final ReplyType reply, @NonNull final SMSPeer peer, @NonNull final String commandContent) {
         switch (reply) {
             case JOIN_AGREED:
                 SMSNetworkManager.getInstance().onJoinReply(peer);

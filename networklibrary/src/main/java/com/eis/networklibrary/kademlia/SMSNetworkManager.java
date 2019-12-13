@@ -32,7 +32,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     protected SerializableObjectParser keyParser;
     protected SerializableObjectParser valueParser;
     protected SMSNetworkCallbackListener callbackListener;
-    protected char SPLIT_CHAR = '_';
+    protected String SPLIT_CHAR = "_";
     private SMSDistributedNetworkDictionary<SerializableObject> dict;
     //joinSent keeps track of JOIN_PROPOSAL requests still pending.
     private ArrayList<SMSPeer> joinSent = new ArrayList<>();
@@ -77,7 +77,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      */
     @Override
     public void invite(@NonNull final SMSKADPeer peer) {
-        SMSCommandMapper.sendRequest(Request.JOIN_PROPOSAL, networkName, peer, new SMSSentListener() {
+        SMSCommandMapper.sendRequest(RequestType.JOIN_PROPOSAL, networkName, peer, new SMSSentListener() {
             @Override
             public void onSMSSent(SMSMessage message, SMSMessage.SentState sentState) {
                 joinSent.add(peer);
@@ -152,7 +152,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
         for(int i = 0; i < ALPHA && i < knownCloserNodes.size(); i++){
             SMSKADPeer peer = knownCloserNodes.get(i);
             //so we ask peer to tell us a closer node
-            SMSCommandMapper.sendRequest(Request.FIND_NODE, kadAddress.toString() , peer);
+            //change mapper
         }
 
 
@@ -198,7 +198,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
         }
         resourceListener = listener;//////////////////////////////////////////////////////////////////////////////////
         for (SMSKADPeer possiblePeer : peersThatMightHaveTheRes) {
-            SMSCommandMapper.sendRequest(Request.FIND_VALUE, resourceKey.toString(), possiblePeer);
+            SMSCommandMapper.sendRequest(RequestType.FIND_VALUE, resourceKey.toString(), possiblePeer);
         }
     }
 
@@ -212,17 +212,17 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     }
 
     /**
-     * Method called when a PING request has been received. Sends a {@link Reply#PING_ECHO) command back.
+     * Method called when a PING request has been received. Sends a {@link ReplyType#PING_ECHO) command back.
      *
      * @param peer who requested a ping
      */
     protected void onPingRequest(SMSPeer peer) {
         //TODO should add a randomID to mach ping requests: take a look at sms formats requests
-        SMSCommandMapper.sendReply(Reply.PING_ECHO, "", peer);
+        SMSCommandMapper.sendReply(ReplyType.PING_ECHO, "", peer);
     }
 
     /**
-     * Method called when a FIND_NODE request is received. Sends a {@link Reply#NODE_FOUND} command back.
+     * Method called when a FIND_NODE request is received. Sends a {@link ReplyType#NODE_FOUND} command back.
      *
      * @param peer           who requested the node search
      * @param requestContent information about the node to find, must be parsed first
@@ -232,7 +232,8 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
         ArrayList<SMSKADPeer> closerNodes = dict.getAllUsersSortedByClosestTo(nodeToSearch);
         //TODO K != 1
         SMSKADPeer closerNode = closerNodes.get(0);
-        SMSCommandMapper.sendReply(Reply.NODE_FOUND, closerNode.networkAddress + "_" , peer);
+        //TODO change SMSCommandMapper
+        SMSHandler.getInstance().sendMessage(new SMSMessage(peer, "NF_" + closerNode.getAddress()));
     }
 
     /**
@@ -252,12 +253,11 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      * @param requestContent information about the key/value to store, must be parsed.
      */
     protected void onStoreRequest(SMSPeer peer, String requestContent) {
-        //THIS COMMAND IS RECEIVED ONLY AFTER SEARCHING FOR THE CLOSEST NODE
-        //THIS AUTOMATICALLY MEANS I AM THE CLOSEST PEER TO the key specified
-        //TODO 1. Splittare la stringa per il SPLIT_CHAR
-        //TODO 2. split[0] è la chiave, key = KADAddress(split[0])
-        //TODO 3. SerializableObject value = valueParser.parseString(split[1])
-        //TODO 4. dict.setResource(key, value);
+        //i am the closest node to the key specified
+        String[] splitStr = requestContent.split(SPLIT_CHAR);
+        SerializableObject key = keyParser.deSerialize(splitStr[0]); //should key.toString() be equal to splitStr[0]? In that case this can be simplified
+        SerializableObject value = valueParser.deSerialize(splitStr[1]);
+        dict.setResource(new KADAddress(key.toString()), value);
     }
 
     /**
@@ -266,10 +266,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      * @param peer user that has just joined.
      */
     protected void onJoinReply(SMSPeer peer) {
-        //TODO 1. Controlliamo che questo lo abbiamo invitato noi cercando se è presente nella lista degli invitati
-        //TODO 2. Gli mandiamo tutte le persone che conosciamo noi tranne noi stessi, poi sarà lui a bucketarli
-        //TODO    Il comando da usare non è ancora stato definito, sarebbe da definire un request REGISTER_NODE
-        //TODO 3. Aggiungiamo questo nuovo peer alla nostra lista dentro i bucket
+
     }
 
     /**
@@ -304,7 +301,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     }
 
 
-    enum Request {
+    enum RequestType {
         JOIN_PROPOSAL,
         PING,
         STORE,
@@ -312,7 +309,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
         FIND_VALUE
     }
 
-    enum Reply {
+    enum ReplyType {
         JOIN_AGREED,
         PING_ECHO,
         NODE_FOUND,
