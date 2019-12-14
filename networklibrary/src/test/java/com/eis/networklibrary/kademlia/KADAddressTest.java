@@ -17,10 +17,9 @@ private KADAddress kadAddress;
 
 @Before
 public void init() {
-        for (int i = 0; i < BIT_SET_SIZE; i++) {
         BIT_SET_ADDRESS = BitSet.valueOf(BYTE_ADDRESS);
-        }
-        }
+}
+
 
 @Test
 public void toString_test(){
