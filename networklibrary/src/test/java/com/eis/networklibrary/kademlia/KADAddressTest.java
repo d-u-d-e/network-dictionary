@@ -10,7 +10,7 @@ import java.util.BitSet;
 public class KADAddressTest {
 
     final byte[] BYTE_ADDRESS = {106, 97, 118, 97, 32, 105, 115, 32, 111, 107};
-    final String ADDRESS_STRING = "java is ok";
+    final String ADDRESS_STRING = "6A617661206973206F6B";
     final int BIT_SET_SIZE = 80;
     BitSet BIT_SET_ADDRESS;
     KADAddress kadAddress;
@@ -23,27 +23,20 @@ public class KADAddressTest {
     }
 
     @Test
-    public void addressToString_byte_constructor() {
+    public void toString_test(){
         kadAddress = new KADAddress(BYTE_ADDRESS);
         Assert.assertEquals(ADDRESS_STRING, kadAddress.toString());
     }
 
     @Test
-    public void addressToString_bitSet_constructor() {
-        kadAddress = new KADAddress(BIT_SET_ADDRESS);
-        Assert.assertEquals(ADDRESS_STRING, kadAddress.toString());
+    public void fromHexString_test() {
+        kadAddress = new KADAddress(BYTE_ADDRESS);
+        Assert.assertEquals(kadAddress, KADAddress.fromHexString(ADDRESS_STRING));
     }
 
     @Test
     public void myTest(){
-        BitSet set = new BitSet(80);
-        System.out.println(set.size());
-        set.set(0);
-        set.set(7);
-        System.out.println(set.get(127));
-        byte[] arr = set.toByteArray();
-        byte firstB = arr[0];
-        int a = firstB & 0xFF;
-        System.out.println(a);
+
+
     }
 }

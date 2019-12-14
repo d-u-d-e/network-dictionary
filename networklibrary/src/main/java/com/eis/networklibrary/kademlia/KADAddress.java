@@ -1,11 +1,15 @@
 package com.eis.networklibrary.kademlia;
 
+import androidx.annotation.NonNull;
+
 import java.lang.reflect.Array;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
+import java.util.Collections;
 
 /**
  * This class manages the peer address, as hash of his phone number
@@ -19,6 +23,8 @@ public class KADAddress {
 
     public static final String HASH_ALGORITHM = "SHA-256";
     public static final int BYTE_ADDRESS_LENGTH = 10;
+    public static final int BIT_LENGTH = Byte.SIZE * BYTE_ADDRESS_LENGTH;
+    private static final char[] HEX_DIGITS = "0123456789ABCDEF".toCharArray();
 
     protected byte[] address;
 
@@ -36,14 +42,13 @@ public class KADAddress {
 
     public KADAddress(BitSet bitset) throws IllegalArgumentException {
         address = new byte[BYTE_ADDRESS_LENGTH];
-        byte[] arr = bitset.toByteArray();
+        byte[] arr = bitset.toByteArray(); //a little endian representation of the bitSet
         if(arr.length < BYTE_ADDRESS_LENGTH)
             throw new IllegalArgumentException("Byte address should be " + BYTE_ADDRESS_LENGTH + " bytes long");
         System.arraycopy(arr, 0, address, 0, BYTE_ADDRESS_LENGTH);
     }
 
     /**
-     * TODO
      *
      * @param objectKey A String containing the key identifier for the object
      */
@@ -78,6 +83,12 @@ public class KADAddress {
         return userBitSet.nextSetBit(0);
     }
 
+
+    /**
+     * @param obj object being compared to
+     * @return true if and only if obj is of KADAddress type and has the same bytes as this address
+     */
+
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof KADAddress) {
@@ -86,12 +97,26 @@ public class KADAddress {
         return false;
     }
 
+    /**
+     * @param a a KADAddress
+     * @param b a KADAddress
+     * @param target a KADAddress which is compared to a and b
+     * @return a or b, whichever is closer to target according to XOR metric
+     */
+
     static KADAddress closerToTarget(KADAddress a, KADAddress b, KADAddress target) {
         return new KADAddress(closerToTarget(BitSet.valueOf(a.getAddress()), BitSet.valueOf(b.getAddress()), BitSet.valueOf(target.getAddress())));
     }
 
+    /**
+     * @param a a bitSet
+     * @param b a bitSet
+     * @param target a bitSet which is compared to a and b
+     * @return a or b, whichever is closer to target according to XOR metric
+     */
+
     private static BitSet closerToTarget(BitSet a, BitSet b, BitSet target) {
-        for (int i = 0; i < BYTE_ADDRESS_LENGTH * Byte.SIZE; i++) {
+        for (int i = 0; i < BIT_LENGTH; i++) { //BitSet returns a little-endian representation of a byte array
             boolean aBit = a.get(i);
             boolean bBit = b.get(i);
             if (aBit != bBit) {
@@ -103,16 +128,32 @@ public class KADAddress {
     }
 
     /**
-     * Creates a string of the {@link KADAddress} address
-     *
-     * @return The {@link KADAddress} address converted
+     * @return the string hexadecimal representation of address
      */
-    public String toString() {
-        return "";
+    @NonNull
+    public String toString() { //
+        char[] hexChars = new char[address.length * 2]; //two hex chars for each byte
+        for (int i = 0; i < address.length; i++) { //for each byte
+            //convert it to a non negative integer: to see why this works, note that & operator is defined only between integers or long ints (not between bytes)
+            //address[i] is promoted to int (by extending the sign) and 0xFF is just 00 00 00 FF as int
+            int v = address[i] & 0xFF;
+            hexChars[i * 2] = HEX_DIGITS[v >>> 4]; //first hex char is at index v divided by 16
+            hexChars[i * 2 + 1] = HEX_DIGITS[v & 0x0F]; //second hex char is at index specified by the second group of 4 bits
+        }
+        return new String(hexChars);
     }
 
+    /**
+    * @param str a valid hexadecimal representation of a KADAddress; str.length() must be BIT_LENGTH/4 bits long and even
+    * @return the KADAddress having str as its hexadecimal representation
+    * */
+
     public static KADAddress fromHexString(String str){
-        return null;
+        int len = str.length();
+        byte[] arr = new byte[len/2];
+        for(int i = 0; i < len-1; i += 2)
+            arr[i/2] = (byte) ((Character.digit(str.charAt(i), 16) << 4) + Character.digit(str.charAt(i+1), 16));
+        return new KADAddress(arr);
     }
 
 }
