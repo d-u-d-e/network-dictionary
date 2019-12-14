@@ -2,14 +2,11 @@ package com.eis.networklibrary.kademlia;
 
 import androidx.annotation.NonNull;
 
-import java.lang.reflect.Array;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
-import java.util.Collections;
 
 /**
  * This class manages the peer address, as hash of his phone number
@@ -30,10 +27,8 @@ public class KADAddress {
     protected byte[] address;
 
     /**
-     * TODO
-     *
      * @param address a byte array containing the object address
-     * @throws IllegalArgumentException TODO
+     * @throws IllegalArgumentException if address does not consist of {@link #BYTE_ADDRESS_LENGTH} bytes
      */
     public KADAddress(byte[] address) throws IllegalArgumentException {
         if (address.length != BYTE_ADDRESS_LENGTH)
@@ -41,16 +36,23 @@ public class KADAddress {
         this.address = address;
     }
 
-    public KADAddress(BitSet bitset) throws IllegalArgumentException {
-        address = new byte[BYTE_ADDRESS_LENGTH];
-        byte[] arr = bitset.toByteArray(); //a little endian representation of the bitSet
+     /**
+     * @param bitSet representing the address. Keep in mind that it extracts bytes from it
+      *              by converting it to a byte array, which returns a little-endian representation.
+     * @throws IllegalArgumentException if {@code bitSet} isn't sufficiently long to hold {@link #BIT_LENGTH} bits.
+     */
+    public KADAddress(BitSet bitSet) throws IllegalArgumentException {
+        byte[] arr = bitSet.toByteArray(); //a little endian representation of the bitSet
         if (arr.length < BYTE_ADDRESS_LENGTH)
             throw new IllegalArgumentException("Byte address should be " + BYTE_ADDRESS_LENGTH + " bytes long");
+        address = new byte[BYTE_ADDRESS_LENGTH];
         System.arraycopy(arr, 0, address, 0, BYTE_ADDRESS_LENGTH);
     }
 
     /**
-     * @param objectKey A String containing the key identifier for the object
+     * @param objectKey A String containing the key identifier for the object. This method creates a hash for the string representation
+     *                  of the object key (serialization). Not to be confused with {@link #fromHexString(String str)} which returns an hexadecimal equivalent
+     *                  representation of this address.
      */
     public KADAddress(String objectKey) {
         address = new byte[BYTE_ADDRESS_LENGTH];
@@ -64,17 +66,17 @@ public class KADAddress {
     }
 
     /**
-     * @return a byte[] address
+     * @return the byte[] address
      */
     public byte[] getAddress() {
         return address;
     }
 
     /**
-     * Calculates the first bit that differs starting from left
+     * Calculates the first significant bit that differs from {@code otherAddress}
      *
-     * @param otherAddress the address of another network user
-     * @return the index of the first different bit between this address and otherAddress
+     * @param otherAddress address to be compared with this address
+     * @return the index of the first different bit between this address and {@code otherAddress}
      * or -1 if no such index exists (i.e. the two addresses are equal)
      */
     public int firstDifferentBit(KADAddress otherAddress) {
@@ -85,8 +87,8 @@ public class KADAddress {
 
 
     /**
-     * @param obj object being compared to
-     * @return true if and only if obj is of KADAddress type and has the same bytes as this address
+     * @param obj object being compared to this object
+     * @return true if and only if obj is of {@code KADAddress} type and has the same bytes as this address
      */
     @Override
     public boolean equals(Object obj) {
@@ -97,24 +99,24 @@ public class KADAddress {
     }
 
     /**
-     * Method used to verify which of the two nodes {@param a} and {@param b} is closest to a given {@param target}
+     * Verifies which of the two nodes {@code a} and {@code b} is closest to a given {@code target}
      *
-     * @param a      1st {@link KADAddress} object to compare
-     * @param b      2nd {@link KADAddress} object to compare
-     * @param target a KADAddress which is compared to a and b
-     * @return a or b, whichever is closer to target according to XOR metric
+     * @param a       1st {@code KADAddress} object to compare
+     * @param b       2nd {@code KADAddress} object to compare
+     * @param target  a KADAddress which is compared to a and b
+     * @return        a or b, whichever is closer to target according to XOR metric
      */
     static KADAddress closerToTarget(KADAddress a, KADAddress b, KADAddress target) {
         return new KADAddress(closerToTarget(BitSet.valueOf(a.getAddress()), BitSet.valueOf(b.getAddress()), BitSet.valueOf(target.getAddress())));
     }
 
     /**
-     * Method used to verify which of the two nodes {@param a} and {@param b} is closest to a given {@param target}
+     * Verifies which of the two nodes {@code a} and {@code b} is closest to a given {@code target}
      *
-     * @param a      1st {@link BitSet} object to compare
-     * @param b      2nd {@link BitSet} object to compare
-     * @param target a bitSet which is compared to a and b
-     * @return a or b, whichever is closer to target according to XOR metric
+     * @param a       1st {@link BitSet} object to compare
+     * @param b       2nd {@link BitSet} object to compare
+     * @param target  a bitSet which is compared to {@code a} and {@code b}
+     * @return        {@code a} or {@code b}, whichever is closer to target according to XOR metric
      */
     private static BitSet closerToTarget(BitSet a, BitSet b, BitSet target) {
         for (int i = 0; i < BIT_LENGTH; i++) { //BitSet returns a little-endian representation of a byte array
@@ -129,7 +131,7 @@ public class KADAddress {
     }
 
     /**
-     * @return The string hexadecimal representation of {@link #address}
+     * @return The string hexadecimal representation of this address
      */
     @NonNull
     public String toString() { //
@@ -145,8 +147,8 @@ public class KADAddress {
     }
 
     /**
-     * @param str a valid hexadecimal representation of a KADAddress; str.length() must be BIT_LENGTH/4 bits long and even
-     * @return the KADAddress having str as its hexadecimal representation
+     * @param str a valid hexadecimal representation of a {@code KADAddress}; {@code str.length()} must be {@code BIT_LENGTH/4} bits long and even
+     * @return the {@code KADAddress} having {@code str} as its hexadecimal representation
      */
     public static KADAddress fromHexString(String str) {
         int len = str.length();

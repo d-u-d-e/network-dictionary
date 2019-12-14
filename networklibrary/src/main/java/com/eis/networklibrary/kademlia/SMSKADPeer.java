@@ -6,18 +6,15 @@ import com.eis.smslibrary.exceptions.InvalidTelephoneNumberException;
 
 import java.util.Comparator;
 
-/**
- * //TODO
- */
 public class SMSKADPeer extends SMSPeer implements KADPeer {
 
     protected KADAddress networkAddress;
 
     /**
-     * TODO
+     * constructs a {@code SMSKADPeer} object from its phone number
      *
-     * @param telephoneNumber Address for the peer.
-     * @throws InvalidTelephoneNumberException If telephoneNumber check is not {@link TelephoneNumberState#TELEPHONE_NUMBER_VALID}.
+     * @param telephoneNumber phone number of this peer.
+     * @throws InvalidTelephoneNumberException if telephoneNumber check does not return {@link TelephoneNumberState#TELEPHONE_NUMBER_VALID}.
      */
     public SMSKADPeer(String telephoneNumber) throws InvalidTelephoneNumberException {
         super(telephoneNumber);
@@ -25,17 +22,14 @@ public class SMSKADPeer extends SMSPeer implements KADPeer {
     }
 
     /**
-     * TODO
-     *
-     * @param smsPeer TODO
+     * constructs a {@code SMSKADPeer} object from a {@link SMSPeer}
+     * @param smsPeer from which a SMSKADPeer is built
      */
     public SMSKADPeer(SMSPeer smsPeer) {
         this(smsPeer.getAddress());
     }
 
     /**
-     * TODO
-     *
      * @return the peer's network address
      */
     @Override
@@ -44,8 +38,15 @@ public class SMSKADPeer extends SMSPeer implements KADPeer {
     }
 
 
+    /**
+    * a static nested class defining a comparator for KAD addresses. A target must be specified in order to compare addresses to it.
+    */
     public static class KADComparator implements Comparator<SMSKADPeer> {
         KADAddress target;
+
+        /**
+         * @param target used to compare addresses to it
+         */
 
         KADComparator(KADAddress target) {
             this.target = target;

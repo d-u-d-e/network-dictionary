@@ -17,14 +17,13 @@ import java.util.Map;
  */
 public class SMSDistributedNetworkDictionary<RV> implements NetworkDictionary<SMSKADPeer, KADAddress, RV> {
 
-    /**
-     * Maximum users per bucket
-     */
+
+    //Maximum users per bucket
     static final int BUCKET_SIZE = 5; // this is KAD K constant TODO: Use this
     static final int NO_BUCKETS = KADAddress.BYTE_ADDRESS_LENGTH * Byte.SIZE; //we have a bucket for each bit
     SMSKADPeer mySelf; //address of current node holding this dictionary
     private ArrayList<SMSKADPeer>[] buckets;
-    private HashMap<KADAddress, RV> resourcesDict;
+    private HashMap<KADAddress, RV> resources;
 
     /**
      * Constructor for the dictionary
@@ -60,7 +59,7 @@ public class SMSDistributedNetworkDictionary<RV> implements NetworkDictionary<SM
     }
 
 
-    int getBucketContaining(KADAddress address) {
+    private int getBucketContaining(KADAddress address) {
 
         //The bucket of node X which has index i contains nodes whose xor distance to X is between 2^i inclusive and 2^(i+1) exclusive.
         //For example, if i = 0, then bucket 0 contains the only node whose distance to X is 1 (thus it has the last bit flipped and it is the closer to X
@@ -109,12 +108,22 @@ public class SMSDistributedNetworkDictionary<RV> implements NetworkDictionary<SM
      *                    If otherwise i = N-1, we get all nodes whose distance d from mySelf is >= 2^(N-1) and < 2^(N), meaning that the first significant bit is flipped.
      * @return an ArrayList of users in that particular bucket, empty ArrayList if there is none
      */
+
+
+    /**
+     * @param bucketIndex identifies each bucket, from 0 to N-1, where N = NO_BUCKETS.
+     * @return all users known in this bucket
+     */
     public ArrayList<SMSKADPeer> getUsersInBucket(int bucketIndex) {
         if (buckets[bucketIndex] != null)
             return new ArrayList<>(buckets[bucketIndex]);
         return new ArrayList<>();
     }
 
+    /**
+     * @param address {@link KADAddress} of which we seek the corresponding {@link SMSKADPeer}
+     * @return the known peer having this address, otherwise null
+     */
     SMSKADPeer getPeerFromAddress(KADAddress address) {
         for (SMSKADPeer peer : buckets[getBucketContaining(address)])
             if (peer.getNetworkAddress().equals(address))
@@ -122,6 +131,10 @@ public class SMSDistributedNetworkDictionary<RV> implements NetworkDictionary<SM
         return null;
     }
 
+    /**
+     * @param address {@link KADAddress} by which all nodes are sorted by their distance to it
+     * @return a list of the known users sorted by increasing distance to address
+     */
     public ArrayList<SMSKADPeer> getNodesSortedByDistance(KADAddress address) {
         ArrayList<SMSKADPeer> users = getAllUsers();
         Collections.sort(users, new SMSKADPeer.KADComparator(address));
@@ -163,7 +176,7 @@ public class SMSDistributedNetworkDictionary<RV> implements NetworkDictionary<SM
      */
     @Override
     public RV setResource(KADAddress key, RV value) {
-        return resourcesDict.put(key, value);
+        return resources.put(key, value);
     }
 
     /**
@@ -185,7 +198,7 @@ public class SMSDistributedNetworkDictionary<RV> implements NetworkDictionary<SM
      */
     @Override
     public RV removeResource(KADAddress resourceKey) {
-        return resourcesDict.remove(resourceKey);
+        return resources.remove(resourceKey);
     }
 
     /**
@@ -207,7 +220,7 @@ public class SMSDistributedNetworkDictionary<RV> implements NetworkDictionary<SM
      */
     @Override
     public RV getValue(KADAddress resourceKey) {
-        return resourcesDict.get(resourceKey);
+        return resources.get(resourceKey);
     }
 
     /**
@@ -228,7 +241,7 @@ public class SMSDistributedNetworkDictionary<RV> implements NetworkDictionary<SM
      */
     @Override
     public ArrayList<KADAddress> getKeys() {
-        return new ArrayList<>(resourcesDict.keySet());
+        return new ArrayList<>(resources.keySet());
     }
 
     /**
@@ -236,7 +249,7 @@ public class SMSDistributedNetworkDictionary<RV> implements NetworkDictionary<SM
      */
     @Override
     public ArrayList<RV> getValues() {
-        return new ArrayList<>(resourcesDict.values());
+        return new ArrayList<>(resources.values());
     }
 
 

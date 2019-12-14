@@ -13,20 +13,23 @@ import com.eis.smslibrary.listeners.SMSSentListener;
  * <p>
  * /**
  * * SPLIT_CHAR = '-' is used to split fields in each request or reply
+ * * each KADAddress is sent as a hexadecimal string to spare characters
  * * <p>
  * * SMS REQUESTS FORMATS
- * * JOIN proposal:      "JOIN_PROPOSAL-%netName"
+ * * JOIN proposal:      "JOIN_PROPOSAL-%netName"                netName is the name of the network the user receiving this is asked to join
  * * PING request:       "PING-%(randomId)"                      randomId is an identifier to match ping requests with replies
- * * STORE request:      "STORE-%(KADAddress key)-%(value)"
- * * FIND_NODE request:  "FIND_NODE-%(KADAddress addr)"          find the K-CLOSEST nodes to this KAD peer (we want to know their phone numbers)
- * * FIND_VALUE request: "FIND_VALUE-%(KADAddress key)
+ * * STORE request:      "STORE-%(KADAddress key)-%(value)"      tell the receiver to store a (key, value) pair
+ * * FIND_NODE request:  "FIND_NODE-%(KADAddress addr)"          find the K-CLOSEST nodes to this KAD address (we want to know their phone numbers)
+ * * FIND_VALUE request: "FIND_VALUE-%(KADAddress key)           find the value associated with key
  * * <p>
  * * <p>
  * * SMS REPLIES FORMATS
- * * JOIN agreed:       "JOIN_AGREED"
- * * PING reply:        "PING_ECHO-%(matchingId)"
- * * NODE_FOUND reply:  "NODE_FOUND-%(KADAddress addr)-(phoneNumber1)-(phoneNumber2)...-(phoneNumber K)"  TODO how many entries should we pack inside this reply?
- * * VALUE_FOUND reply: "VALUE_FOUND-%(KADAddress key)-(value)"
+ * * JOIN agreed:           "JOIN_AGREED"                            a join confirmation
+ * * PING reply:            "PING_ECHO-%(matchingId)"                matchingId is to match this ping reply with its request
+ * * NODE_FOUND reply:      "NODE_FOUND-%(KADAddress addr)-(phoneNumber1)-(phoneNumber2)...-(phoneNumber K)" //the receiving user is told other K closer nodes to addr
+ *   TODO how many entries should we pack inside this reply?
+ * * VALUE_FOUND reply:     "VALUE_FOUND-%(KADAddress key)-(value)"  the value for key is returned to the querier
+ * * VALUE_NOT_FOUND reply: "VALUE_NOT_FOUND-%(KADAddress key)       the value for key has not been found
  */
 
 

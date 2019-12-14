@@ -2,7 +2,12 @@ package com.eis.networklibrary.kademlia;
 
 import com.eis.smslibrary.SMSPeer;
 
-public interface JoinListener {
-    void onJoinProposal(SMSPeer peer);
 
+/**
+ * A listener waiting for a {@code JOIN_PROPOSAL} request
+ *
+ * */
+public interface JoinListener
+{
+    void onJoinProposal(SMSPeer peer);
 }
