@@ -125,7 +125,6 @@ public class SMSDistributedNetworkDictionary<RV> implements NetworkDictionary<SM
 
     public ArrayList<SMSKADPeer> getNodesSortedByDistance(KADAddress address){
        ArrayList<SMSKADPeer> users = getAllUsers();
-       users.add(mySelf); //TODO this is to simplify when we check if mySelf is the closest
        Collections.sort(users, new SMSKADPeer.KADComparator(address));
        return users;
     }

@@ -1,10 +1,9 @@
 package com.eis.networklibrary.kademlia;
 
-import androidx.annotation.NonNull;
-
 import com.eis.smslibrary.SMSMessage;
 import com.eis.smslibrary.SMSPeer;
 import com.eis.smslibrary.listeners.SMSReceivedServiceListener;
+
 
 import static com.eis.networklibrary.kademlia.SMSCommandMapper.SPLIT_CHAR;
 
@@ -18,10 +17,10 @@ import static com.eis.networklibrary.kademlia.SMSCommandMapper.SPLIT_CHAR;
  */
 class SMSNetworkListener extends SMSReceivedServiceListener {
 
-    ConverseListener listener;
+    JoinListener joinListener;
 
-    SMSNetworkListener(ConverseListener listener){
-        this.listener = listener;
+    SMSNetworkListener(JoinListener listener){
+        this.joinListener = listener;
     }
 
     /**
@@ -61,7 +60,7 @@ class SMSNetworkListener extends SMSReceivedServiceListener {
     private void processRequest(SMSNetworkManager.RequestType req, SMSPeer peer, String commandContent) {
         switch (req) {
             case JOIN_PROPOSAL:
-                listener.onJoinProposal(peer);
+                joinListener.onJoinProposal(peer);
                 break;
             case PING:
                 SMSNetworkManager.getInstance().onPingRequest(peer);
@@ -83,19 +82,20 @@ class SMSNetworkListener extends SMSReceivedServiceListener {
      * @param commandContent The content of the command without the command prefix, can be empty.
      */
     private void processReply(SMSNetworkManager.ReplyType reply, SMSPeer peer, String commandContent) {
+        SMSNetworkManager manager = SMSNetworkManager.getInstance();
+        String[] splitStr = commandContent.split(SPLIT_CHAR);;
         switch (reply) {
             case JOIN_AGREED:
-                SMSNetworkManager.getInstance().onJoinAgreedReply(peer);
+                manager.onJoinAgreedReply(peer);
                 break;
             case PING_ECHO:
-                SMSNetworkManager.getInstance().onPingEchoReply(peer);
+                manager.onPingEchoReply(peer);
                 break;
             case NODE_FOUND:
-                SMSNetworkManager.getInstance().onNodeFoundReply(commandContent); //peer is not very useful to
-                // pass, because we already know him, since we asked him to give us the closest nodes he knows about
+                manager.onNodeFoundReply(manager.keyParser.deSerialize(splitStr[0]), /*build address from its string representation*/, peer);
                 break;
             case VALUE_FOUND:
-                listener.onValueFound(SMSNetworkManager.getInstance().valueParser.deSerialize(commandContent));
+                manager.onValueFoundReply(/* build address from its string representation */, manager.valueParser.deSerialize(splitStr[1]));
                 break;
         }
     }

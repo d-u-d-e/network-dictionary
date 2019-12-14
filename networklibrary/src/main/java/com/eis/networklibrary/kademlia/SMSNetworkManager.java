@@ -1,6 +1,7 @@
 package com.eis.networklibrary.kademlia;
 
 import android.os.CountDownTimer;
+import android.webkit.WebView;
 
 import com.eis.communication.network.NetworkManager;
 import com.eis.communication.network.SerializableObject;
@@ -10,6 +11,7 @@ import com.eis.smslibrary.SMSPeer;
 import com.eis.smslibrary.listeners.SMSSentListener;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 /**
  * Singleton class that handles the Kademlia network.
@@ -33,12 +35,11 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     private SMSDistributedNetworkDictionary<SerializableObject> dict;
     //joinSent keeps track of JOIN_PROPOSAL requests still pending.
     private ArrayList<SMSPeer> joinSent = new ArrayList<>();
-    protected ArrayList<CountDownTimer> pendingTimers;
-
-    final static int TIMER = 60000; //timer is 1 minute, in millis
-    final static int INTERVAL = 1000; //timer ticks every second
 
     static final int ALPHA = 1;
+
+    private HashMap<KADAddress, FindNodeListener> findNodeListenerMap = new HashMap<>();
+    private  HashMap<KADAddress, FindValueListener> findValueListenerMap = new HashMap<>();
 
     private SMSNetworkManager() {
         //Private because of singleton
@@ -130,42 +131,26 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      * If the given KADAddress doesn't exist then finds then peer of the closest (to the one given)
      *
      * @param kadAddress The KADAddress for which to find the peer
-     * @return a {@link KADAddress} object
      */
-    private KADAddress findNode(KADAddress kadAddress) {
+    private void findNode(KADAddress kadAddress, FindNodeListener listener) {
 
-        //TODO 4. Procedere in modo ricorsivo sino a quando ricevo il numero di telefono del peer più vicino in assoluto a kadAddress
+        if(findNodeListenerMap.containsKey(kadAddress))
+            throw new IllegalStateException("A find request for this key is already pending");
+        findNodeListenerMap.put(kadAddress, listener); //listener should remove itself from this map; maybe there's a better way to achieve this
 
-        //Checks if we are the finding node
-        if(kadAddress.equals(mySelf.getNetworkAddress())) onNodeFoundReply(mySelf);
+        //check if we are finding ourselves
+        if(kadAddress.equals(mySelf.getNetworkAddress())) onNodeFoundReply(kadAddress, mySelf, mySelf);
 
         //Checks if we already know the kadAddress
         SMSKADPeer nodeFoundInLocalDict = dict.getPeerFromAddress(kadAddress);
-        if(nodeFoundInLocalDict != null) onNodeFoundReply(nodeFoundInLocalDict);
+        if(nodeFoundInLocalDict != null) onNodeFoundReply(kadAddress, nodeFoundInLocalDict, mySelf);
 
         //Creates an ArrayList with the known closest nodes
         ArrayList<SMSKADPeer> knownCloserNodes = dict.getNodesSortedByDistance(kadAddress);
 
         //Sends a FIND_NODE request to the peers in the ArrayList
-        for(int i = 0; i < ALPHA && i < knownCloserNodes.size(); i++){
+        for(int i = 0; i < ALPHA && i < knownCloserNodes.size(); i++)
             SMSCommandMapper.sendRequest(RequestType.FIND_NODE, kadAddress.toString(), knownCloserNodes.get(i));
-            final CountDownTimer timer = new CountDownTimer(TIMER, INTERVAL) {
-                @Override
-                public void onTick(long millisUntilFinished) {
-
-                }
-
-                @Override
-                public void onFinish() {
-                    //pendingTimers.remove(timer); non so perchè ma dà errore sulla variabile timer
-                }
-            };
-            timer.start();
-            pendingTimers.add(timer);
-        }
-        //la gestione della risposta va fatta col listener --> quando la ricevo devo chiamare timer.cancel()
-
-        return null;
     }
 
     /**
@@ -180,16 +165,16 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     /**
      * Method used to find a value of the given key
      *
-     * @param resourceKey The resource key of which we want to find the value
+     * @param key The resource key of which we want to find the value
      */
-    @Override
-    public void findValue(SerializableObject resourceKey, ConverseListener listener) {
-        KADAddress key = new KADAddress(resourceKey.toString());
-        SerializableObject value = dict.getValue(key);
+    public void findValue(SerializableObject key, FindValueListener listener) {
+        KADAddress keyAddress = new KADAddress(key.toString());
+        SerializableObject value = dict.getValue(keyAddress);
         if (value != null) {
             listener.onValueFound(value);
             return;
         }
+        findValueListenerMap.put(keyAddress, listener);
 
         //TODO this is similar to findNode, except that when the value is found it is immediately returned
 
@@ -258,17 +243,20 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
 
     /**
      * Method called when a NODE_FOUND reply is received.
-     *
-     * @param content      contains the kad address and the k closest nodes found to it
+     * @param address we want to know the closer node to address
+     * @param closerNode is the closer node returned
+     * @param sender is the node who informed us back about closerNode
      */
-    protected void onNodeFoundReply(String content) {
-        String[] splitStr = content.split(SMSCommandMapper.SPLIT_CHAR);
-        //to call after content has been parsed: onNodeFound(SMSKADPeer) if k = 1
-        //TODO mandare una richiesta di FIND_NODE al nodo più vicino ricevuto
+    protected void onNodeFoundReply(KADAddress address, SMSKADPeer closerNode, SMSKADPeer sender) { //TODO k > 1
+        //TODO not sure if this if statement is correct: is it guaranteed that a node knowing to be the closer among its buckets nodes is the closest globally?
+        if(closerNode.equals(sender)) findNodeListenerMap.get(address).onClosestNodeFound(closerNode);
+        else
+            SMSCommandMapper.sendRequest(RequestType.FIND_NODE, address.toString() + closerNode.getAddress(), sender);
     }
 
-    protected void onNodeFoundReply(SMSKADPeer closestReceived){
-        //TODO change second parameter to list if we expect to receive k nodes as a response, now k = 1
+    protected void onValueFoundReply(KADAddress key, SerializableObject value) {
+        FindValueListener listener = findValueListenerMap.remove(key);
+        listener.onValueFound(value);
     }
 
     enum RequestType {

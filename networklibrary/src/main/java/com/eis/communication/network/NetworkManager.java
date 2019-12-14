@@ -1,7 +1,7 @@
 package com.eis.communication.network;
 
 import com.eis.communication.Peer;
-import com.eis.networklibrary.kademlia.ConverseListener;
+import com.eis.networklibrary.kademlia.FindValueListener;
 
 /**
  * @param <U>  Peer for users in the network
@@ -41,6 +41,6 @@ public interface NetworkManager<U extends Peer, RK extends SerializableObject, R
      * @param key      The resource key
      * @param listener The listener used to warn when the value was found
      */
-    void findValue(RK key, ConverseListener listener);
+    void findValue(RK key, FindValueListener listener);
 
 }
