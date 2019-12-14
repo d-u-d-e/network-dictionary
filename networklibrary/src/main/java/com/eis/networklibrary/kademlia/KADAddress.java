@@ -17,6 +17,7 @@ import java.util.Collections;
  * @author Luca Crema
  * @author Alessandra Tonin
  * @author Mariotto Marco
+ * @author Alberto Ursino
  * @since 10/12/2019
  */
 public class KADAddress {
@@ -43,13 +44,12 @@ public class KADAddress {
     public KADAddress(BitSet bitset) throws IllegalArgumentException {
         address = new byte[BYTE_ADDRESS_LENGTH];
         byte[] arr = bitset.toByteArray(); //a little endian representation of the bitSet
-        if(arr.length < BYTE_ADDRESS_LENGTH)
+        if (arr.length < BYTE_ADDRESS_LENGTH)
             throw new IllegalArgumentException("Byte address should be " + BYTE_ADDRESS_LENGTH + " bytes long");
         System.arraycopy(arr, 0, address, 0, BYTE_ADDRESS_LENGTH);
     }
 
     /**
-     *
      * @param objectKey A String containing the key identifier for the object
      */
     public KADAddress(String objectKey) {
@@ -88,7 +88,6 @@ public class KADAddress {
      * @param obj object being compared to
      * @return true if and only if obj is of KADAddress type and has the same bytes as this address
      */
-
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof KADAddress) {
@@ -98,23 +97,25 @@ public class KADAddress {
     }
 
     /**
-     * @param a a KADAddress
-     * @param b a KADAddress
+     * Method used to verify which of the two nodes {@param a} and {@param b} is closest to a given {@param target}
+     *
+     * @param a      1st {@link KADAddress} object to compare
+     * @param b      2nd {@link KADAddress} object to compare
      * @param target a KADAddress which is compared to a and b
      * @return a or b, whichever is closer to target according to XOR metric
      */
-
     static KADAddress closerToTarget(KADAddress a, KADAddress b, KADAddress target) {
         return new KADAddress(closerToTarget(BitSet.valueOf(a.getAddress()), BitSet.valueOf(b.getAddress()), BitSet.valueOf(target.getAddress())));
     }
 
     /**
-     * @param a a bitSet
-     * @param b a bitSet
+     * Method used to verify which of the two nodes {@param a} and {@param b} is closest to a given {@param target}
+     *
+     * @param a      1st {@link BitSet} object to compare
+     * @param b      2nd {@link BitSet} object to compare
      * @param target a bitSet which is compared to a and b
      * @return a or b, whichever is closer to target according to XOR metric
      */
-
     private static BitSet closerToTarget(BitSet a, BitSet b, BitSet target) {
         for (int i = 0; i < BIT_LENGTH; i++) { //BitSet returns a little-endian representation of a byte array
             boolean aBit = a.get(i);
@@ -128,7 +129,7 @@ public class KADAddress {
     }
 
     /**
-     * @return the string hexadecimal representation of address
+     * @return The string hexadecimal representation of {@link #address}
      */
     @NonNull
     public String toString() { //
@@ -144,15 +145,14 @@ public class KADAddress {
     }
 
     /**
-    * @param str a valid hexadecimal representation of a KADAddress; str.length() must be BIT_LENGTH/4 bits long and even
-    * @return the KADAddress having str as its hexadecimal representation
-    * */
-
-    public static KADAddress fromHexString(String str){
+     * @param str a valid hexadecimal representation of a KADAddress; str.length() must be BIT_LENGTH/4 bits long and even
+     * @return the KADAddress having str as its hexadecimal representation
+     */
+    public static KADAddress fromHexString(String str) {
         int len = str.length();
-        byte[] arr = new byte[len/2];
-        for(int i = 0; i < len-1; i += 2)
-            arr[i/2] = (byte) ((Character.digit(str.charAt(i), 16) << 4) + Character.digit(str.charAt(i+1), 16));
+        byte[] arr = new byte[len / 2];
+        for (int i = 0; i < len - 1; i += 2)
+            arr[i / 2] = (byte) ((Character.digit(str.charAt(i), 16) << 4) + Character.digit(str.charAt(i + 1), 16));
         return new KADAddress(arr);
     }
 
