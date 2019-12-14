@@ -24,6 +24,9 @@ public class KADAddress {
     public static final int BIT_LENGTH = Byte.SIZE * BYTE_ADDRESS_LENGTH;
     private static final char[] HEX_DIGITS = "0123456789ABCDEF".toCharArray();
 
+    /**
+     * 10 byte long variable that represents the address of a resource or a user in the dictionary.
+     */
     protected byte[] address;
 
     /**
@@ -36,9 +39,9 @@ public class KADAddress {
         this.address = address;
     }
 
-     /**
+    /**
      * @param bitSet representing the address. Keep in mind that it extracts bytes from it
-      *              by converting it to a byte array, which returns a little-endian representation.
+     *               by converting it to a byte array, which returns a little-endian representation.
      * @throws IllegalArgumentException if {@code bitSet} isn't sufficiently long to hold {@link #BIT_LENGTH} bits.
      */
     public KADAddress(BitSet bitSet) throws IllegalArgumentException {
@@ -101,10 +104,10 @@ public class KADAddress {
     /**
      * Verifies which of the two nodes {@code a} and {@code b} is closest to a given {@code target}
      *
-     * @param a       1st {@code KADAddress} object to compare
-     * @param b       2nd {@code KADAddress} object to compare
-     * @param target  a KADAddress which is compared to a and b
-     * @return        a or b, whichever is closer to target according to XOR metric
+     * @param a      1st {@code KADAddress} object to compare
+     * @param b      2nd {@code KADAddress} object to compare
+     * @param target a KADAddress which is compared to a and b
+     * @return a or b, whichever is closer to target according to XOR metric
      */
     static KADAddress closerToTarget(KADAddress a, KADAddress b, KADAddress target) {
         return new KADAddress(closerToTarget(BitSet.valueOf(a.getAddress()), BitSet.valueOf(b.getAddress()), BitSet.valueOf(target.getAddress())));
@@ -113,10 +116,10 @@ public class KADAddress {
     /**
      * Verifies which of the two nodes {@code a} and {@code b} is closest to a given {@code target}
      *
-     * @param a       1st {@link BitSet} object to compare
-     * @param b       2nd {@link BitSet} object to compare
-     * @param target  a bitSet which is compared to {@code a} and {@code b}
-     * @return        {@code a} or {@code b}, whichever is closer to target according to XOR metric
+     * @param a      1st {@link BitSet} object to compare
+     * @param b      2nd {@link BitSet} object to compare
+     * @param target a bitSet which is compared to {@code a} and {@code b}
+     * @return {@code a} or {@code b}, whichever is closer to target according to XOR metric
      */
     private static BitSet closerToTarget(BitSet a, BitSet b, BitSet target) {
         for (int i = 0; i < BIT_LENGTH; i++) { //BitSet returns a little-endian representation of a byte array
