@@ -61,22 +61,22 @@ class SMSNetworkListener extends SMSReceivedServiceListener {
      * Calls the appropriate method depending on the received request
      *
      * @param req            the request received
-     * @param peer           the request sender
+     * @param sender          the request sender
      * @param commandContent the content of the command without the command prefix, can be empty
      */
-    private void processRequest(SMSNetworkManager.RequestType req, SMSPeer peer, String commandContent) {
+    private void processRequest(SMSNetworkManager.RequestType req, SMSPeer sender, String commandContent) {
         switch (req) {
             case JOIN_PROPOSAL:
-                joinListener.onJoinProposal(peer);
+                joinListener.onJoinProposal(sender);
                 break;
             case PING:
-                SMSNetworkManager.getInstance().onPingRequest(peer);
+                SMSNetworkManager.getInstance().onPingRequest(sender);
                 break;
             case FIND_NODE:
-                SMSNetworkManager.getInstance().onFindNodeRequest(peer, commandContent);
+                SMSNetworkManager.getInstance().onFindNodeRequest(sender, commandContent);
                 break;
             case FIND_VALUE:
-                SMSNetworkManager.getInstance().onFindValueRequest(peer, commandContent);
+                SMSNetworkManager.getInstance().onFindValueRequest(sender, commandContent);
                 break;
             case STORE:
                 SMSNetworkManager.getInstance().onStoreRequest(commandContent);
@@ -101,10 +101,10 @@ class SMSNetworkListener extends SMSReceivedServiceListener {
                 manager.onPingEchoReply(peer);
                 break;
             case NODE_FOUND:
-                manager.onNodeFoundReply(manager.keyParser.deSerialize(splitStr[0]), /*build address from its string representation*/, peer);
+                manager.onNodeFoundReply(KADAddress.fromHexString(splitStr[0]), new SMSKADPeer(splitStr[1]), new SMSKADPeer(peer));
                 break;
             case VALUE_FOUND:
-                manager.onValueFoundReply(/* build address from its string representation */, manager.valueParser.deSerialize(splitStr[1]));
+                manager.onValueFoundReply(KADAddress.fromHexString(splitStr[0]), manager.valueParser.deSerialize(splitStr[1]));
                 break;
         }
     }

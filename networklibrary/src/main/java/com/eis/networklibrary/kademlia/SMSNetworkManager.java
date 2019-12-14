@@ -204,24 +204,23 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     /**
      * Method called when a FIND_NODE request is received. Sends a {@link ReplyType#NODE_FOUND} command back.
      *
-     * @param peer           who requested the node search
-     * @param requestContent information about the node to find, must be parsed first
+     * @param sender          who requested the node search
+     * @param requestContent  contains the address of the node sender wants to know about
      */
-    protected void onFindNodeRequest(SMSPeer peer, String requestContent) {
-        KADAddress nodeToSearch = new KADAddress(requestContent);
-        ArrayList<SMSKADPeer> closerNodes = dict.getNodesSortedByDistance(nodeToSearch);
+    protected void onFindNodeRequest(SMSPeer sender, String requestContent) {
+        ArrayList<SMSKADPeer> closerNodes = dict.getNodesSortedByDistance(new KADAddress(requestContent));
         //TODO K != 1
         SMSKADPeer closerNode = closerNodes.get(0);
-        SMSCommandMapper.sendReply(ReplyType.NODE_FOUND, closerNode.getAddress(), peer);
+        SMSCommandMapper.sendReply(ReplyType.NODE_FOUND, closerNode.getAddress(), sender);
     }
 
     /**
      * Method called when a FIND_VALUE request is received. Sends a {@link ReplyType#VALUE_FOUND} command back.
      *
-     * @param peer           who requested the value
-     * @param requestContent information about the value to find, must be parsed first
+     * @param sender                who requested the value
+     * @param requestContent        contains the key
      */
-    protected void onFindValueRequest(SMSPeer peer, String requestContent) {
+    protected void onFindValueRequest(SMSPeer sender, String requestContent) {
 
     }
 

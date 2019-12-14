@@ -15,18 +15,18 @@ import com.eis.smslibrary.listeners.SMSSentListener;
  * * SPLIT_CHAR = '-' is used to split fields in each request or reply
  * * <p>
  * * SMS REQUESTS FORMATS
- * * JOIN proposal:      "JOIN_REQUEST%netName"            netName is the name of the network the new node is asked to join
- * * PING request:       "PI-%(randomId)"         randomId is an identifier to match ping requests with replies
- * * STORE request:      "ST-%(key)-%(value)"
- * * FIND_NODE request:  "FN-%(KADAddress)"          find the K-CLOSEST nodes to this KAD peer (we want to know their phone numbers)
- * * FIND_VALUE request: "FV-%(key)
+ * * JOIN proposal:      "JOIN_PROPOSAL-%netName"
+ * * PING request:       "PING-%(randomId)"                      randomId is an identifier to match ping requests with replies
+ * * STORE request:      "STORE-%(KADAddress key)-%(value)"
+ * * FIND_NODE request:  "FIND_NODE-%(KADAddress addr)"          find the K-CLOSEST nodes to this KAD peer (we want to know their phone numbers)
+ * * FIND_VALUE request: "FIND_VALUE-%(KADAddress key)
  * * <p>
  * * <p>
  * * SMS REPLIES FORMATS
- * * JOIN agreed:       "PJ-%netName" //we use the same notation to keep it consistent with NF and VF
- * * PING reply:        "IP-%(matchingId)"
- * * NODE_FOUND reply:  "NF-%(key)-(phoneNumber1)-(phoneNumber2)...-(phoneNumber K)"  TODO how many entries should we pack inside this reply?
- * * VALUE_FOUND reply: "VF-%(key)-(value)" TODO should send also key to match with value? Or use a randomId like in PING?
+ * * JOIN agreed:       "JOIN_AGREED"
+ * * PING reply:        "PING_ECHO-%(matchingId)"
+ * * NODE_FOUND reply:  "NODE_FOUND-%(KADAddress addr)-(phoneNumber1)-(phoneNumber2)...-(phoneNumber K)"  TODO how many entries should we pack inside this reply?
+ * * VALUE_FOUND reply: "VALUE_FOUND-%(KADAddress key)-(value)"
  */
 
 

@@ -1,5 +1,6 @@
 package com.eis.networklibrary.kademlia;
 
+import java.lang.reflect.Array;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -34,9 +35,11 @@ public class KADAddress {
     }
 
     public KADAddress(BitSet bitset) throws IllegalArgumentException {
-        if (bitset.length() != BYTE_ADDRESS_LENGTH * Byte.SIZE)
-            throw new IllegalArgumentException("Byte address should be " + BYTE_ADDRESS_LENGTH * Byte.SIZE + " bytes long");
-        address = bitset.toByteArray();
+        address = new byte[BYTE_ADDRESS_LENGTH];
+        byte[] arr = bitset.toByteArray();
+        if(arr.length < BYTE_ADDRESS_LENGTH)
+            throw new IllegalArgumentException("Byte address should be " + BYTE_ADDRESS_LENGTH + " bytes long");
+        System.arraycopy(arr, 0, address, 0, BYTE_ADDRESS_LENGTH);
     }
 
     /**
@@ -83,11 +86,11 @@ public class KADAddress {
         return false;
     }
 
-    public static KADAddress closerToTarget(KADAddress a, KADAddress b, KADAddress target) {
+    static KADAddress closerToTarget(KADAddress a, KADAddress b, KADAddress target) {
         return new KADAddress(closerToTarget(BitSet.valueOf(a.getAddress()), BitSet.valueOf(b.getAddress()), BitSet.valueOf(target.getAddress())));
     }
 
-    public static BitSet closerToTarget(BitSet a, BitSet b, BitSet target) {
+    private static BitSet closerToTarget(BitSet a, BitSet b, BitSet target) {
         for (int i = 0; i < BYTE_ADDRESS_LENGTH * Byte.SIZE; i++) {
             boolean aBit = a.get(i);
             boolean bBit = b.get(i);
@@ -99,17 +102,17 @@ public class KADAddress {
         return a; //a == b
     }
 
-//    /**
-//     * Creates a string of the {@link KADAddress} address
-//     *
-//     * @return The {@link KADAddress} address converted
-//     */
-//    public String addressToString() {
-//        String stringAddress = "";
-//        for (int i = 0; i < address.length; i++) {
-//            stringAddress = stringAddress + address[i];
-//        }
-//        return stringAddress;
-//    }
+    /**
+     * Creates a string of the {@link KADAddress} address
+     *
+     * @return The {@link KADAddress} address converted
+     */
+    public String toString() {
+        return "";
+    }
+
+    public static KADAddress fromHexString(String str){
+        return null;
+    }
 
 }
