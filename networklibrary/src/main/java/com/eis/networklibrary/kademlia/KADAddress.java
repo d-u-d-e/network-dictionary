@@ -1,13 +1,12 @@
 package com.eis.networklibrary.kademlia;
 
-import androidx.annotation.Nullable;
+import androidx.annotation.NonNull;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.BitSet;
-import java.util.Comparator;
 
 /**
  * This class manages the peer address, as hash of his phone number
@@ -37,8 +36,8 @@ public class KADAddress {
     }
 
     public KADAddress(BitSet bitset) throws IllegalArgumentException {
-        if (bitset.size()!= BYTE_ADDRESS_LENGTH * Byte.SIZE)
-            throw new IllegalArgumentException("Byte address should be " +  BYTE_ADDRESS_LENGTH * Byte.SIZE + " bytes long");
+        if (bitset.length() != BYTE_ADDRESS_LENGTH * Byte.SIZE)
+            throw new IllegalArgumentException("Byte address should be " + BYTE_ADDRESS_LENGTH * Byte.SIZE + " bytes long");
         address = bitset.toByteArray();
     }
 
@@ -48,9 +47,9 @@ public class KADAddress {
      * @param objectKey A String containing the key identifier for the object
      */
     public KADAddress(String objectKey) {
+        address = new byte[BYTE_ADDRESS_LENGTH];
         try {
             MessageDigest digestAlgorithm = MessageDigest.getInstance(HASH_ALGORITHM);
-            address = new byte[BYTE_ADDRESS_LENGTH];
             byte[] hashedObject = digestAlgorithm.digest(objectKey.getBytes(StandardCharsets.UTF_8));
             System.arraycopy(hashedObject, 0, address, 0, BYTE_ADDRESS_LENGTH);
         } catch (NoSuchAlgorithmException e) {
@@ -80,25 +79,39 @@ public class KADAddress {
 
     @Override
     public boolean equals(Object obj) {
-        if(obj instanceof KADAddress){
+        if (obj instanceof KADAddress) {
             return Arrays.equals(address, ((KADAddress) obj).address);
         }
         return false;
     }
 
-    public static KADAddress closerToTarget(KADAddress a, KADAddress b, KADAddress target){
+    public static KADAddress closerToTarget(KADAddress a, KADAddress b, KADAddress target) {
         return new KADAddress(closerToTarget(BitSet.valueOf(a.getAddress()), BitSet.valueOf(b.getAddress()), BitSet.valueOf(target.getAddress())));
     }
 
-    public static BitSet closerToTarget(BitSet a, BitSet b, BitSet target){
-        for(int i = 0; i < BYTE_ADDRESS_LENGTH * Byte.SIZE; i++){
+    public static BitSet closerToTarget(BitSet a, BitSet b, BitSet target) {
+        for (int i = 0; i < BYTE_ADDRESS_LENGTH * Byte.SIZE; i++) {
             boolean aBit = a.get(i);
             boolean bBit = b.get(i);
-            if(aBit != bBit){
-                if(aBit == target.get(i)) return a;
+            if (aBit != bBit) {
+                if (aBit == target.get(i)) return a;
                 else return b;
             }
         }
         return a; //a == b
     }
+
+//    /**
+//     * Creates a string of the {@link KADAddress} address
+//     *
+//     * @return The {@link KADAddress} address converted
+//     */
+//    public String addressToString() {
+//        String stringAddress = "";
+//        for (int i = 0; i < address.length; i++) {
+//            stringAddress = stringAddress + address[i];
+//        }
+//        return stringAddress;
+//    }
+
 }
