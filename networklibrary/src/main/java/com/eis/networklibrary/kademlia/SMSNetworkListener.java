@@ -19,7 +19,7 @@ class SMSNetworkListener extends SMSReceivedServiceListener {
 
     JoinListener joinListener;
 
-    SMSNetworkListener(JoinListener listener){
+    SMSNetworkListener(JoinListener listener) {
         this.joinListener = listener;
     }
 
@@ -57,6 +57,13 @@ class SMSNetworkListener extends SMSReceivedServiceListener {
     }
 
 
+    /**
+     * Calls the appropriate method depending on the received request
+     *
+     * @param req            the request received
+     * @param peer           the request sender
+     * @param commandContent the content of the command without the command prefix, can be empty
+     */
     private void processRequest(SMSNetworkManager.RequestType req, SMSPeer peer, String commandContent) {
         switch (req) {
             case JOIN_PROPOSAL:
@@ -78,12 +85,14 @@ class SMSNetworkListener extends SMSReceivedServiceListener {
     }
 
     /**
-     * @param reply          The command received.
-     * @param commandContent The content of the command without the command prefix, can be empty.
+     * Calls the appropriate method depending on the received reply
+     *
+     * @param reply          the command received
+     * @param commandContent the content of the command without the command prefix, can be empty
      */
     private void processReply(SMSNetworkManager.ReplyType reply, SMSPeer peer, String commandContent) {
         SMSNetworkManager manager = SMSNetworkManager.getInstance();
-        String[] splitStr = commandContent.split(SPLIT_CHAR);;
+        String[] splitStr = commandContent.split(SPLIT_CHAR);
         switch (reply) {
             case JOIN_AGREED:
                 manager.onJoinAgreedReply(peer);

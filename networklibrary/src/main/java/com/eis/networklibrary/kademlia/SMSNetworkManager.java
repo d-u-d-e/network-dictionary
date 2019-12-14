@@ -1,8 +1,5 @@
 package com.eis.networklibrary.kademlia;
 
-import android.os.CountDownTimer;
-import android.webkit.WebView;
-
 import com.eis.communication.network.NetworkManager;
 import com.eis.communication.network.SerializableObject;
 import com.eis.smslibrary.SMSHandler;
@@ -39,7 +36,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     static final int ALPHA = 1;
 
     private HashMap<KADAddress, FindNodeListener> findNodeListenerMap = new HashMap<>();
-    private  HashMap<KADAddress, FindValueListener> findValueListenerMap = new HashMap<>();
+    private HashMap<KADAddress, FindValueListener> findValueListenerMap = new HashMap<>();
 
     private SMSNetworkManager() {
         //Private because of singleton
@@ -131,25 +128,29 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      * If the given KADAddress doesn't exist then finds then peer of the closest (to the one given)
      *
      * @param kadAddress The KADAddress for which to find the peer
+     * @param listener   TODO
+     * @throws IllegalStateException if there's already a pending find request fort this address
      */
     private void findNode(KADAddress kadAddress, FindNodeListener listener) {
 
-        if(findNodeListenerMap.containsKey(kadAddress))
+        if (findNodeListenerMap.containsKey(kadAddress))
             throw new IllegalStateException("A find request for this key is already pending");
         findNodeListenerMap.put(kadAddress, listener); //listener should remove itself from this map; maybe there's a better way to achieve this
 
         //check if we are finding ourselves
-        if(kadAddress.equals(mySelf.getNetworkAddress())) onNodeFoundReply(kadAddress, mySelf, mySelf);
+        if (kadAddress.equals(mySelf.getNetworkAddress()))
+            onNodeFoundReply(kadAddress, mySelf, mySelf);
 
         //Checks if we already know the kadAddress
         SMSKADPeer nodeFoundInLocalDict = dict.getPeerFromAddress(kadAddress);
-        if(nodeFoundInLocalDict != null) onNodeFoundReply(kadAddress, nodeFoundInLocalDict, mySelf);
+        if (nodeFoundInLocalDict != null)
+            onNodeFoundReply(kadAddress, nodeFoundInLocalDict, mySelf);
 
         //Creates an ArrayList with the known closest nodes
         ArrayList<SMSKADPeer> knownCloserNodes = dict.getNodesSortedByDistance(kadAddress);
 
         //Sends a FIND_NODE request to the peers in the ArrayList
-        for(int i = 0; i < ALPHA && i < knownCloserNodes.size(); i++)
+        for (int i = 0; i < ALPHA && i < knownCloserNodes.size(); i++)
             SMSCommandMapper.sendRequest(RequestType.FIND_NODE, kadAddress.toString(), knownCloserNodes.get(i));
     }
 
@@ -165,7 +166,8 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     /**
      * Method used to find a value of the given key
      *
-     * @param key The resource key of which we want to find the value
+     * @param key      The resource key of which we want to find the value
+     * @param listener TODO
      */
     public void findValue(SerializableObject key, FindValueListener listener) {
         KADAddress keyAddress = new KADAddress(key.toString());
@@ -190,7 +192,12 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
         SMSCommandMapper.sendReply(ReplyType.PING_ECHO, "", peer);
     }
 
-    void onJoinAgreedReply(SMSPeer peer){
+    /**
+     * Method called when a join proposal has been accepted
+     *
+     * @param peer the peer who accepted to join the network TODO: is this the node who accepted or those who invited?
+     */
+    void onJoinAgreedReply(SMSPeer peer) {
 
     }
 
@@ -242,18 +249,26 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     }
 
     /**
-     * Method called when a NODE_FOUND reply is received.
-     * @param address we want to know the closer node to address
-     * @param closerNode is the closer node returned
-     * @param sender is the node who informed us back about closerNode
+     * Method called when a NODE_FOUND reply is received
+     *
+     * @param address    the node we are finding for
+     * @param closerNode the closer node returned
+     * @param sender     the node who informed us back about closerNode
      */
     protected void onNodeFoundReply(KADAddress address, SMSKADPeer closerNode, SMSKADPeer sender) { //TODO k > 1
         //TODO not sure if this if statement is correct: is it guaranteed that a node knowing to be the closer among its buckets nodes is the closest globally?
-        if(closerNode.equals(sender)) findNodeListenerMap.get(address).onClosestNodeFound(closerNode);
+        if (closerNode.equals(sender))
+            findNodeListenerMap.get(address).onClosestNodeFound(closerNode);
         else
-            SMSCommandMapper.sendRequest(RequestType.FIND_NODE, address.toString() + closerNode.getAddress(), sender);
+            SMSCommandMapper.sendRequest(RequestType.FIND_NODE, address.toString(), closerNode);
     }
 
+    /**
+     * Method called when a VALUE_FOUND reply is received
+     *
+     * @param key   the key of the value we are searching for
+     * @param value TODO
+     */
     protected void onValueFoundReply(KADAddress key, SerializableObject value) {
         FindValueListener listener = findValueListenerMap.remove(key);
         listener.onValueFound(value);

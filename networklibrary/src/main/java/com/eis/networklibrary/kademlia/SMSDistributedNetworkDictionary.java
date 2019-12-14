@@ -60,7 +60,7 @@ public class SMSDistributedNetworkDictionary<RV> implements NetworkDictionary<SM
     }
 
 
-    int getBucketContaining(KADAddress address){
+    int getBucketContaining(KADAddress address) {
 
         //The bucket of node X which has index i contains nodes whose xor distance to X is between 2^i inclusive and 2^(i+1) exclusive.
         //For example, if i = 0, then bucket 0 contains the only node whose distance to X is 1 (thus it has the last bit flipped and it is the closer to X
@@ -107,7 +107,6 @@ public class SMSDistributedNetworkDictionary<RV> implements NetworkDictionary<SM
      *                    then we get all nodes. The only node satisfying this is the node having all first N-1 significant bits equal to those of mySelf,
      *                    except for the last bit which is flipped.
      *                    If otherwise i = N-1, we get all nodes whose distance d from mySelf is >= 2^(N-1) and < 2^(N), meaning that the first significant bit is flipped.
-     *
      * @return an ArrayList of users in that particular bucket, empty ArrayList if there is none
      */
     public ArrayList<SMSKADPeer> getUsersInBucket(int bucketIndex) {
@@ -123,10 +122,10 @@ public class SMSDistributedNetworkDictionary<RV> implements NetworkDictionary<SM
         return null;
     }
 
-    public ArrayList<SMSKADPeer> getNodesSortedByDistance(KADAddress address){
-       ArrayList<SMSKADPeer> users = getAllUsers();
-       Collections.sort(users, new SMSKADPeer.KADComparator(address));
-       return users;
+    public ArrayList<SMSKADPeer> getNodesSortedByDistance(KADAddress address) {
+        ArrayList<SMSKADPeer> users = getAllUsers();
+        Collections.sort(users, new SMSKADPeer.KADComparator(address));
+        return users;
     }
 
     /**
@@ -136,7 +135,7 @@ public class SMSDistributedNetworkDictionary<RV> implements NetworkDictionary<SM
      */
     @Override
     public void removeUser(SMSKADPeer user) {
-        int bucketIndex =getBucketContaining(user.getNetworkAddress());
+        int bucketIndex = getBucketContaining(user.getNetworkAddress());
         if (bucketIndex == NO_BUCKETS)
             throw new IllegalArgumentException("Cannot remove itself");
         if (buckets[bucketIndex] == null)
