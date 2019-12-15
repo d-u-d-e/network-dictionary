@@ -36,6 +36,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
 
     private HashMap<KADAddress, FindNodeListener> findNodeListenerMap = new HashMap<>();
     private HashMap<KADAddress, FindValueListener> findValueListenerMap = new HashMap<>();
+    private HashMap<SMSPeer, PingListener> pingListenerMap = new HashMap<>();
     private JoinListener joinListener;
 
     private SMSNetworkManager() {
@@ -176,12 +177,38 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     }
 
     /**
+     * Method called to PING a node
+     *
+     * @param peer     the node we want to ping
+     * @param listener a {@link PingListener} listener
+     */
+    public void ping(SMSPeer peer, PingListener listener) {
+        //TODO: add a randomId
+        SMSCommandMapper.sendRequest(RequestType.PING, "", peer);
+        pingListenerMap.put(peer, listener);
+    }
+
+    /**
      * Method called when a PING request has been received. Sends a {@link ReplyType#PING_ECHO) command back.
      *
      * @param peer who requested a ping
      */
     protected void onPingRequest(SMSPeer peer) {
-        //TODO
+        //TODO: add a randomId
+        SMSCommandMapper.sendReply(ReplyType.PING_ECHO, "", peer);
+        dict.addUser(new SMSKADPeer(peer));
+    }
+
+    /**
+     * Method called when a PING_ECHO reply is received. We are sure this node is alive.
+     *
+     * @param peer user that replied to the ping
+     */
+    protected void onPingEchoReply(SMSPeer peer) {
+        //TODO: add a randomId
+
+        PingListener listener = pingListenerMap.remove(peer);
+        listener.onPingReply(peer);
     }
 
     /**
@@ -193,11 +220,11 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
         //TODO
     }
 
-    void onJoinProposal(SMSPeer sender){
+    void onJoinProposal(SMSPeer sender) {
         joinListener.onJoinProposal(sender);
     }
 
-    public void setJoinProposalListener(JoinListener listener){
+    public void setJoinProposalListener(JoinListener listener) {
         joinListener = listener;
     }
 
@@ -234,20 +261,12 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
         dict.setResource(KADAddress.fromHexString(splitStr[0]), valueParser.deSerialize(splitStr[1]));
     }
 
-    /**
-     * Method called when a PING_ECHO reply is received. We are sure this node is alive.
-     *
-     * @param peer user that replied to the ping.
-     */
-    protected void onPingEchoReply(SMSPeer peer) {
-        //TODO
-    }
 
     /**
      * Method called when a NODE_FOUND reply is received
      *
-     * @param replyContent  a string representing the NODE_FOUND reply
-     * @param sender        the node who informed us back about closerNode
+     * @param replyContent a string representing the NODE_FOUND reply
+     * @param sender       the node who informed us back about closerNode
      */
     protected void onNodeFoundReply(String replyContent, SMSKADPeer sender) {
         //TODO k > 1
@@ -281,8 +300,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      *
      * @param replyContent a string representing the VALUE_NOT_FOUND reply
      */
-    protected void onValueNotFoundReply(String replyContent)
-    {
+    protected void onValueNotFoundReply(String replyContent) {
         KADAddress key = KADAddress.fromHexString(replyContent);
         FindValueListener listener = findValueListenerMap.remove(key);
         listener.onValueNotFound();
