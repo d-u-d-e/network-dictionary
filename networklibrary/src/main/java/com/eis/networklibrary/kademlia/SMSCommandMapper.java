@@ -69,8 +69,8 @@ class SMSCommandMapper {
      * @param req     the request type.
      * @param peer    the recipient of the request.
      */
-    public static void sendRequest(RequestType req,  SMSPeer peer, SMSSentListener sentListener) {
-        sendRequest(req, "", peer, null);
+    public static void sendRequest(RequestType req, SMSPeer peer, SMSSentListener sentListener) {
+        sendRequest(req, "", peer, sentListener);
     }
 
     /**
@@ -80,7 +80,7 @@ class SMSCommandMapper {
      * @param peer    the recipient of the request.
      */
     public static void sendRequest(RequestType req, SMSPeer peer) {
-        sendRequest(req,  peer, null);
+        sendRequest(req, "", peer, null);
     }
 
     /**
@@ -125,7 +125,7 @@ class SMSCommandMapper {
      * @param peer  the recipient of the reply.
      */
     public static void sendReply(ReplyType reply, SMSPeer peer) {
-        sendReply(reply, peer, null);
+        sendReply(reply, "", peer, null);
     }
 
     /**
