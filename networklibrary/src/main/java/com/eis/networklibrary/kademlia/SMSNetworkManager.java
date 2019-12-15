@@ -30,14 +30,10 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     protected SerializableObjectParser keyParser;
     protected SerializableObjectParser valueParser;
     private SMSDistributedNetworkDictionary<SerializableObject> dict;
-    //joinSent keeps track of JOIN_PROPOSAL requests still pending.
-    private ArrayList<SMSPeer> joinSent = new ArrayList<>();
 
     static final int ALPHA = 1;
 
     private SMSNetworkListenerHandler listenerHandler;
-    private HashMap<SMSPeer, PingListener> pingListenerMap = new HashMap<>();
-    private JoinListener joinListener;
 
     private SMSNetworkManager() {
         //Private because of singleton
@@ -74,7 +70,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
         SMSCommandMapper.sendRequest(RequestType.JOIN_PROPOSAL, networkName, peer, new SMSSentListener() {
             @Override
             public void onSMSSent(SMSMessage message, SMSMessage.SentState sentState) {
-                joinSent.add(peer);
+                listenerHandler.addSMSPeerToJoinProposal(peer);
             }
         });
     }
@@ -140,7 +136,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
         if (nodeFoundInLocalDict != null)
             listener.onClosestNodeFound(nodeFoundInLocalDict);
 
-        findNodeListenerMap.put(kadAddress, listener); //listener should remove itself from this map; maybe there's a better way to achieve this
+        listenerHandler.registerNodeListener(kadAddress, listener);
 
         //Creates an ArrayList with the known closest nodes
         ArrayList<SMSKADPeer> knownCloserNodes = dict.getNodesSortedByDistance(kadAddress);
@@ -170,7 +166,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
         KADAddress keyAddress = new KADAddress(key.toString());
         SerializableObject value = dict.getValue(keyAddress);
         if (value != null) {
-            listenerHandler.triggerValueListener(keyAddress, value);
+            listenerHandler.triggerValueFound(keyAddress, value);
             return;
         }
         listenerHandler.registerValueListener(keyAddress, listener);
@@ -187,7 +183,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      */
     public void ping(SMSPeer peer, PingListener listener) {
         SMSCommandMapper.sendRequest(RequestType.PING, peer);
-        pingListenerMap.put(peer, listener);
+        listenerHandler.registerPingListener(peer, listener);
     }
 
     /**
@@ -206,8 +202,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      * @param peer user that replied to the ping
      */
     protected void onPingEchoReply(SMSPeer peer) {
-        PingListener listener = pingListenerMap.remove(peer);
-        listener.onPingReply(peer);
+        listenerHandler.triggerPingReply(peer);
     }
 
     /**
@@ -220,11 +215,13 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     }
 
     void onJoinProposal(SMSPeer sender) {
-        joinListener.onJoinProposal(sender);
+        listenerHandler.triggerJoinProposal(sender);
     }
 
     public void setJoinProposalListener(JoinListener listener) {
-        joinListener = listener;
+        if(listenerHandler == null)
+            listenerHandler = new SMSNetworkListenerHandler(listener);
+        else listenerHandler.setJoinListener(listener);
     }
 
     /**
@@ -276,7 +273,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
         SMSKADPeer closerNode = new SMSKADPeer(splitStr[1]); //build a kad address from phone number
 
         if (closerNode.equals(sender))
-            listenerHandler.triggerNodeListener(address, closerNode);
+            listenerHandler.triggerNodeFound(address, closerNode);
         else
             SMSCommandMapper.sendRequest(RequestType.FIND_NODE, address.toString(), closerNode);
     }
@@ -290,7 +287,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
         String[] splitStr = replyContent.split(SMSCommandMapper.SPLIT_CHAR);
         KADAddress key = KADAddress.fromHexString(splitStr[0]);
         SerializableObject value = valueParser.deSerialize(splitStr[1]);
-        listenerHandler.triggerValueListener(key, value);
+        listenerHandler.triggerValueFound(key, value);
     }
 
     /**
@@ -300,8 +297,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      */
     protected void onValueNotFoundReply(String replyContent) {
         KADAddress key = KADAddress.fromHexString(replyContent);
-        FindValueListener listener = findValueListenerMap.remove(key);
-        listener.onValueNotFound();
+        listenerHandler.triggerValueNotFound(key);
     }
 
     enum RequestType {
