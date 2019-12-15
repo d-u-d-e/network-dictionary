@@ -10,8 +10,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 /**
- * This class handles the FindNode, FindValue and Join listeners
- * Uses KADAddress as key to identify a specific listener
+ * This class handles the FindNode, FindValue, Reply and Join listeners
+ * Uses KADAddress or SMSPeer as key to identify a specific listener
  * When a listener is triggered it is removed from the pending list
  *
  * @author Marco Tommasini
