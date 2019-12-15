@@ -75,8 +75,8 @@ public class KADAddress {
         byte[] bBytes = b.getAddress();
         short pos = 0;
         for(int i = 0; i < BYTE_ADDRESS_LENGTH; i++){
-            pos = leftMostSetBit((byte) (aBytes[i] ^ bBytes[i]));
-            if(pos != Byte.SIZE) return i * Byte.SIZE + pos;
+            byte xor = (byte) (aBytes[i] ^ bBytes[i]);
+            if(xor != 0) return i * Byte.SIZE + leftMostSetBit(xor);
         }
         return BIT_LENGTH;
     }
