@@ -73,7 +73,6 @@ public class KADAddress {
     public static int firstDifferentBit(KADAddress a, KADAddress b) {
         byte[] aBytes = a.getAddress();
         byte[] bBytes = b.getAddress();
-        short pos = 0;
         for(int i = 0; i < BYTE_ADDRESS_LENGTH; i++){
             byte xor = (byte) (aBytes[i] ^ bBytes[i]);
             if(xor != 0) return i * Byte.SIZE + leftMostSetBit(xor);
