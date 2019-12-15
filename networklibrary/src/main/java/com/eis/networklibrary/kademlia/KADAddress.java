@@ -63,38 +63,38 @@ public class KADAddress {
     }
 
     /**
-     * @param a address to be compared with {@code b}
-     * @param b address to be compared with {@code a}
+     * @param a The address to be compared with {@code b}
+     * @param b The address to be compared with {@code a}
      * @return the index of the first different bit between {@code a} and {@code b}
-     * or BIT_LENGTH if no such index exists (i.e. the two addresses are equal)
+     * or {@value BIT_LENGTH} if no such index exists (i.e. the two addresses are equal)
      */
     public static int firstDifferentBit(KADAddress a, KADAddress b) {
         byte[] aBytes = a.getAddress();
         byte[] bBytes = b.getAddress();
-        for(int i = 0; i < BYTE_ADDRESS_LENGTH; i++){
+        for (int i = 0; i < BYTE_ADDRESS_LENGTH; i++) {
             byte xor = (byte) (aBytes[i] ^ bBytes[i]);
-            if(xor != 0) return i * Byte.SIZE + leftMostSetBit(xor);
+            if (xor != 0) return i * Byte.SIZE + leftMostSetBit(xor);
         }
         return BIT_LENGTH;
     }
 
     /**
-     * @param b byte
-     * @return the index of the leftmost bit set, otherwise Byte.SIZE if {@code b} equals 0
+     * @param b The byte
+     * @return the index of the leftmost bit set, otherwise Byte.SIZE if {@code b} equals to 0
      */
-
-    private static short leftMostSetBit(byte b){
-        short pos = 0; int j = 0x80;
+    private static short leftMostSetBit(byte b) {
+        short pos = 0;
+        int j = 0x80;
         int byteAsInt = b & 0xFF;
-        for(; pos < Byte.SIZE; pos++){
-            if((j & byteAsInt) != 0) return pos;
+        for (; pos < Byte.SIZE; pos++) {
+            if ((j & byteAsInt) != 0) return pos;
             j = j >>> 1;
         }
         return pos;
     }
 
     /**
-     * @param obj object being compared to this object
+     * @param obj The object being compared to this object
      * @return true if and only if obj is of {@code KADAddress} type and has the same bytes as this address
      */
     @Override
@@ -111,20 +111,22 @@ public class KADAddress {
      * @param a      1st {@code KADAddress} object to compare
      * @param b      2nd {@code KADAddress} object to compare
      * @param target a KADAddress which is compared to a and b
-     * @return a or b, whichever is closer to target according to XOR metric
+     * @return a or b, whichever is closer to target according to XOR metric. If a == b then return a.
      */
     static KADAddress closerToTarget(KADAddress a, KADAddress b, KADAddress target) {
         byte[] aBytes = a.getAddress();
         byte[] bBytes = b.getAddress();
         byte[] targetBytes = target.getAddress();
 
-        for(int i = 0; i < BYTE_ADDRESS_LENGTH; i++){
+        for (int i = 0; i < BYTE_ADDRESS_LENGTH; i++) {
             byte xorA = (byte) (aBytes[i] ^ targetBytes[i]);
             byte xorB = (byte) (bBytes[i] ^ targetBytes[i]);
-            if(xorA < xorB) return a;
-            else if(xorA > xorB) return b;
+            if (xorA < xorB) return a;
+            else if (xorA > xorB) return b;
         }
-        return a; //a == b
+
+        //a == b
+        return a;
     }
 
     /**
