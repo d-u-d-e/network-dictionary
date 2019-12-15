@@ -34,8 +34,8 @@ public class KADAddress {
      * @throws IllegalArgumentException if address does not consist of {@link #BYTE_ADDRESS_LENGTH} bytes
      */
     public KADAddress(byte[] address) throws IllegalArgumentException {
-        //if (address.length != BYTE_ADDRESS_LENGTH)
-            //throw new IllegalArgumentException("Byte address should be " + BYTE_ADDRESS_LENGTH + " bytes long");
+        if (address.length != BYTE_ADDRESS_LENGTH)
+            throw new IllegalArgumentException("Byte address should be " + BYTE_ADDRESS_LENGTH + " bytes long");
         this.address = address;
     }
 
@@ -63,8 +63,6 @@ public class KADAddress {
     }
 
     /**
-     * Calculates the first significant bit that differs between {@code a} and {@code b}
-     *
      * @param a address to be compared with {@code b}
      * @param b address to be compared with {@code a}
      * @return the index of the first different bit between {@code a} and {@code b}
@@ -81,8 +79,6 @@ public class KADAddress {
     }
 
     /**
-     * Returns the index of the left most set bit in byte
-     *
      * @param b byte
      * @return the index of the leftmost bit set, otherwise Byte.SIZE if {@code b} equals 0
      */
@@ -110,7 +106,7 @@ public class KADAddress {
     }
 
     /**
-     * Verifies which of the two nodes {@code a} and {@code b} is closest to a given {@code target}
+     * Verifies which of the two nodes {@code a} and {@code b} is closer to a given {@code target}
      *
      * @param a      1st {@code KADAddress} object to compare
      * @param b      2nd {@code KADAddress} object to compare
