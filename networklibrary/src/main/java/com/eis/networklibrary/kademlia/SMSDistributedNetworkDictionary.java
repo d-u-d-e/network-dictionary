@@ -47,7 +47,7 @@ public class SMSDistributedNetworkDictionary<RV> implements NetworkDictionary<SM
         int bucketIndex = getBucketContaining(newUser.getNetworkAddress());
 
         //If it's actually the current user we don't add himself
-        if (bucketIndex == NO_BUCKETS) return;
+        if (bucketIndex == -1) return;
 
         if (buckets[bucketIndex] == null)
             buckets[bucketIndex] = new ArrayList<>();
@@ -65,8 +65,8 @@ public class SMSDistributedNetworkDictionary<RV> implements NetworkDictionary<SM
         //For example, if i = 0, then bucket 0 contains the only node whose distance to X is 1 (thus it has the last bit flipped and it is the closer to X
         //even from a geometric point of view in the tree). The closer bucket of mySelf containing address is therefore:
 
-        return NO_BUCKETS - 1 - mySelf.getNetworkAddress().firstDifferentBit(address);
-        //returns NO_BUCKETS if address is equal to mySelf
+        return NO_BUCKETS - 1 - KADAddress.firstDifferentBit(mySelf.getNetworkAddress(), address);
+        //returns -1 if address is equal to mySelf
     }
 
     /**
@@ -108,12 +108,6 @@ public class SMSDistributedNetworkDictionary<RV> implements NetworkDictionary<SM
      *                    If otherwise i = N-1, we get all nodes whose distance d from mySelf is >= 2^(N-1) and < 2^(N), meaning that the first significant bit is flipped.
      * @return an ArrayList of users in that particular bucket, empty ArrayList if there is none
      */
-
-
-    /**
-     * @param bucketIndex identifies each bucket, from 0 to N-1, where N = NO_BUCKETS.
-     * @return all users known in this bucket
-     */
     public ArrayList<SMSKADPeer> getUsersInBucket(int bucketIndex) {
         if (buckets[bucketIndex] != null)
             return new ArrayList<>(buckets[bucketIndex]);
@@ -149,7 +143,7 @@ public class SMSDistributedNetworkDictionary<RV> implements NetworkDictionary<SM
     @Override
     public void removeUser(SMSKADPeer user) {
         int bucketIndex = getBucketContaining(user.getNetworkAddress());
-        if (bucketIndex == NO_BUCKETS)
+        if (bucketIndex == -1)
             throw new IllegalArgumentException("Cannot remove itself");
         if (buckets[bucketIndex] == null)
             throw new IllegalArgumentException("User is not actually present in the list");

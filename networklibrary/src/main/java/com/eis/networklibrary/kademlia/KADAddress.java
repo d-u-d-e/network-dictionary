@@ -25,31 +25,18 @@ public class KADAddress {
     private static final char[] HEX_DIGITS = "0123456789ABCDEF".toCharArray();
 
     /**
-     * 10 byte long variable that represents the address of a resource or a user in the dictionary.
+     * 10 byte long variable that represents the address of a resource or a user in the dictionary (big-endian)
      */
     protected byte[] address;
 
     /**
-     * @param address a byte array containing the object address
+     * @param address a big-endian byte array containing the object address
      * @throws IllegalArgumentException if address does not consist of {@link #BYTE_ADDRESS_LENGTH} bytes
      */
     public KADAddress(byte[] address) throws IllegalArgumentException {
-        if (address.length != BYTE_ADDRESS_LENGTH)
-            throw new IllegalArgumentException("Byte address should be " + BYTE_ADDRESS_LENGTH + " bytes long");
+        //if (address.length != BYTE_ADDRESS_LENGTH)
+            //throw new IllegalArgumentException("Byte address should be " + BYTE_ADDRESS_LENGTH + " bytes long");
         this.address = address;
-    }
-
-    /**
-     * @param bitSet representing the address. Keep in mind that it extracts bytes from it
-     *               by converting it to a byte array, which returns a little-endian representation.
-     * @throws IllegalArgumentException if {@code bitSet} isn't sufficiently long to hold {@link #BIT_LENGTH} bits.
-     */
-    public KADAddress(BitSet bitSet) throws IllegalArgumentException {
-        byte[] arr = bitSet.toByteArray(); //a little endian representation of the bitSet
-        if (arr.length < BYTE_ADDRESS_LENGTH)
-            throw new IllegalArgumentException("Byte address should be " + BYTE_ADDRESS_LENGTH + " bytes long");
-        address = new byte[BYTE_ADDRESS_LENGTH];
-        System.arraycopy(arr, 0, address, 0, BYTE_ADDRESS_LENGTH);
     }
 
     /**
@@ -78,16 +65,38 @@ public class KADAddress {
     /**
      * Calculates the first significant bit that differs from {@code otherAddress}
      *
-     * @param otherAddress address to be compared with this address
-     * @return the index of the first different bit between this address and {@code otherAddress}
-     * or -1 if no such index exists (i.e. the two addresses are equal)
+     * @param a address to be compared with {@code b}
+     * @param b address to be compared with {@code a}
+     * @return the index of the first different bit between {@code a} and {@code b}
+     * or BIT_LENGTH if no such index exists (i.e. the two addresses are equal)
      */
-    public int firstDifferentBit(KADAddress otherAddress) {
-        BitSet userBitSet = BitSet.valueOf(address);
-        userBitSet.xor(BitSet.valueOf(otherAddress.getAddress()));
-        return userBitSet.nextSetBit(0);
+    public static int firstDifferentBit(KADAddress a, KADAddress b) {
+        byte[] aBytes = a.getAddress();
+        byte[] bBytes = b.getAddress();
+        short pos = 0;
+        for(int i = 0; i < BYTE_ADDRESS_LENGTH; i++){
+            pos = leftMostSetBit((byte) (aBytes[i] ^ bBytes[i]));
+            if(pos != Byte.SIZE) return i * Byte.SIZE + pos;
+        }
+        return BIT_LENGTH;
     }
 
+    /**
+     * Calculates the first significant bit that differs from {@code otherAddress}
+     *
+     * @param b byte
+     * @return the index of the leftmost bit set, otherwise Byte.SIZE if {@code b} equals 0
+     */
+
+    private static short leftMostSetBit(byte b){
+        short pos = 0; int j = 0x80;
+        int byteAsInt = b & 0xFF;
+        for(; pos < Byte.SIZE; pos++){
+            if((j & byteAsInt) != 0) return pos;
+            j = j >>> 1;
+        }
+        return pos;
+    }
 
     /**
      * @param obj object being compared to this object
@@ -110,25 +119,15 @@ public class KADAddress {
      * @return a or b, whichever is closer to target according to XOR metric
      */
     static KADAddress closerToTarget(KADAddress a, KADAddress b, KADAddress target) {
-        return new KADAddress(closerToTarget(BitSet.valueOf(a.getAddress()), BitSet.valueOf(b.getAddress()), BitSet.valueOf(target.getAddress())));
-    }
+        byte[] aBytes = a.getAddress();
+        byte[] bBytes = b.getAddress();
+        byte[] targetBytes = target.getAddress();
 
-    /**
-     * Verifies which of the two nodes {@code a} and {@code b} is closest to a given {@code target}
-     *
-     * @param a      1st {@link BitSet} object to compare
-     * @param b      2nd {@link BitSet} object to compare
-     * @param target a bitSet which is compared to {@code a} and {@code b}
-     * @return {@code a} or {@code b}, whichever is closer to target according to XOR metric
-     */
-    private static BitSet closerToTarget(BitSet a, BitSet b, BitSet target) {
-        for (int i = 0; i < BIT_LENGTH; i++) { //BitSet returns a little-endian representation of a byte array
-            boolean aBit = a.get(i);
-            boolean bBit = b.get(i);
-            if (aBit != bBit) {
-                if (aBit == target.get(i)) return a;
-                else return b;
-            }
+        for(int i = 0; i < BYTE_ADDRESS_LENGTH; i++){
+            byte xorA = (byte) (aBytes[i] ^ targetBytes[i]);
+            byte xorB = (byte) (bBytes[i] ^ targetBytes[i]);
+            if(xorA < xorB) return a;
+            else if(xorA > xorB) return b;
         }
         return a; //a == b
     }

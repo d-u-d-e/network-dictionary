@@ -19,7 +19,7 @@ public class SMSDistributedNetworkDictionaryTest {
         defaultDictionary = new SMSDistributedNetworkDictionary<>(DEFAULT_USER_ADDRESS);
         defaultDictionary.addUser(OTHER_USER_ADDRESS);
         defaultDictionary.setResource(DEFAULT_RESOURCE_KEY_1, DEFAULT_RESOURCE_VALUE_1);
-        System.out.println("Closeness: " + DEFAULT_USER_ADDRESS.getNetworkAddress().firstDifferentBit(OTHER_USER_ADDRESS.getNetworkAddress()));
+        System.out.println("Closeness: " + KADAddress.firstDifferentBit(DEFAULT_USER_ADDRESS.getNetworkAddress(), OTHER_USER_ADDRESS.getNetworkAddress()));
     }
 
     @Test

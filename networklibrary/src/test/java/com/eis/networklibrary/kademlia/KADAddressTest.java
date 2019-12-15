@@ -1,8 +1,8 @@
 
 package com.eis.networklibrary.kademlia;
 
+
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 
 /**
@@ -11,53 +11,43 @@ import org.junit.Test;
  */
 public class KADAddressTest {
 
-    final byte[] BYTE_ADDRESS = {106, 97, 118, 97, 32, 105, 115, 32, 111, 107};
-    final byte[] BYTE_ADDRESS_2 = {106, 10, 118, 97, 32, 105, 115, 32, 111, 107};
-    final String STRING_ADDRESS = "6A617661206973206F6B";
-    final int FIRST_DIFFERENT_BIT_INDEX = 1;
-    final int DEFAULT_VALUE_EQUAL_ADDRESSES = -1;
-    KADAddress kadAddress;
-
-    @Before
-    public void init() {
-        kadAddress = new KADAddress(BYTE_ADDRESS);
-    }
+    private KADAddress ADDRESS_1 = new KADAddress(new byte[]{106, 97, 118, 97, 32, 105, 115, 32, 111, 107});
+    private KADAddress ADDRESS_2 = new KADAddress(new byte[]{106, 97, 118, 97, 32, 105, 115, 32, 111, 107});
+    private KADAddress ADDRESS_3 = new KADAddress(new byte[]{12, 3, 118, 97, 32, 105, 115, 32, 111, 107});
+    private KADAddress ADDRESS_4 = new KADAddress(new byte[]{12, 8, 118, 97, 32, 105, 115, 32, 111, 107});
+    private KADAddress ADDRESS_5 = new KADAddress(new byte[]{106, 97, 118, 97, 32, 85, 115, 32, 111, 107});
+    private KADAddress ADDRESS_6 = new KADAddress(new byte[]{106, 97, 118, 97, 32, 99, 115, 32, 111, 107});
+    private final String ADDRESS_1_TO_STRING = "6A617661206973206F6B";
 
     @Test
     public void toString_test() {
-        Assert.assertEquals(STRING_ADDRESS, kadAddress.toString());
+        Assert.assertEquals(ADDRESS_1_TO_STRING, ADDRESS_1.toString());
     }
 
     @Test
     public void fromHexString_test() {
-        Assert.assertEquals(kadAddress, KADAddress.fromHexString(STRING_ADDRESS));
+        Assert.assertEquals(ADDRESS_1, KADAddress.fromHexString(ADDRESS_1_TO_STRING));
     }
 
     @Test
-    public void getAddress_isOk() {
-        Assert.assertEquals(kadAddress.address, kadAddress.getAddress());
+    public void firstDifferentBit_test() {
+        Assert.assertEquals(KADAddress.BIT_LENGTH, KADAddress.firstDifferentBit(ADDRESS_1, ADDRESS_2));
+        Assert.assertEquals(12, KADAddress.firstDifferentBit(ADDRESS_3, ADDRESS_4));
     }
 
     @Test
-    public void firstDifferentBit_address_areEquals() {
-        Assert.assertEquals(DEFAULT_VALUE_EQUAL_ADDRESSES, kadAddress.firstDifferentBit(kadAddress));
+    public void equals_test(){
+        Assert.assertEquals(ADDRESS_1, ADDRESS_2);
     }
 
     @Test
-    public void firstDifferentBit_addresses_areNotEquals() {
-        Assert.assertNotEquals(DEFAULT_VALUE_EQUAL_ADDRESSES, kadAddress.firstDifferentBit(new KADAddress(BYTE_ADDRESS_2)));
+    public void closerToTarget_test(){
+        Assert.assertEquals(ADDRESS_6, KADAddress.closerToTarget(ADDRESS_5, ADDRESS_6, ADDRESS_1));
     }
 
     @Test
-    public void firstDifferentBit_return_firstDiffBit() {
-        System.out.println(new KADAddress(BYTE_ADDRESS).toString());
-        System.out.println(new KADAddress(BYTE_ADDRESS_2).toString());
-        Assert.assertEquals(FIRST_DIFFERENT_BIT_INDEX, kadAddress.firstDifferentBit((new KADAddress(BYTE_ADDRESS_2))));
-    }
-
-    /*@Test
     public void generalTest() {
 
-    }*/
+    }
 
 }
