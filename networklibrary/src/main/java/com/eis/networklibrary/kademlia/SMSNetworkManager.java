@@ -35,8 +35,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
 
     static final int ALPHA = 1;
 
-    private HashMap<KADAddress, FindNodeListener> findNodeListenerMap = new HashMap<>();
-    private HashMap<KADAddress, FindValueListener> findValueListenerMap = new HashMap<>();
+    private SMSNetworkListenerHandler listenerHandler;
 
     private SMSNetworkManager() {
         //Private because of singleton
@@ -61,6 +60,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
         SMSHandler.getInstance().setReceivedListener(SMSNetworkListener.class);
         this.keyParser = keyParser;
         this.valueParser = valueParser;
+        listenerHandler = new SMSNetworkListenerHandler();
     }
 
     /**
@@ -133,9 +133,9 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      */
     private void findNode(KADAddress kadAddress, FindNodeListener listener) {
 
-        if (findNodeListenerMap.containsKey(kadAddress))
+        if (listenerHandler.isNodeAddressRegistered(kadAddress))
             throw new IllegalStateException("A find request for this key is already pending");
-        findNodeListenerMap.put(kadAddress, listener); //listener should remove itself from this map; maybe there's a better way to achieve this
+        listenerHandler.registerNodeListener(kadAddress, listener); //listener should remove itself from this map; maybe there's a better way to achieve this
 
         //check if we are finding ourselves
         if (kadAddress.equals(mySelf.getNetworkAddress()))
@@ -173,10 +173,10 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
         KADAddress keyAddress = new KADAddress(key.toString());
         SerializableObject value = dict.getValue(keyAddress);
         if (value != null) {
-            listener.onValueFound(value);
+            listenerHandler.triggerValueListener(keyAddress, value);
             return;
         }
-        findValueListenerMap.put(keyAddress, listener);
+        listenerHandler.registerValueListener(keyAddress, listener);
 
         //TODO this is similar to findNode, except that when the value is found it is immediately returned
 
@@ -258,7 +258,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     protected void onNodeFoundReply(KADAddress address, SMSKADPeer closerNode, SMSKADPeer sender) { //TODO k > 1
         //TODO not sure if this if statement is correct: is it guaranteed that a node knowing to be the closer among its buckets nodes is the closest globally?
         if (closerNode.equals(sender))
-            findNodeListenerMap.get(address).onClosestNodeFound(closerNode);
+            listenerHandler.triggerNodeListener(address, closerNode);
         else
             SMSCommandMapper.sendRequest(RequestType.FIND_NODE, address.toString(), closerNode);
     }
@@ -270,8 +270,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      * @param value TODO
      */
     protected void onValueFoundReply(KADAddress key, SerializableObject value) {
-        FindValueListener listener = findValueListenerMap.remove(key);
-        listener.onValueFound(value);
+        listenerHandler.triggerValueListener(key, value);
     }
 
     enum RequestType {
