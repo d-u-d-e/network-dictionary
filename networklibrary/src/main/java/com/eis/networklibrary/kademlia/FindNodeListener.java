@@ -1,6 +1,11 @@
 package com.eis.networklibrary.kademlia;
 
-interface FindNodeListener {
+/**
+ * A listener waiting for a {@code NODE_FOUND} reply
+ *
+ * */
 
+interface FindNodeListener
+{
     void onClosestNodeFound(SMSKADPeer peer);
 }

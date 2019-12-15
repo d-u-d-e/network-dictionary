@@ -1,37 +1,53 @@
+
 package com.eis.networklibrary.kademlia;
 
+
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 
-import java.util.BitSet;
-
-
+/**
+ * @author Marco Mariotto
+ * @author Alberto Ursino
+ */
 public class KADAddressTest {
 
-    final byte[] BYTE_ADDRESS = {1, 0, 1, 0, 0, 0, 0, 0, 0, 0};
-    final String ADDRESS_STRING = "1010000000";
-    final int BIT_SET_SIZE = 80;
-    final BitSet BIT_SET_ADDRESS = new BitSet(BIT_SET_SIZE);
-    final String BIT_SET_STRING = "-1-1-1-1-1-1-1-1-1-1";
-    KADAddress kadAddress;
+    private KADAddress ADDRESS_1 = new KADAddress(new byte[]{106, 97, 118, 97, 32, 105, 115, 32, 111, 107});
+    private KADAddress ADDRESS_2 = new KADAddress(new byte[]{106, 97, 118, 97, 32, 105, 115, 32, 111, 107});
+    private KADAddress ADDRESS_3 = new KADAddress(new byte[]{12, 3, 118, 97, 32, 105, 115, 32, 111, 107});
+    private KADAddress ADDRESS_4 = new KADAddress(new byte[]{12, 8, 118, 97, 32, 105, 115, 32, 111, 107});
+    private KADAddress ADDRESS_5 = new KADAddress(new byte[]{106, 97, 118, 97, 32, 85, 115, 32, 111, 107});
+    private KADAddress ADDRESS_6 = new KADAddress(new byte[]{106, 97, 118, 97, 32, 99, 115, 32, 111, 107});
+    private final String ADDRESS_1_TO_STRING = "6A617661206973206F6B";
 
-    @Before
-    public void init() {
-        for (int i = 0; i < BIT_SET_SIZE; i++) {
-            BIT_SET_ADDRESS.set(i, true);
-        }
+    @Test
+    public void toString_test() {
+        Assert.assertEquals(ADDRESS_1_TO_STRING, ADDRESS_1.toString());
     }
 
-//    @Test
-//    public void addressToString_byte_constructor() {
-//        kadAddress = new KADAddress(BYTE_ADDRESS);
-//        Assert.assertEquals(ADDRESS_STRING, kadAddress.addressToString());
-//    }
-//
-//    @Test
-//    public void addressToString_bitSet_constructor() {
-//        kadAddress = new KADAddress(BIT_SET_ADDRESS);
-//        Assert.assertEquals(BIT_SET_STRING, kadAddress.addressToString());
-//    }
+    @Test
+    public void fromHexString_test() {
+        Assert.assertEquals(ADDRESS_1, KADAddress.fromHexString(ADDRESS_1_TO_STRING));
+    }
+
+    @Test
+    public void firstDifferentBit_test() {
+        Assert.assertEquals(KADAddress.BIT_LENGTH, KADAddress.firstDifferentBit(ADDRESS_1, ADDRESS_2));
+        Assert.assertEquals(12, KADAddress.firstDifferentBit(ADDRESS_3, ADDRESS_4));
+    }
+
+    @Test
+    public void equals_test(){
+        Assert.assertEquals(ADDRESS_1, ADDRESS_2);
+    }
+
+    @Test
+    public void closerToTarget_test(){
+        Assert.assertEquals(ADDRESS_6, KADAddress.closerToTarget(ADDRESS_5, ADDRESS_6, ADDRESS_1));
+    }
+
+    @Test
+    public void generalTest() {
+
+    }
+
 }

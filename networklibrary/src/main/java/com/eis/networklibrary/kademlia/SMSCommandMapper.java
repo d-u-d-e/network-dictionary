@@ -13,20 +13,23 @@ import com.eis.smslibrary.listeners.SMSSentListener;
  * <p>
  * /**
  * * SPLIT_CHAR = '-' is used to split fields in each request or reply
+ * * each KADAddress is sent as a hexadecimal string to spare characters
  * * <p>
  * * SMS REQUESTS FORMATS
- * * JOIN proposal:      "JOIN_REQUEST%netName"            netName is the name of the network the new node is asked to join
- * * PING request:       "PI-%(randomId)"         randomId is an identifier to match ping requests with replies
- * * STORE request:      "ST-%(key)-%(value)"
- * * FIND_NODE request:  "FN-%(KADAddress)"          find the K-CLOSEST nodes to this KAD peer (we want to know their phone numbers)
- * * FIND_VALUE request: "FV-%(key)
+ * * JOIN proposal:      "JOIN_PROPOSAL-%netName"                netName is the name of the network the user receiving this is asked to join
+ * * PING request:       "PING"
+ * * STORE request:      "STORE-%(KADAddress key)-%(value)"      tell the receiver to store a (key, value) pair
+ * * FIND_NODE request:  "FIND_NODE-%(KADAddress addr)"          find the K-CLOSEST nodes to this KAD address (we want to know their phone numbers)
+ * * FIND_VALUE request: "FIND_VALUE-%(KADAddress key)           find the value associated with key
  * * <p>
  * * <p>
  * * SMS REPLIES FORMATS
- * * JOIN agreed:       "PJ-%netName" //we use the same notation to keep it consistent with NF and VF
- * * PING reply:        "IP-%(matchingId)"
- * * NODE_FOUND reply:  "NF-%(key)-(phoneNumber1)-(phoneNumber2)...-(phoneNumber K)"  TODO how many entries should we pack inside this reply?
- * * VALUE_FOUND reply: "VF-%(key)-(value)" TODO should send also key to match with value? Or use a randomId like in PING?
+ * * JOIN agreed:           "JOIN_AGREED"                            a join confirmation
+ * * PING reply:            "PING_ECHO"
+ * * NODE_FOUND reply:      "NODE_FOUND-%(KADAddress addr)-(phoneNumber1)-(phoneNumber2)...-(phoneNumber K)" //the receiving user is told other K closer nodes to addr
+ *   TODO how many entries should we pack inside this reply?
+ * * VALUE_FOUND reply:     "VALUE_FOUND-%(KADAddress key)-(value)"  the value for key is returned to the querier
+ * * VALUE_NOT_FOUND reply: "VALUE_NOT_FOUND-%(KADAddress key)       the value for key has not been found
  */
 
 
@@ -61,6 +64,26 @@ class SMSCommandMapper {
     }
 
     /**
+     * Sends an sms with the request. Useful for those requests that don't need content.
+     *
+     * @param req     the request type.
+     * @param peer    the recipient of the request.
+     */
+    public static void sendRequest(RequestType req, SMSPeer peer, SMSSentListener sentListener) {
+        sendRequest(req, "", peer, sentListener);
+    }
+
+    /**
+     * Sends an sms with the request. Useful for those requests that don't need content.
+     *
+     * @param req     the request type.
+     * @param peer    the recipient of the request.
+     */
+    public static void sendRequest(RequestType req, SMSPeer peer) {
+        sendRequest(req, "", peer, null);
+    }
+
+    /**
      * Sends an sms with the reply.
      *
      * @param reply        the reply type.
@@ -92,8 +115,7 @@ class SMSCommandMapper {
      * @param sentListener callback for when message is sent.
      */
     public static void sendReply(ReplyType reply, SMSPeer peer, SMSSentListener sentListener) {
-        SMSMessage messageReply = new SMSMessage(peer, buildReply(reply));
-        handler.sendMessage(messageReply, sentListener);
+        sendReply(reply, "", peer, sentListener);
     }
 
     /**
@@ -103,40 +125,28 @@ class SMSCommandMapper {
      * @param peer  the recipient of the reply.
      */
     public static void sendReply(ReplyType reply, SMSPeer peer) {
-        sendReply(reply, peer, null);
+        sendReply(reply, "", peer, null);
     }
 
     /**
      * Parses a request into a string to put into a message.
      *
      * @param req     The request.
-     * @param content The content of the request.
+     * @param content The content of the request. Can be empty
      * @return The request parsed into a string ready to be sent.
      */
     private static String buildRequest(RequestType req, String content) {
-        return req.toString() + SPLIT_CHAR + content;
+        return content.isEmpty()? req.toString():(req.toString() + SPLIT_CHAR + content);
     }
 
     /**
      * Parses a reply into a string to put into a message.
      *
      * @param reply   The reply.
-     * @param content The content of the reply.
-     * @return The reply parsed into a string ready to be sent. Can't be null, if you don't have content use {@link #buildReply(ReplyType)}
-     */
-    private static String buildReply(ReplyType reply, String content) {
-        return reply.toString() + SPLIT_CHAR + content;
-    }
-
-    /**
-     * Parses a reply into a string to put into a message.
-     * This method is for those replies that don't use the content.
-     *
-     * @param reply The reply.
+     * @param content The content of the reply. Can be empty
      * @return The reply parsed into a string ready to be sent.
      */
-    private static String buildReply(ReplyType reply) {
-        return reply.toString();
+    private static String buildReply(ReplyType reply, String content) {
+        return content.isEmpty()? reply.toString():(reply.toString() + SPLIT_CHAR + content);
     }
-
 }

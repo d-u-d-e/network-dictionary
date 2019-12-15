@@ -17,12 +17,6 @@ import static com.eis.networklibrary.kademlia.SMSCommandMapper.SPLIT_CHAR;
  */
 class SMSNetworkListener extends SMSReceivedServiceListener {
 
-    JoinListener joinListener;
-
-    SMSNetworkListener(JoinListener listener) {
-        this.joinListener = listener;
-    }
-
     /**
      * Checks if the received message is a command for the kad dictionary, check which command
      * has been received and calls processReply or processRequest.
@@ -31,6 +25,7 @@ class SMSNetworkListener extends SMSReceivedServiceListener {
      */
     @Override
     public void onMessageReceived(SMSMessage message) {
+        //TODO adjust this to handle requests and replies better
         String[] splitMessageContent = message.getData().split(SPLIT_CHAR, 2);
         if (splitMessageContent.length != 2) {
             //TODO: Throw exception? What if it's a message for another app?
@@ -61,25 +56,26 @@ class SMSNetworkListener extends SMSReceivedServiceListener {
      * Calls the appropriate method depending on the received request
      *
      * @param req            the request received
-     * @param peer           the request sender
+     * @param sender         the request sender
      * @param commandContent the content of the command without the command prefix, can be empty
      */
-    private void processRequest(SMSNetworkManager.RequestType req, SMSPeer peer, String commandContent) {
+    private void processRequest(SMSNetworkManager.RequestType req, SMSPeer sender, String commandContent) {
+        SMSNetworkManager manager = SMSNetworkManager.getInstance();
         switch (req) {
             case JOIN_PROPOSAL:
-                joinListener.onJoinProposal(peer);
+                manager.onJoinProposal(sender);
                 break;
             case PING:
-                SMSNetworkManager.getInstance().onPingRequest(peer);
+                manager.onPingRequest(sender);
                 break;
             case FIND_NODE:
-                SMSNetworkManager.getInstance().onFindNodeRequest(peer, commandContent);
+                manager.onFindNodeRequest(sender, commandContent);
                 break;
             case FIND_VALUE:
-                SMSNetworkManager.getInstance().onFindValueRequest(peer, commandContent);
+                manager.onFindValueRequest(sender, commandContent);
                 break;
             case STORE:
-                SMSNetworkManager.getInstance().onStoreRequest(commandContent);
+                manager.onStoreRequest(commandContent);
                 break;
         }
     }
@@ -90,21 +86,23 @@ class SMSNetworkListener extends SMSReceivedServiceListener {
      * @param reply          the command received
      * @param commandContent the content of the command without the command prefix, can be empty
      */
-    private void processReply(SMSNetworkManager.ReplyType reply, SMSPeer peer, String commandContent) {
+    private void processReply(SMSNetworkManager.ReplyType reply, SMSPeer sender, String commandContent) {
         SMSNetworkManager manager = SMSNetworkManager.getInstance();
-        String[] splitStr = commandContent.split(SPLIT_CHAR);
         switch (reply) {
             case JOIN_AGREED:
-                manager.onJoinAgreedReply(peer);
+                manager.onJoinAgreedReply(sender);
                 break;
             case PING_ECHO:
-                manager.onPingEchoReply(peer);
+                manager.onPingEchoReply(sender);
                 break;
             case NODE_FOUND:
-                manager.onNodeFoundReply(manager.keyParser.deSerialize(splitStr[0]), /*build address from its string representation*/, peer);
+                manager.onNodeFoundReply(commandContent, new SMSKADPeer(sender));
                 break;
             case VALUE_FOUND:
-                manager.onValueFoundReply(/* build address from its string representation */, manager.valueParser.deSerialize(splitStr[1]));
+                manager.onValueFoundReply(commandContent); //sender is useless to pass
+                break;
+            case VALUE_NOT_FOUND:
+                manager.onValueNotFoundReply(commandContent);
                 break;
         }
     }

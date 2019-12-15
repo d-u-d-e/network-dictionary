@@ -2,6 +2,7 @@ package com.eis.communication.network;
 
 import com.eis.communication.Peer;
 import com.eis.networklibrary.kademlia.FindValueListener;
+import com.eis.networklibrary.kademlia.JoinListener;
 
 /**
  * @param <U>  Peer for users in the network
@@ -43,4 +44,5 @@ public interface NetworkManager<U extends Peer, RK extends SerializableObject, R
      */
     void findValue(RK key, FindValueListener listener);
 
+    void setJoinProposalListener(JoinListener listener);
 }
