@@ -63,7 +63,7 @@ public class KADAddress {
     }
 
     /**
-     * Calculates the first significant bit that differs from {@code otherAddress}
+     * Calculates the first significant bit that differs between {@code a} and {@code b}
      *
      * @param a address to be compared with {@code b}
      * @param b address to be compared with {@code a}
@@ -81,7 +81,7 @@ public class KADAddress {
     }
 
     /**
-     * Calculates the first significant bit that differs from {@code otherAddress}
+     * Returns the index of the left most set bit in byte
      *
      * @param b byte
      * @return the index of the leftmost bit set, otherwise Byte.SIZE if {@code b} equals 0
@@ -132,7 +132,7 @@ public class KADAddress {
     }
 
     /**
-     * @return The string hexadecimal representation of this address
+     * @return the string hexadecimal representation of this address
      */
     @NonNull
     public String toString() { //
