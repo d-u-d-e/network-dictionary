@@ -183,8 +183,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      * @param listener a {@link PingListener} listener
      */
     public void ping(SMSPeer peer, PingListener listener) {
-        //TODO: add a randomId
-        SMSCommandMapper.sendRequest(RequestType.PING, "", peer);
+        SMSCommandMapper.sendRequest(RequestType.PING, peer);
         pingListenerMap.put(peer, listener);
     }
 
@@ -194,8 +193,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      * @param peer who requested a ping
      */
     protected void onPingRequest(SMSPeer peer) {
-        //TODO: add a randomId
-        SMSCommandMapper.sendReply(ReplyType.PING_ECHO, "", peer);
+        SMSCommandMapper.sendReply(ReplyType.PING_ECHO, peer);
         dict.addUser(new SMSKADPeer(peer));
     }
 
@@ -205,8 +203,6 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      * @param peer user that replied to the ping
      */
     protected void onPingEchoReply(SMSPeer peer) {
-        //TODO: add a randomId
-
         PingListener listener = pingListenerMap.remove(peer);
         listener.onPingReply(peer);
     }

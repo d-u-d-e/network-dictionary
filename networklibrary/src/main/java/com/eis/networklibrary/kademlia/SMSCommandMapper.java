@@ -17,7 +17,7 @@ import com.eis.smslibrary.listeners.SMSSentListener;
  * * <p>
  * * SMS REQUESTS FORMATS
  * * JOIN proposal:      "JOIN_PROPOSAL-%netName"                netName is the name of the network the user receiving this is asked to join
- * * PING request:       "PING-%(randomId)"                      randomId is an identifier to match ping requests with replies
+ * * PING request:       "PING"
  * * STORE request:      "STORE-%(KADAddress key)-%(value)"      tell the receiver to store a (key, value) pair
  * * FIND_NODE request:  "FIND_NODE-%(KADAddress addr)"          find the K-CLOSEST nodes to this KAD address (we want to know their phone numbers)
  * * FIND_VALUE request: "FIND_VALUE-%(KADAddress key)           find the value associated with key
@@ -25,7 +25,7 @@ import com.eis.smslibrary.listeners.SMSSentListener;
  * * <p>
  * * SMS REPLIES FORMATS
  * * JOIN agreed:           "JOIN_AGREED"                            a join confirmation
- * * PING reply:            "PING_ECHO-%(matchingId)"                matchingId is to match this ping reply with its request
+ * * PING reply:            "PING_ECHO"
  * * NODE_FOUND reply:      "NODE_FOUND-%(KADAddress addr)-(phoneNumber1)-(phoneNumber2)...-(phoneNumber K)" //the receiving user is told other K closer nodes to addr
  *   TODO how many entries should we pack inside this reply?
  * * VALUE_FOUND reply:     "VALUE_FOUND-%(KADAddress key)-(value)"  the value for key is returned to the querier
@@ -64,6 +64,26 @@ class SMSCommandMapper {
     }
 
     /**
+     * Sends an sms with the request. Useful for those requests that don't need content.
+     *
+     * @param req     the request type.
+     * @param peer    the recipient of the request.
+     */
+    public static void sendRequest(RequestType req,  SMSPeer peer, SMSSentListener sentListener) {
+        sendRequest(req, "", peer, null);
+    }
+
+    /**
+     * Sends an sms with the request. Useful for those requests that don't need content.
+     *
+     * @param req     the request type.
+     * @param peer    the recipient of the request.
+     */
+    public static void sendRequest(RequestType req, SMSPeer peer) {
+        sendRequest(req,  peer, null);
+    }
+
+    /**
      * Sends an sms with the reply.
      *
      * @param reply        the reply type.
@@ -95,8 +115,7 @@ class SMSCommandMapper {
      * @param sentListener callback for when message is sent.
      */
     public static void sendReply(ReplyType reply, SMSPeer peer, SMSSentListener sentListener) {
-        SMSMessage messageReply = new SMSMessage(peer, buildReply(reply));
-        handler.sendMessage(messageReply, sentListener);
+        sendReply(reply, "", peer, sentListener);
     }
 
     /**
@@ -113,33 +132,21 @@ class SMSCommandMapper {
      * Parses a request into a string to put into a message.
      *
      * @param req     The request.
-     * @param content The content of the request.
+     * @param content The content of the request. Can be empty
      * @return The request parsed into a string ready to be sent.
      */
     private static String buildRequest(RequestType req, String content) {
-        return req.toString() + SPLIT_CHAR + content;
+        return content.isEmpty()? req.toString():(req.toString() + SPLIT_CHAR + content);
     }
 
     /**
      * Parses a reply into a string to put into a message.
      *
      * @param reply   The reply.
-     * @param content The content of the reply.
-     * @return The reply parsed into a string ready to be sent. Can't be null, if you don't have content use {@link #buildReply(ReplyType)}
-     */
-    private static String buildReply(ReplyType reply, String content) {
-        return reply.toString() + SPLIT_CHAR + content;
-    }
-
-    /**
-     * Parses a reply into a string to put into a message.
-     * This method is for those replies that don't use the content.
-     *
-     * @param reply The reply.
+     * @param content The content of the reply. Can be empty
      * @return The reply parsed into a string ready to be sent.
      */
-    private static String buildReply(ReplyType reply) {
-        return reply.toString();
+    private static String buildReply(ReplyType reply, String content) {
+        return content.isEmpty()? reply.toString():(reply.toString() + SPLIT_CHAR + content);
     }
-
 }
