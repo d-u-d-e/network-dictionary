@@ -148,6 +148,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
         //Sends a FIND_NODE request to the peers in the ArrayList
         for (int i = 0; i < ALPHA && i < knownCloserNodes.size(); i++)
             SMSCommandMapper.sendRequest(RequestType.FIND_NODE, kadAddress.toString(), knownCloserNodes.get(i));
+
     }
 
     /**
