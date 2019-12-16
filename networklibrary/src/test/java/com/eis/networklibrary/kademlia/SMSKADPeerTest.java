@@ -1,6 +1,7 @@
 package com.eis.networklibrary.kademlia;
 
 import com.eis.smslibrary.SMSPeer;
+import com.eis.smslibrary.exceptions.InvalidTelephoneNumberException;
 
 import org.junit.Assert;
 import org.junit.Before;
@@ -10,6 +11,8 @@ public class SMSKADPeerTest {
 
     final String PHONE_NUMBER = "+391111111111";
     final String PHONE_NUMBER2 = "+391111111112";
+    final String WRONG_PHONE_NUMBER = "ciao";
+    final String ASSERT_FAIL_EXCEPTION_MESSAGE = "Should have thrown an exception";
     final int COMPARE_NEG_INT = -1;
     final int COMPARE_POS_INT = 1;
     final int COMPARE_ZERO_INT = 0;
@@ -45,6 +48,16 @@ public class SMSKADPeerTest {
         Assert.assertEquals(COMPARE_NEG_INT, kadComparator.compare(stringKadPeer, string2KadPeer));
         //Second is closer
         Assert.assertEquals(COMPARE_POS_INT, kadComparator.compare(string2KadPeer, stringKadPeer));
+    }
+
+    @Test
+    public void constructor_phoneNumber_invalid() {
+        try {
+            new SMSKADPeer(WRONG_PHONE_NUMBER);
+            Assert.fail(ASSERT_FAIL_EXCEPTION_MESSAGE);
+        } catch (InvalidTelephoneNumberException e) {
+            //Success
+        }
     }
 
 }
