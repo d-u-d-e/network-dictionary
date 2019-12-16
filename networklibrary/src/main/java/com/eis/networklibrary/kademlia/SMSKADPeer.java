@@ -23,6 +23,7 @@ public class SMSKADPeer extends SMSPeer implements KADPeer {
 
     /**
      * constructs a {@code SMSKADPeer} object from a {@link SMSPeer}
+     *
      * @param smsPeer from which a SMSKADPeer is built
      */
     public SMSKADPeer(SMSPeer smsPeer) {
@@ -39,8 +40,8 @@ public class SMSKADPeer extends SMSPeer implements KADPeer {
 
 
     /**
-    * a static nested class defining a comparator for KAD addresses. A target must be specified in order to compare addresses to it.
-    */
+     * a static nested class defining a comparator for KAD addresses. A target must be specified in order to compare addresses to it.
+     */
     public static class KADComparator implements Comparator<SMSKADPeer> {
         KADAddress target;
 
@@ -52,6 +53,11 @@ public class SMSKADPeer extends SMSPeer implements KADPeer {
             this.target = target;
         }
 
+        /**
+         * @param o1 first object to compare
+         * @param o2 seconds object to compare
+         * @return 0 if {@code o1} and {@code o2} are equals, -1 if the first is the closest to the target, 1 otherwise
+         */
         @Override
         public int compare(SMSKADPeer o1, SMSKADPeer o2) {
             KADAddress a1 = o1.getNetworkAddress();
