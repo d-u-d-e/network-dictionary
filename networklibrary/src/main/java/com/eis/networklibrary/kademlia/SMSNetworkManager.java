@@ -219,9 +219,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     }
 
     public void setJoinProposalListener(JoinListener listener) {
-        if(listenerHandler == null)
-            listenerHandler = new SMSNetworkListenerHandler(listener);
-        else listenerHandler.setJoinListener(listener);
+        listenerHandler.setJoinListener(listener);
     }
 
     /**

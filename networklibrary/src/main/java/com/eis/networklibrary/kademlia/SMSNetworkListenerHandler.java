@@ -185,15 +185,6 @@ public class SMSNetworkListenerHandler {
     //region JoinListener
 
     /**
-     * If must use joinListener
-     * 
-     * @param joinListener  The joinListener in use
-     */
-    protected SMSNetworkListenerHandler(JoinListener joinListener) {
-        joinListenerPair = new Pair<>(new ArrayList<SMSPeer>(), joinListener);
-    }
-
-    /**
      * Sets the joinListener in use
      * 
      * @param joinListener  The joinListener in use
