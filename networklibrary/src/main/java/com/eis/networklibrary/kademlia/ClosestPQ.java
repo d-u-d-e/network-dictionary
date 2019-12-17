@@ -20,7 +20,7 @@ public class ClosestPQ extends PriorityQueue<ClosestPQ.SMSFindNodeKADPeer> {
     public ClosestPQ(SMSKADPeer.KADComparator comparator, ArrayList<SMSKADPeer> collection) {
         super(comparator);
         Collection<SMSFindNodeKADPeer> internalCollection = new ArrayList<>();
-        for(int i=0;i<collection.size();i++){
+        for(int i = 0 ;i < collection.size(); i++){
             internalCollection.add(new SMSFindNodeKADPeer(collection.get(i)));
         }
         addAll(internalCollection);
@@ -38,10 +38,10 @@ public class ClosestPQ extends PriorityQueue<ClosestPQ.SMSFindNodeKADPeer> {
     }
 
     /**
-     * Inner class that extends {@link SMSKADPeer} and contains an extra flag, true if this object has being called, false otherwise
+     * Inner class that extends {@link SMSKADPeer} and contains an extra flag, true if this object has been already queried for a FIND_NODE, false otherwise
      */
     public class SMSFindNodeKADPeer extends SMSKADPeer {
-        private boolean called = false;
+        private boolean queried = false;
 
         public SMSFindNodeKADPeer(String telephoneNumber) throws InvalidTelephoneNumberException {
             super(telephoneNumber);
@@ -56,19 +56,19 @@ public class ClosestPQ extends PriorityQueue<ClosestPQ.SMSFindNodeKADPeer> {
         }
 
         /**
-         * @return the "called" variable
+         * @return the "queried" variable
          */
-        public boolean isCalled() {
-            return called;
+        public boolean hasBeenQueried() {
+            return queried;
         }
 
         /**
          * Sets the "called" variable value
          *
-         * @param state to assign to the "called" variable
+         * @param state to assign to the "queried" variable
          */
-        public void setCalled(boolean state) {
-            this.called = state;
+        public void setQueried(boolean state) {
+            this.queried = state;
         }
     }
 

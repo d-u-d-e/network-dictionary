@@ -29,12 +29,7 @@ public class SMSNetworkListenerHandler {
     //Only one joinListener for a list of SMSPeer
     private Pair<ArrayList<KADInvitation>, JoinListener> joinListenerPair;
 
-
-    protected SMSNetworkListenerHandler() {
-    }
-
-
-    //region NodeListener
+    //*******************************************************************************************
 
     /**
      * Registers a new NodeListener
@@ -73,16 +68,13 @@ public class SMSNetworkListenerHandler {
      * @param peer       The peer found
      * @return The NodeListener triggered
      */
-    protected FindNodeListener<SMSKADPeer> triggerNodeFound(KADAddress kadAddress, SMSKADPeer peer) {
+    protected void triggerNodeFound(KADAddress kadAddress, SMSKADPeer peer) {
         FindNodeListener listener = removeNodeListener(kadAddress);
         if (listener != null)
-            listener.onNodeFound(peer);
-        return listener;
+            listener.OnKClosestNodesFound(peer);
     }
-    //endregion
 
-
-    //region ValueListener
+    //*******************************************************************************************
 
     /**
      * Registers a new ValueListener
@@ -121,11 +113,10 @@ public class SMSNetworkListenerHandler {
      * @param value      The peer found
      * @return The ValueListener triggered
      */
-    protected FindValueListener triggerValueFound(KADAddress kadAddress, SerializableObject value) {
+    protected void triggerValueFound(KADAddress kadAddress, SerializableObject value) {
         FindValueListener listener = removeValueListener(kadAddress);
         if (listener != null)
             listener.onValueFound(value);
-        return listener;
     }
 
     /**
@@ -134,16 +125,13 @@ public class SMSNetworkListenerHandler {
      * @param kadAddress The address linked to the ValueListener
      * @return The ValueListener triggered
      */
-    protected FindValueListener triggerValueNotFound(KADAddress kadAddress) {
+    protected void triggerValueNotFound(KADAddress kadAddress) {
         FindValueListener listener = removeValueListener(kadAddress);
         if (listener != null)
             listener.onValueNotFound();
-        return listener;
     }
-    //endregion
 
-
-    //region PingListener
+    //*******************************************************************************************
 
     /**
      * Registers a new PingListener
@@ -153,16 +141,6 @@ public class SMSNetworkListenerHandler {
      */
     protected void registerPingListener(SMSPeer peer, PingListener listener) {
         pingListenerMap.put(peer, listener);
-    }
-
-    /**
-     * Unregisters a PingListener
-     *
-     * @param peer The SMSPeer linked to the PingListener
-     * @return The PingListener removed
-     */
-    protected PingListener removePingListener(SMSPeer peer) {
-        return pingListenerMap.remove(peer);
     }
 
     /**
@@ -181,16 +159,13 @@ public class SMSNetworkListenerHandler {
      * @param peer The SMSPeer that replied
      * @return The PingListener triggered
      */
-    protected PingListener triggerPingReply(SMSPeer peer) {
-        PingListener listener = removePingListener(peer);
+    protected void triggerPingReply(SMSPeer peer) {
+        PingListener listener = pingListenerMap.remove(peer);
         if (listener != null)
             listener.onPingReply(peer);
-        return listener;
     }
-    //endregion
 
-
-    //region JoinListener
+    //*******************************************************************************************
 
     /**
      * Sets the joinListener in use
@@ -207,20 +182,9 @@ public class SMSNetworkListenerHandler {
      *
      * @param peer The SMSPeer to add
      */
-    protected void addSMSPeerToJoinProposal(SMSPeer peer) {
+    protected void addToInvitedList(SMSPeer peer) {
         //TODO: Riguardare come sono stati gestiti gli inviti e i listener. @LucaCrema
         //joinListenerPair.first.add(peer);
-    }
-
-    /**
-     * Remove a SMSPeer from pending list
-     * Should set the joinListener first
-     *
-     * @param invitation The received invitation to join a network
-     * @return True if removed successfully
-     */
-    protected boolean removeJoinListener(KADInvitation invitation) {
-        return joinListenerPair.first.remove(invitation);
     }
 
     /**
@@ -241,11 +205,10 @@ public class SMSNetworkListenerHandler {
      * @param invitation The invitation to join a network.
      * @return The JoinListener triggered.
      */
-    protected boolean triggerJoinProposal(KADInvitation invitation) {
-        boolean success = removeJoinListener(invitation);
+    protected void triggerJoinProposal(KADInvitation invitation) {
+        boolean success = joinListenerPair.first.remove(invitation);
         if (success)
             joinListenerPair.second.onJoinProposal(invitation);
-        return success;
     }
-    //endregion
+    //*******************************************************************************************
 }
