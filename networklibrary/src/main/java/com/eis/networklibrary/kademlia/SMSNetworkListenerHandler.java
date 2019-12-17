@@ -68,7 +68,7 @@ public class SMSNetworkListenerHandler {
      * @param peer       The peer found
      * @return The NodeListener triggered
      */
-    protected void triggerNodeFound(KADAddress kadAddress, SMSKADPeer peer) {
+    protected void triggerKNodesFound(KADAddress kadAddress, SMSKADPeer[] peer) {
         FindNodeListener listener = removeNodeListener(kadAddress);
         if (listener != null)
             listener.OnKClosestNodesFound(peer);

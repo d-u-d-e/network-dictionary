@@ -42,14 +42,14 @@ public class SMSKADPeer extends SMSPeer implements KADPeer {
     /**
      * a static nested class defining a comparator for KAD addresses. A target must be specified in order to compare addresses to it.
      */
-    public static class KADComparator implements Comparator<SMSKADPeer> {
+    public static class SMSKADComparator implements Comparator<SMSKADPeer> {
         KADAddress target;
 
         /**
          * @param target used to compare addresses to it
          */
 
-        KADComparator(KADAddress target) {
+        SMSKADComparator(KADAddress target) {
             this.target = target;
         }
 

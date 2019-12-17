@@ -1,75 +1,64 @@
 package com.eis.networklibrary.kademlia;
 
-import com.eis.smslibrary.SMSPeer;
-import com.eis.smslibrary.exceptions.InvalidTelephoneNumberException;
-
+import android.util.Pair;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.PriorityQueue;
+import java.util.Collections;
+
+import static com.eis.networklibrary.kademlia.SMSKADPeer.SMSKADComparator;
+import static com.eis.networklibrary.kademlia.SMSDistributedNetworkDictionary.KADEMLIA_K;
 
 /**
- * Collection used to hold the first k-nodes closest to a given address
+ * Collection used to keep the first k-nodes closest to a given address
  */
-public class ClosestPQ extends PriorityQueue<ClosestPQ.SMSFindNodeKADPeer> {
+public class ClosestPQ {
 
-    /**
-     * Sets the comparator for the priority queue
-     *
-     * @param comparator contains the target address
-     */
-    public ClosestPQ(SMSKADPeer.KADComparator comparator, ArrayList<SMSKADPeer> collection) {
-        super(comparator);
-        Collection<SMSFindNodeKADPeer> internalCollection = new ArrayList<>();
-        for(int i = 0 ;i < collection.size(); i++){
-            internalCollection.add(new SMSFindNodeKADPeer(collection.get(i)));
+    static class MutablePair<F, S>
+    {
+        MutablePair(F f, S s){
+            first = f;
+            second = s;
         }
-        addAll(internalCollection);
+        F first;
+        S second;
     }
 
-    /**
-     * Adds a {@link SMSKADPeer} object to the collection
-     *
-     * @param smskadPeer to add
-     */
-    public void add(SMSKADPeer smskadPeer) {
-        super.add(new SMSFindNodeKADPeer(smskadPeer));
-        if (size() > SMSDistributedNetworkDictionary.BUCKET_SIZE)
-            remove(toArray()[size() - 1]);
+    private ArrayList<MutablePair<SMSKADPeer, Boolean>> arr;
+    SMSKADComparator cp;
+
+    ClosestPQ(SMSKADComparator comparator, ArrayList<SMSKADPeer> nodes){
+        Collections.sort(nodes, comparator);
+        arr = new ArrayList<>();
+        for(SMSKADPeer p: nodes.subList(0, Math.min(KADEMLIA_K, nodes.size())))
+            arr.add(new MutablePair<>(p, false));
+        cp = comparator;
     }
 
-    /**
-     * Inner class that extends {@link SMSKADPeer} and contains an extra flag, true if this object has been already queried for a FIND_NODE, false otherwise
-     */
-    public class SMSFindNodeKADPeer extends SMSKADPeer {
-        private boolean queried = false;
-
-        public SMSFindNodeKADPeer(String telephoneNumber) throws InvalidTelephoneNumberException {
-            super(telephoneNumber);
-        }
-
-        public SMSFindNodeKADPeer(SMSPeer smsPeer) {
-            super(smsPeer);
-        }
-
-        public SMSFindNodeKADPeer(SMSKADPeer smskadPeer) {
-            super(smskadPeer.getAddress());
-        }
-
-        /**
-         * @return the "queried" variable
-         */
-        public boolean hasBeenQueried() {
-            return queried;
-        }
-
-        /**
-         * Sets the "called" variable value
-         *
-         * @param state to assign to the "queried" variable
-         */
-        public void setQueried(boolean state) {
-            this.queried = state;
-        }
+    MutablePair<SMSKADPeer, Boolean> get(int index){
+        return  arr.get(index);
     }
 
+    void add(SMSKADPeer peer){
+        for(int i = 0; i < arr.size(); i++){
+            int comp = cp.compare(peer, arr.get(i).first);
+            if(comp == 0) return; //peer is already in the queue
+            else if(comp < 0){ //insertion sort
+                arr.add(i, new MutablePair<>(peer, false));
+                if(arr.size() > KADEMLIA_K) arr.remove(KADEMLIA_K - 1); //delete the last element if this queue has more than KADEMLIA_K elements
+                break;
+            }
+        }
+        if(arr.size() < KADEMLIA_K)
+            arr.add(new MutablePair<>(peer, false));
+    }
+
+    int size(){
+        return arr.size();
+    }
+
+    SMSKADPeer[] getAllPeers(){
+        SMSKADPeer[] peers = new SMSKADPeer[arr.size()];
+        for(int i = 0; i < arr.size(); i++)
+            peers[i] = arr.get(i).first;
+        return peers;
+    }
 }

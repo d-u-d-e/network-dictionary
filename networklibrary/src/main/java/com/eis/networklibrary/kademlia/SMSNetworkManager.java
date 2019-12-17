@@ -15,6 +15,8 @@ import com.eis.smslibrary.listeners.SMSSentListener;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import static com.eis.networklibrary.kademlia.SMSDistributedNetworkDictionary.KADEMLIA_K;
+
 /**
  * Singleton class that handles the Kademlia network.
  * If you want to join a network you have to
@@ -50,11 +52,9 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     protected SMSKADPeer mySelf;
     protected SerializableObjectParser valueParser;
     private SMSDistributedNetworkDictionary<SerializableObject> dict;
-    private HashMap<KADAddress, ClosestPQ> bestCurrentFoundNodes = new HashMap<>();
-    private JoinListener joinListener;
+    private HashMap<KADAddress, ClosestPQ> bestSoFarClosestNodes = new HashMap<>();
 
-    static final int KADEMLIA_ALPHA = 1;
-    static final int KADEMLIA_K = 5;
+    static final int KADEMLIA_ALPHA = 1; //always less than KADEMLIA_K
 
     private SMSNetworkListenerHandler listenerHandler;
 
@@ -147,8 +147,9 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
         final KADAddress resKadAddress = new KADAddress(key.toString());
         findNode(resKadAddress, new FindNodeListener<SMSKADPeer>() {
             @Override
-            public void OnKClosestNodesFound(SMSKADPeer peer) {
-                SMSCommandMapper.sendRequest(RequestType.STORE, resKadAddress + SMSCommandMapper.SPLIT_CHAR + valueParser.serialize(value), peer);
+            public void OnKClosestNodesFound(SMSKADPeer[] peers) {
+                for(SMSKADPeer p: peers)
+                    SMSCommandMapper.sendRequest(RequestType.STORE, resKadAddress + SMSCommandMapper.SPLIT_CHAR + valueParser.serialize(value), p);
             }
         });
     }
@@ -190,29 +191,26 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
             throw new IllegalStateException("A find request for this key is already pending");
         listenerHandler.registerNodeListener(kadAddress, listener); //listener should remove itself from this map; maybe there's a better way to achieve this
 
-        //Checks if we are finding ourselves
+
+        //TODO can this comment block be safely deleted? Even if we are finding ourselves, this should work
+/*        //Checks if we are finding ourselves
         if (kadAddress.equals(mySelf.getNetworkAddress()))
             listener.OnKClosestNodesFound(mySelf);
 
         //Checks if we already know the kadAddress
         SMSKADPeer nodeFoundInLocalDict = dict.getPeerFromAddress(kadAddress);
         if (nodeFoundInLocalDict != null)
-            listener.OnKClosestNodesFound(nodeFoundInLocalDict);
+            listener.OnKClosestNodesFound(nodeFoundInLocalDict);*/
 
-        //Creates a sorted by distance ArrayList with the known nodes
-        //ArrayList<SMSKADPeer> knownNodesOrdered = dict.getNodesSortedByDistance(kadAddress);
+        //bestSoFarClosestNodes contains the best so far KADEMLIA_K nodes found closer to kadAddress
+        ClosestPQ currentBestPQ = new ClosestPQ(new SMSKADPeer.SMSKADComparator(kadAddress), dict.getAllUsers());
+        bestSoFarClosestNodes.put(kadAddress, currentBestPQ);
 
-        ClosestPQ closestNodes = new ClosestPQ(new SMSKADPeer.KADComparator(kadAddress), dict.getAllUsers());
-
-        bestCurrentFoundNodes.put(kadAddress, closestNodes);
-
-        //((ClosestPQ.SMSFindNodeKADPeer[])closestNodes.toArray())[0].
-
-
-        //Sends a FIND_NODE request to the peers in the ArrayList
-        /*for (int i = 0; i < ALPHA && i < knownNodesOrdered.size(); i++)
-            SMSCommandMapper.sendRequest(RequestType.FIND_NODE, kadAddress.toString(), knownNodesOrdered.get(i));*/
-
+        //Sends a FIND_NODE request to first KADEMLIA_ALPHA nodes in closestNodes
+        for (int i = 0; i < KADEMLIA_ALPHA; i++){
+            currentBestPQ.get(i).second = Boolean.TRUE; //set it to queried
+            SMSCommandMapper.sendRequest(RequestType.FIND_NODE, kadAddress.toString(), currentBestPQ.get(i).first);
+        }
     }
 
     /**
@@ -223,9 +221,12 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      */
     protected void onFindNodeRequest(SMSPeer sender, String requestContent) {
         ArrayList<SMSKADPeer> closerNodes = dict.getNodesSortedByDistance(KADAddress.fromHexString(requestContent));
-        //TODO K != 1
-        SMSKADPeer closerNode = closerNodes.get(0);
-        SMSCommandMapper.sendReply(ReplyType.NODE_FOUND, requestContent + SMSCommandMapper.SPLIT_CHAR + closerNode.getAddress(), sender);
+        StringBuilder replyContent = new StringBuilder(requestContent); //this is the address we were asked to look up
+        for(int i = 0; i < Math.min(KADEMLIA_K, closerNodes.size()); i++){ //we send up to K closest nodes we know about
+            replyContent.append(SMSCommandMapper.SPLIT_CHAR);
+            replyContent.append(closerNodes.get(i).getAddress()); //phone number
+        }
+        SMSCommandMapper.sendReply(ReplyType.NODE_FOUND, replyContent.toString(), sender);
     }
 
     /**
@@ -235,17 +236,27 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      * @param sender       the node who informed us back about closerNode
      */
     protected void onNodeFoundReply(String replyContent, SMSKADPeer sender) {
-        //TODO k > 1
-        //TODO not sure if this if statement is correct: is it guaranteed that a node knowing to be the closer among its buckets nodes is the closest globally?
-
         String[] splitStr = replyContent.split(SMSCommandMapper.SPLIT_CHAR);
-        KADAddress address = KADAddress.fromHexString(splitStr[0]);
-        SMSKADPeer closerNode = new SMSKADPeer(splitStr[1]); //build a kad address from phone number
+        KADAddress address = KADAddress.fromHexString(splitStr[0]); //address which we asked to find
+        ClosestPQ currentBestPQ = bestSoFarClosestNodes.get(address); //this SHOULD BE ALWAYS NON NULL
 
-        if (closerNode.equals(sender))
-            listenerHandler.triggerNodeFound(address, closerNode);
-        else
-            SMSCommandMapper.sendRequest(RequestType.FIND_NODE, address.toString(), closerNode);
+        for(int i = 1; i < splitStr.length; i++){ //start from 1 because the first element is address, while the other elements are phone numbers of closer nodes
+            SMSKADPeer p = new SMSKADPeer(splitStr[i]);
+            currentBestPQ.add(p);
+        }
+        int picked = 0;
+        for(int i = 0; i < currentBestPQ.size() && picked < KADEMLIA_ALPHA; i++){  //pick other alpha non queried nodes in currentBestPQ
+            ClosestPQ.MutablePair<SMSKADPeer, Boolean> pair = currentBestPQ.get(i);
+            if(!pair.second){ //if not queried
+                picked++;
+                pair.second = true;
+                SMSCommandMapper.sendRequest(RequestType.FIND_NODE, splitStr[0], pair.first); //splitStr[0] is address
+            }
+        }
+
+        if(picked == 0){ //our PQ consists only of already queried nodes, which are the closest globally
+            listenerHandler.triggerKNodesFound(address, currentBestPQ.getAllPeers());
+        }
     }
 
     //*******************************************************************************************

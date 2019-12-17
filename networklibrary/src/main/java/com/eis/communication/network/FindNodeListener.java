@@ -15,5 +15,5 @@ public interface FindNodeListener<P extends Peer> {
      *
      * @param peer The peer reference.
      */
-    void OnKClosestNodesFound(P peer);
+    void OnKClosestNodesFound(P[] peer);
 }
