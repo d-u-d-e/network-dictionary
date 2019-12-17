@@ -50,7 +50,12 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     protected SMSKADPeer mySelf;
     protected SerializableObjectParser valueParser;
     private SMSDistributedNetworkDictionary<SerializableObject> dict;
+<<<<<<< HEAD
     private HashMap<KADAddress, ClosestPQ> bestCurrentFoundNodes = new HashMap<>();
+=======
+    private HashMap<KADAddress, ClosestPQ> findNodeBuckets = new HashMap<>();
+    private JoinListener joinListener;
+>>>>>>> 4adaf99e6a3f44a31608014b06f8bec43efa012b
 
     static final int KADEMLIA_ALPHA = 1;
     static final int KADEMLIA_K = 5;
@@ -105,13 +110,47 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      * @param invitation The invitation message
      */
     public void join(Invitation<SMSKADPeer> invitation) {
-        //TODO: 1. Aggiungere chi ci ha invitato al nostro dizionario
-        //TODO: 2. Dirgli che ci vogliamo aggiungere alla rete: ovvero inviare un JOIN_AGREED
         //TODO: 3. farci conoscere e ricevere la lista di peer da chi ci ha invitato
+        SMSKADPeer inviter = invitation.getInviter();
+        dict.addUser(inviter);
+        SMSCommandMapper.sendReply(ReplyType.JOIN_AGREED, inviter);
+        //TODO: quando ricevo una lista di nodi, li devo aggiungere ai miei bucket e poi pingarli per farmi conoscere
+
     }
 
     /**
      * Method called when a join proposal this peer has made has been accepted
+     *
+     * @param peer the peer who accepted to join the network
+     */
+    void onJoinAgreedReply(SMSPeer peer) {
+        dict.addUser(new SMSKADPeer(peer));
+        ArrayList<SMSKADPeer> myPeers = dict.getAllUsers();
+        //TODO: trovare un modo per inviare la lista dei miei contatti al nodo appena entrato (ad esempio un nuovo tipo di comando, SEND_NODES (?))
+
+    }
+
+    /**
+<<<<<<< HEAD
+     * Method called when a join proposal this peer has made has been accepted
+=======
+     * Method called when we receive a join proposal from someone.
+     *
+     * @param peer           Who invited you to join the network.
+     * @param requestContent There should be the name of the network you're invited to
+     */
+    void onJoinProposal(SMSPeer peer, String requestContent) {
+        SMSKADPeer kadPeer = new SMSKADPeer(peer);
+        joinListener.onJoinProposal(new KADInvitation(kadPeer, requestContent));
+
+    }
+
+    public void setJoinProposalListener(JoinListener listener) {
+        this.joinListener = listener;
+    }
+    /**
+     * Finds the closest node to the given {@param key} and sends to it the STORE request
+>>>>>>> 4adaf99e6a3f44a31608014b06f8bec43efa012b
      *
      * @param peer the peer who accepted to join the network
      */
@@ -274,6 +313,52 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     }
 
     /**
+<<<<<<< HEAD
+=======
+     * Method called to PING a node
+     *
+     * @param peer     the node we want to ping
+     * @param listener a {@link PingListener} listener
+     */
+    public void ping(SMSPeer peer, PingListener listener) {
+        SMSCommandMapper.sendRequest(RequestType.PING, peer);
+        listenerHandler.registerPingListener(peer, listener);
+    }
+
+    /**
+     * Method called when a PING request has been received. Sends a {@link ReplyType#PING_ECHO) command back.
+     *
+     * @param peer who requested a ping
+     */
+    protected void onPingRequest(SMSPeer peer) {
+        SMSCommandMapper.sendReply(ReplyType.PING_ECHO, peer);
+        dict.addUser(new SMSKADPeer(peer));
+    }
+
+    /**
+     * Method called when a PING_ECHO reply is received. We are sure this node is alive.
+     *
+     * @param peer user that replied to the ping
+     */
+    protected void onPingEchoReply(SMSPeer peer) {
+        listenerHandler.triggerPingReply(peer);
+    }
+
+    /**
+     * Method called when a FIND_NODE request is received. Sends a {@link ReplyType#NODE_FOUND} command back.
+     *
+     * @param sender         who requested the node search
+     * @param requestContent contains a kad address that sender wants to know about
+     */
+    protected void onFindNodeRequest(SMSPeer sender, String requestContent) {
+        ArrayList<SMSKADPeer> closerNodes = dict.getNodesSortedByDistance(KADAddress.fromHexString(requestContent));
+        //TODO K != 1
+        SMSKADPeer closerNode = closerNodes.get(0);
+        SMSCommandMapper.sendReply(ReplyType.NODE_FOUND, requestContent + SMSCommandMapper.SPLIT_CHAR + closerNode.getAddress(), sender);
+    }
+
+    /**
+>>>>>>> 4adaf99e6a3f44a31608014b06f8bec43efa012b
      * Method called when a FIND_VALUE request is received. Sends a {@link ReplyType#VALUE_FOUND} command back.
      *
      * @param sender         who requested the value
