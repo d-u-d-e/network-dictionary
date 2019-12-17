@@ -35,6 +35,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     protected SerializableObjectParser valueParser;
     private SMSDistributedNetworkDictionary<SerializableObject> dict;
     private HashMap<KADAddress, ClosestPQ> findNodeBuckets = new HashMap<>();
+    private JoinListener joinListener;
 
     static final int ALPHA = 1;
 
@@ -86,11 +87,41 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      * @param invitation The invitation message
      */
     public void join(Invitation<SMSKADPeer> invitation) {
-        //TODO: 1. Aggiungere chi ci ha invitato al nostro dizionario
-        //TODO: 2. Dirgli che ci vogliamo aggiungere alla rete: ovvero inviare un JOIN_AGREED
         //TODO: 3. farci conoscere e ricevere la lista di peer da chi ci ha invitato
+        SMSKADPeer inviter = invitation.getInviter();
+        dict.addUser(inviter);
+        SMSCommandMapper.sendReply(ReplyType.JOIN_AGREED, inviter);
+        //TODO: quando ricevo una lista di nodi, li devo aggiungere ai miei bucket e poi pingarli per farmi conoscere
+
     }
 
+    /**
+     * Method called when a join proposal this peer has made has been accepted
+     *
+     * @param peer the peer who accepted to join the network
+     */
+    void onJoinAgreedReply(SMSPeer peer) {
+        dict.addUser(new SMSKADPeer(peer));
+        ArrayList<SMSKADPeer> myPeers = dict.getAllUsers();
+        //TODO: trovare un modo per inviare la lista dei miei contatti al nodo appena entrato (ad esempio un nuovo tipo di comando, SEND_NODES (?))
+
+    }
+
+    /**
+     * Method called when we receive a join proposal from someone.
+     *
+     * @param peer           Who invited you to join the network.
+     * @param requestContent There should be the name of the network you're invited to
+     */
+    void onJoinProposal(SMSPeer peer, String requestContent) {
+        SMSKADPeer kadPeer = new SMSKADPeer(peer);
+        joinListener.onJoinProposal(new KADInvitation(kadPeer, requestContent));
+
+    }
+
+    public void setJoinProposalListener(JoinListener listener) {
+        this.joinListener = listener;
+    }
     /**
      * Finds the closest node to the given {@param key} and sends to it the STORE request
      *
@@ -213,30 +244,6 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      */
     protected void onPingEchoReply(SMSPeer peer) {
         listenerHandler.triggerPingReply(peer);
-    }
-
-    /**
-     * Method called when a join proposal this peer has made has been accepted
-     *
-     * @param peer the peer who accepted to join the network
-     */
-    void onJoinAgreedReply(SMSPeer peer) {
-        //TODO
-    }
-
-    /**
-     * Method called when we receive a join proposal from someone.
-     *
-     * @param peer           Who invited you to join the network.
-     * @param requestContent There should be the name of the network you're invited to
-     */
-    void onJoinProposal(SMSPeer peer, String requestContent) {
-        SMSKADPeer kadPeer = new SMSKADPeer(peer);
-        listenerHandler.triggerJoinProposal(new KADInvitation(kadPeer, requestContent));
-    }
-
-    public void setJoinProposalListener(JoinListener listener) {
-        listenerHandler.setJoinListener(listener);
     }
 
     /**
