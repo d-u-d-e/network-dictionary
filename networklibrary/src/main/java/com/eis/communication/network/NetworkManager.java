@@ -1,8 +1,6 @@
 package com.eis.communication.network;
 
 import com.eis.communication.Peer;
-import com.eis.networklibrary.kademlia.FindValueListener;
-import com.eis.networklibrary.kademlia.JoinListener;
 
 /**
  * @param <U>  Peer for users in the network
@@ -10,16 +8,24 @@ import com.eis.networklibrary.kademlia.JoinListener;
  * @param <RV> Value class for the resource
  * @author Marco Mariotto
  * @author Alberto Ursino
+ * @author Luca Crema
  * @since 10/12/2019
  */
 public interface NetworkManager<U extends Peer, RK extends SerializableObject, RV extends SerializableObject> {
 
     /**
-     * Sends an invitation to the specified peer
+     * Sends an invitation to the specified peer.
      *
-     * @param user The peer of the user to invite
+     * @param user The peer of the user to invite.
      */
     void invite(U user);
+
+    /**
+     * Adds the user to the network, if they were invited.
+     *
+     * @param invitation The received invitation to the network.
+     */
+    void join(Invitation<U> invitation);
 
     /**
      * Sets a (key, value) resource in the local dictionary: this is called only if a STORE message is received

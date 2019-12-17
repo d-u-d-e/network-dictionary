@@ -4,7 +4,6 @@ import com.eis.smslibrary.SMSMessage;
 import com.eis.smslibrary.SMSPeer;
 import com.eis.smslibrary.listeners.SMSReceivedServiceListener;
 
-
 import static com.eis.networklibrary.kademlia.SMSCommandMapper.SPLIT_CHAR;
 
 /**
@@ -63,7 +62,7 @@ class SMSNetworkListener extends SMSReceivedServiceListener {
         SMSNetworkManager manager = SMSNetworkManager.getInstance();
         switch (req) {
             case JOIN_PROPOSAL:
-                manager.onJoinProposal(sender);
+                manager.onJoinProposal(sender, commandContent);
                 break;
             case PING:
                 manager.onPingRequest(sender);

@@ -1,4 +1,4 @@
-package com.eis.networklibrary.kademlia;
+package com.eis.communication.network;
 
 import com.eis.smslibrary.SMSPeer;
 

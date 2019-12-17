@@ -1,6 +1,11 @@
 package com.eis.networklibrary.kademlia;
 
+import com.eis.communication.network.FindNodeListener;
+import com.eis.communication.network.FindValueListener;
+import com.eis.communication.network.Invitation;
+import com.eis.communication.network.JoinListener;
 import com.eis.communication.network.NetworkManager;
+import com.eis.communication.network.PingListener;
 import com.eis.communication.network.SerializableObject;
 import com.eis.smslibrary.SMSHandler;
 import com.eis.smslibrary.SMSMessage;
@@ -8,7 +13,6 @@ import com.eis.smslibrary.SMSPeer;
 import com.eis.smslibrary.listeners.SMSSentListener;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 
 /**
  * Singleton class that handles the Kademlia network.
@@ -80,7 +84,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      *
      * @param invitation The invitation message
      */
-    public void join(SMSMessage invitation) {
+    public void join(Invitation<SMSKADPeer> invitation) {
         //TODO: 1. Aggiungere chi ci ha invitato al nostro dizionario
         //TODO: 2. Dirgli che ci vogliamo aggiungere alla rete: ovvero inviare un JOIN_AGREED
         //TODO: 3. farci conoscere e ricevere la lista di peer da chi ci ha invitato
@@ -95,9 +99,9 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     @Override
     public void setResource(final SerializableObject key, final SerializableObject value) {
         final KADAddress resKadAddress = new KADAddress(key.toString());
-        findNode(resKadAddress, new FindNodeListener() {
+        findNode(resKadAddress, new FindNodeListener<SMSKADPeer>() {
             @Override
-            public void onClosestNodeFound(SMSKADPeer peer) {
+            public void onNodeFound(SMSKADPeer peer) {
                 SMSCommandMapper.sendRequest(RequestType.STORE, resKadAddress + SMSCommandMapper.SPLIT_CHAR + valueParser.serialize(value), peer);
             }
         });
@@ -121,7 +125,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      * @param listener   Called when the
      * @throws IllegalStateException if there's already a pending find request fort this address
      */
-    private void findNode(KADAddress kadAddress, FindNodeListener listener) {
+    private void findNode(KADAddress kadAddress, FindNodeListener<SMSKADPeer> listener) {
 
         if (listenerHandler.isNodeAddressRegistered(kadAddress))
             throw new IllegalStateException("A find request for this key is already pending");
@@ -129,12 +133,12 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
 
         //Checks if we are finding ourselves
         if (kadAddress.equals(mySelf.getNetworkAddress()))
-            listener.onClosestNodeFound(mySelf);
+            listener.onNodeFound(mySelf);
 
         //Checks if we already know the kadAddress
         SMSKADPeer nodeFoundInLocalDict = dict.getPeerFromAddress(kadAddress);
         if (nodeFoundInLocalDict != null)
-            listener.onClosestNodeFound(nodeFoundInLocalDict);
+            listener.onNodeFound(nodeFoundInLocalDict);
 
         listenerHandler.registerNodeListener(kadAddress, listener);
 
@@ -206,7 +210,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     }
 
     /**
-     * Method called when a join proposal has been accepted
+     * Method called when a join proposal this peer has made has been accepted
      *
      * @param peer the peer who accepted to join the network
      */
@@ -214,8 +218,15 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
         //TODO
     }
 
-    void onJoinProposal(SMSPeer sender) {
-        listenerHandler.triggerJoinProposal(sender);
+    /**
+     * Method called when we receive a join proposal from someone.
+     *
+     * @param peer           Who invited you to join the network.
+     * @param requestContent There should be the name of the network you're invited to
+     */
+    void onJoinProposal(SMSPeer peer, String requestContent) {
+        SMSKADPeer kadPeer = new SMSKADPeer(peer);
+        listenerHandler.triggerJoinProposal(new KADInvitation(kadPeer, requestContent));
     }
 
     public void setJoinProposalListener(JoinListener listener) {
