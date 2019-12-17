@@ -13,6 +13,7 @@ import com.eis.smslibrary.SMSPeer;
 import com.eis.smslibrary.listeners.SMSSentListener;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 /**
  * Singleton class that handles the Kademlia network.
@@ -31,9 +32,9 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     protected static SMSNetworkManager instance;
     protected String networkName;
     protected SMSKADPeer mySelf;
-    protected SerializableObjectParser keyParser;
     protected SerializableObjectParser valueParser;
     private SMSDistributedNetworkDictionary<SerializableObject> dict;
+    private HashMap<KADAddress, ClosestPQ> findNodeBuckets = new HashMap<>();
 
     static final int ALPHA = 1;
 
@@ -122,7 +123,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      * If the given KADAddress doesn't exist then finds the peer of the closest (to the one given)
      *
      * @param kadAddress The {@link KADAddress} object for which to find the peer
-     * @param listener   Called when the
+     * @param listener   Called when the //TODO
      * @throws IllegalStateException if there's already a pending find request fort this address
      */
     private void findNode(KADAddress kadAddress, FindNodeListener<SMSKADPeer> listener) {
@@ -140,14 +141,19 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
         if (nodeFoundInLocalDict != null)
             listener.onNodeFound(nodeFoundInLocalDict);
 
-        listenerHandler.registerNodeListener(kadAddress, listener);
+        //Creates a sorted by distance ArrayList with the known nodes
+        //ArrayList<SMSKADPeer> knownNodesOrdered = dict.getNodesSortedByDistance(kadAddress);
 
-        //Creates an ArrayList with the known closest nodes
-        ArrayList<SMSKADPeer> knownCloserNodes = dict.getNodesSortedByDistance(kadAddress);
+        ClosestPQ closestNodes = new ClosestPQ(new SMSKADPeer.KADComparator(kadAddress), dict.getAllUsers());
+
+        findNodeBuckets.put(kadAddress, closestNodes);
+
+        //((ClosestPQ.SMSFindNodeKADPeer[])closestNodes.toArray())[0].
+
 
         //Sends a FIND_NODE request to the peers in the ArrayList
-        for (int i = 0; i < ALPHA && i < knownCloserNodes.size(); i++)
-            SMSCommandMapper.sendRequest(RequestType.FIND_NODE, kadAddress.toString(), knownCloserNodes.get(i));
+        /*for (int i = 0; i < ALPHA && i < knownNodesOrdered.size(); i++)
+            SMSCommandMapper.sendRequest(RequestType.FIND_NODE, kadAddress.toString(), knownNodesOrdered.get(i));*/
 
     }
 
