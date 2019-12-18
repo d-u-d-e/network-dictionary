@@ -55,6 +55,8 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     protected SerializableObjectParser valueParser;
     private SMSDistributedNetworkDictionary<SerializableObject> dict;
     private HashMap<KADAddress, ClosestPQ> bestSoFarClosestNodes = new HashMap<>();
+    private ArrayList<KADInvitation> invitationList;
+    private JoinListener joinListener;
 
     static final int KADEMLIA_ALPHA = 1; //always less than KADEMLIA_K
 
@@ -84,6 +86,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
         dict = new SMSDistributedNetworkDictionary<>(new SMSKADPeer(mySelf));
         SMSHandler.getInstance().setReceivedListener(SMSNetworkListener.class);
         this.valueParser = valueParser;
+        invitationList = new ArrayList<>();
         listenerHandler = new SMSNetworkListenerHandler();
     }
     //*******************************************************************************************
@@ -98,7 +101,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
         SMSCommandMapper.sendRequest(RequestType.JOIN_PROPOSAL, networkName, peer, new SMSSentListener() {
             @Override
             public void onSMSSent(SMSMessage message, SMSMessage.SentState sentState) {
-                listenerHandler.addToInvitedList(peer);
+                //listenerHandler.addToInvitedList(peer);
             }
         });
     }
@@ -134,11 +137,11 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      */
     void onJoinProposal(SMSPeer peer, String requestContent) {
         SMSKADPeer kadPeer = new SMSKADPeer(peer);
-        listenerHandler.triggerJoinProposal(new KADInvitation(kadPeer, requestContent));
+        joinListener.onJoinProposal(new KADInvitation(kadPeer, requestContent));
     }
 
     public void setJoinProposalListener(JoinListener listener) {
-        listenerHandler.setJoinListener(listener);
+        joinListener = listener;
     }
     //*******************************************************************************************
 

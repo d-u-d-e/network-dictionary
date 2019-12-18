@@ -1,20 +1,17 @@
 package com.eis.networklibrary.kademlia;
 
 
-import android.util.Pair;
 
 import com.eis.communication.network.FindNodeListener;
 import com.eis.communication.network.FindValueListener;
-import com.eis.communication.network.JoinListener;
 import com.eis.communication.network.PingListener;
 import com.eis.communication.network.SerializableObject;
 import com.eis.smslibrary.SMSPeer;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 
 /**
- * This class handles the FindNode, FindValue, Reply and Join listeners
+ * This class handles the FindNode, FindValue and Ping listeners
  * Uses KADAddress or SMSPeer as key to identify a specific listener
  * When a listener is triggered it is removed from the pending list
  *
@@ -26,9 +23,6 @@ public class SMSNetworkListenerHandler {
     private HashMap<KADAddress, FindValueListener<SerializableObject>> findValueListenerMap = new HashMap<>();
     private HashMap<SMSPeer, PingListener> pingListenerMap = new HashMap<>();
 
-    //Only one joinListener for a list of SMSPeer
-    private Pair<ArrayList<KADInvitation>, JoinListener> joinListenerPair;
-
     //*******************************************************************************************
 
     /**
@@ -36,9 +30,10 @@ public class SMSNetworkListenerHandler {
      *
      * @param kadAddress The address linked to the listener
      * @param listener   The listener to add to the pending list
+     * @return  The previous value corresponding to the key, null otherwise
      */
-    protected void registerNodeListener(KADAddress kadAddress, FindNodeListener listener) {
-        findNodeListenerMap.put(kadAddress, listener);
+    protected FindNodeListener<SMSKADPeer> registerNodeListener(KADAddress kadAddress, FindNodeListener<SMSKADPeer> listener) {
+        return findNodeListenerMap.put(kadAddress, listener);
     }
 
     /**
@@ -54,14 +49,13 @@ public class SMSNetworkListenerHandler {
     /**
      * Triggers onClosestNodeFound and removes the NodeListener
      *
-     * @param kadAddress The address linked to the NodeListener
-     * @param peer       The peer found
-     * @return The NodeListener triggered
+     * @param kadAddress    The address linked to the NodeListener
+     * @param peers         The peers found
      */
-    protected void triggerKNodesFound(KADAddress kadAddress, SMSKADPeer[] peer) {
-        FindNodeListener listener = findNodeListenerMap.remove(kadAddress);
+    protected void triggerKNodesFound(KADAddress kadAddress, SMSKADPeer[] peers) {
+        FindNodeListener<SMSKADPeer> listener = findNodeListenerMap.remove(kadAddress);
         if (listener != null)
-            listener.OnKClosestNodesFound(peer);
+            listener.OnKClosestNodesFound(peers);
     }
 
     //*******************************************************************************************
@@ -72,7 +66,7 @@ public class SMSNetworkListenerHandler {
      * @param kadAddress The address linked to the listener
      * @param listener   The listener to add to the pending list
      */
-    protected void registerValueListener(KADAddress kadAddress, FindValueListener listener) {
+    protected void registerValueListener(KADAddress kadAddress, FindValueListener<SerializableObject> listener) {
         findValueListenerMap.put(kadAddress, listener);
     }
 
@@ -90,11 +84,10 @@ public class SMSNetworkListenerHandler {
      * Triggers onValueFound and removes the ValueListener
      *
      * @param kadAddress The address linked to the ValueListener
-     * @param value      The peer found
-     * @return The ValueListener triggered
+     * @param value      The value found
      */
     protected void triggerValueFound(KADAddress kadAddress, SerializableObject value) {
-        FindValueListener listener = findValueListenerMap.remove(kadAddress);
+        FindValueListener<SerializableObject> listener = findValueListenerMap.remove(kadAddress);
         if (listener != null)
             listener.onValueFound(value);
     }
@@ -106,7 +99,7 @@ public class SMSNetworkListenerHandler {
      * @return The ValueListener triggered
      */
     protected void triggerValueNotFound(KADAddress kadAddress) {
-        FindValueListener listener = findValueListenerMap.remove(kadAddress);
+        FindValueListener<SerializableObject> listener = findValueListenerMap.remove(kadAddress);
         if (listener != null)
             listener.onValueNotFound();
     }
@@ -127,7 +120,6 @@ public class SMSNetworkListenerHandler {
      * Triggers onPingReply and removes the PingListener
      *
      * @param peer The SMSPeer that replied
-     * @return The PingListener triggered
      */
     protected void triggerPingReply(SMSPeer peer) {
         PingListener listener = pingListenerMap.remove(peer);
@@ -135,50 +127,5 @@ public class SMSNetworkListenerHandler {
             listener.onPingReply(peer);
     }
 
-    //*******************************************************************************************
-
-    /**
-     * Sets the joinListener in use
-     *
-     * @param joinListener The joinListener in use
-     */
-    protected void setJoinListener(JoinListener joinListener) {
-        joinListenerPair = new Pair<>(new ArrayList<KADInvitation>(), joinListener);
-    }
-
-    /**
-     * Adds a new SMSPeer to pending list
-     * Should set the joinListener first
-     *
-     * @param peer The SMSPeer to add
-     */
-    protected void addToInvitedList(SMSPeer peer) {
-        //TODO: Riguardare come sono stati gestiti gli inviti e i listener. @LucaCrema
-        //joinListenerPair.first.add(peer);
-    }
-
-    /**
-     * Searches for the SMSPeer in the pending list
-     * Should set the joinListener first
-     *
-     * @param invitation The invitation to join a network.
-     * @return True if found, false otherwise.
-     */
-    protected boolean isInvitationInJoinProposals(KADInvitation invitation) {
-        return joinListenerPair.first.contains(invitation);
-    }
-
-    /**
-     * Triggers onJoinProposal and removes the SMSPeer from pending list
-     * Should set the joinListener first
-     *
-     * @param invitation The invitation to join a network.
-     * @return The JoinListener triggered.
-     */
-    protected void triggerJoinProposal(KADInvitation invitation) {
-        boolean success = joinListenerPair.first.remove(invitation);
-        if (success)
-            joinListenerPair.second.onJoinProposal(invitation);
-    }
     //*******************************************************************************************
 }
