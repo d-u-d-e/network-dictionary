@@ -19,13 +19,13 @@ import com.eis.smslibrary.listeners.SMSSentListener;
  * PING request:       "PING"                                  check whether the receiver is alive
  * STORE request:      "STORE-%(KADAddress key)-%(value)"      tell the receiver to store the (key, value) pair
  * DELETE request:     "DELETE-%(KADAddress key)"              tell the receiver to delete the (key, value) pair
- * FIND_NODE request:  "FIND_NODE-%(KADAddress address)"       find the K-CLOSEST nodes to this KAD address (we want to know their phone numbers)
+ * FIND_CLOSEST_NODES request:  "FIND_CLOSEST_NODES-%(KADAddress address)"       find the K-CLOSEST nodes to this KAD address (we want to know their phone numbers)
  * FIND_VALUE request: "FIND_VALUE-%(KADAddress key)           find the value associated with key
  * <p>
  * SMS REPLIES FORMATS
  * JOIN agreed:           "JOIN_AGREED" join confirmation
  * PING reply:            "PING_ECHO"   ping reply
- * NODE_FOUND reply:      "NODE_FOUND-%(KADAddress address)-(phoneNumber1)-...-(phoneNumber K)" the receiving user is told other K closer nodes to address
+ * CLOSEST_NODES_FOUND reply:      "CLOSEST_NODES_FOUND-%(KADAddress address)-(phoneNumber1)-...-(phoneNumber K)" the receiving user is told other K closer nodes to address
  * VALUE_FOUND reply:     "VALUE_FOUND-%(KADAddress key)-(value)"  the value for key is returned to the querier
  * VALUE_NOT_FOUND reply: "VALUE_NOT_FOUND-%(KADAddress key)       the value for key has not been found
  *

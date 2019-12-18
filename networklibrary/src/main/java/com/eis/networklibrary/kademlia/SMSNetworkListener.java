@@ -16,9 +16,6 @@ import static com.eis.networklibrary.kademlia.SMSCommandMapper.SPLIT_CHAR;
  */
 class SMSNetworkListener extends SMSReceivedServiceListener {
 
-    protected static final int FIND_NODE_FLAG = 0;
-    protected static final int FIND_VALUE_FLAG = 1;
-
     /**
      * Checks if the received message is a command for the kad dictionary, check which command
      * has been received and calls processReply or processRequest.
@@ -69,8 +66,8 @@ class SMSNetworkListener extends SMSReceivedServiceListener {
             case PING:
                 manager.onPingRequest(sender);
                 break;
-            case FIND_NODE:
-                manager.onFindNodeRequest(sender, commandContent);
+            case FIND_CLOSEST_NODES:
+                manager.onFindClosestNodesRequest(sender, commandContent);
                 break;
             case FIND_VALUE:
                 manager.onFindValueRequest(sender, commandContent);
@@ -97,10 +94,10 @@ class SMSNetworkListener extends SMSReceivedServiceListener {
             case PING_ECHO:
                 manager.onPingEchoReply(sender);
                 break;
-            case NODE_FOUND:
-                manager.onNodeFoundReply(commandContent, FIND_NODE_FLAG);
-            case NODES_FOR_FIND_VALUE:
-                manager.onNodeFoundReply(commandContent, FIND_VALUE_FLAG);
+            case CLOSEST_NODES_FOUND:
+                manager.onClosestNodesFoundReply(commandContent);
+            case CLOSEST_NODES_FOR_FIND_VALUE_FOUND:
+                manager.onFindValueNodesFoundReply(commandContent);
                 break;
             case VALUE_FOUND:
                 manager.onValueFoundReply(commandContent); //sender is useless to pass
