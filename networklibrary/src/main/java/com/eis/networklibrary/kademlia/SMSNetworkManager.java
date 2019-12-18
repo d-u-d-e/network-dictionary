@@ -40,7 +40,6 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
         DELETE,
         FIND_NODE,
         FIND_VALUE,
-        FIND_VALUE_NODE_FOUND
     }
 
     enum ReplyType {
