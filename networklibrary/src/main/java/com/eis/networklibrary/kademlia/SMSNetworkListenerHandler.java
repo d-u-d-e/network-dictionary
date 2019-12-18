@@ -122,6 +122,7 @@ public class SMSNetworkListenerHandler {
      * @param peer The SMSPeer that replied
      */
     protected void triggerPingReply(SMSPeer peer) {
+        //TODO check if it timed out
         PingListener listener = pingListenerMap.remove(peer);
         if (listener != null)
             listener.onPingReply(peer);

@@ -17,7 +17,6 @@ import java.util.HashMap;
 
 import static com.eis.networklibrary.kademlia.SMSCommandMapper.SPLIT_CHAR;
 import static com.eis.networklibrary.kademlia.SMSDistributedNetworkDictionary.KADEMLIA_K;
-import static com.eis.networklibrary.kademlia.SMSDistributedNetworkDictionary.NO_BUCKETS;
 
 /**
  * Singleton class that handles the Kademlia network.
@@ -103,7 +102,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
         SMSCommandMapper.sendRequest(RequestType.JOIN_PROPOSAL, networkName, peer, new SMSSentListener() {
             @Override
             public void onSMSSent(SMSMessage message, SMSMessage.SentState sentState) {
-                //listenerHandler.addToInvitedList(peer);
+                //TODO use invited list
             }
         });
     }
@@ -117,8 +116,15 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
         SMSKADPeer inviter = invitation.getInviter();
         dict.addUser(inviter);
         SMSCommandMapper.sendReply(ReplyType.JOIN_AGREED, inviter);
-        SMSCommandMapper.sendRequest(RequestType.FIND_CLOSEST_NODES, mySelf.getNetworkAddress().toString(), inviter);
-        refresh();
+
+        findClosestNodes(mySelf.networkAddress, new FindNodeListener<SMSKADPeer>() {
+            @Override
+            public void OnKClosestNodesFound(SMSKADPeer[] peers) {
+                //when a node lookup for ourselves has been performed
+                //note that peers have already been added to the dict
+                //TODO refresh based on timestamps
+            }
+        });
     }
 
     /**
@@ -127,17 +133,16 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      * @param peer the peer who accepted to join the network
      */
     void onJoinAgreedReply(SMSPeer peer) {
+        //TODO has this node received a join proposal? If not, then ignore
         SMSKADPeer newUser = new SMSKADPeer(peer);
         dict.addUser(newUser);
-        //ricavo le mie risorse e per ognuna di esse controllo se la distanza da me è maggiore di quella dal nuovo peer --> se è maggiore mando a lui la richiesta di STORE
+        //Get my resources. If the new node is closer to resource x, we send him a STORE request for x (this is an optimization)
         ArrayList<KADAddress> myResources = dict.getKeys();
         for (int i = 0; i < myResources.size(); i++) {
             KADAddress resourceKey = myResources.get(i);
             KADAddress closer = KADAddress.closerToTarget(mySelf.getNetworkAddress(), newUser.getNetworkAddress(), resourceKey);
-            if (closer.equals(newUser.getNetworkAddress())) {
-                //TODO: check the content (in particular the value format)
-                SMSCommandMapper.sendRequest(RequestType.STORE, resourceKey + SPLIT_CHAR + dict.getValue(resourceKey), peer);
-            }
+            if (closer.equals(newUser.getNetworkAddress()))
+                SMSCommandMapper.sendRequest(RequestType.STORE, resourceKey.toString() + SPLIT_CHAR + dict.getValue(resourceKey).toString(), peer);
         }
     }
 
@@ -458,13 +463,13 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     //REFRESH
 
     /**
-     * Refresh the buckets of a node (This method must be called when a new node joins the network and also every hour by every node)
+     * Refreshes the specified bucket
+     *
+     * @param bucketIndex identifies each bucket, from 0 to N-1, where N = NO_BUCKETS.
      */
-    public void refresh() {
-        for (int i = 0; i < NO_BUCKETS; i++) {
-            KADAddress randomAddress = dict.getRandomAddressInBucket(i);
-            //TODO
-        }
+    private void refreshBucket(int bucketIndex) {
+        //TODO maybe add a listener so we know when the refresh has completed
+        KADAddress randomAddress = dict.getRandomAddressInBucket(bucketIndex);
+        findClosestNodes(randomAddress, null); //will trigger the listener handler, but no listener will actually be called
     }
-
 }

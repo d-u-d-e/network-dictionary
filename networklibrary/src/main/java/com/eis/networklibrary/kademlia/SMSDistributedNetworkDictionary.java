@@ -9,6 +9,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 
 
 /**
@@ -44,36 +45,39 @@ public class SMSDistributedNetworkDictionary<RV> implements NetworkDictionary<SM
      * @param newUser new network user. Must not be the current user.
      */
     @Override
-    public void addUser(SMSKADPeer newUser) { //TODO implement queuing policy
+    public void addUser(final SMSKADPeer newUser) {
 
         //bucketIndex is the closer bucket of mySelf containing newUser
         int bucketIndex = getBucketContaining(newUser.getNetworkAddress());
-
         //If it's actually the current user we don't add himself
         if (bucketIndex == -1) return;
 
         if (buckets[bucketIndex] == null)
             buckets[bucketIndex] = new ArrayList<>();
-        else if (buckets[bucketIndex].contains(newUser))
-            return;
 
-        //TODO each bucket should contain at most KADEMLIA_K users: use an array? and add politics of queuing
-        final ArrayList<SMSKADPeer> usersInBucket = getUsersInBucket(bucketIndex);
-        //if bucket is full, ping its first node
-        if (usersInBucket.size() == KADEMLIA_K) {
+        final ArrayList<SMSKADPeer> usersInBucket = buckets[bucketIndex];
+
+        if(usersInBucket.size() == KADEMLIA_K){
             PingListener listener = new PingListener() {
                 @Override
                 public void onPingReply(SMSPeer peer) {
-                    // TODO: check this (move peer at the bottom of the bucket, then return without adding the new peer)
+                    //move peer at the tail of the bucket, then return without adding the new peer
                     usersInBucket.remove(peer);
                     usersInBucket.add(new SMSKADPeer(peer));
                 }
+                @Override
+                public void onPingTimedOut(SMSPeer peer) {
+                    usersInBucket.remove(peer); //peer does not respond, so we remove it
+                    usersInBucket.add(newUser); //instead we add the new user at the tail
+                }
             };
-            SMSNetworkManager.getInstance().ping(usersInBucket.get(0), listener);
-            buckets[bucketIndex].add(newUser);
-
+            SMSKADPeer head = usersInBucket.get(0);
+            SMSNetworkManager.getInstance().ping(head, listener);
         }
-        buckets[bucketIndex].add(newUser);
+        else{
+            usersInBucket.remove(newUser); //does nothing if not present
+            usersInBucket.add(newUser); //add at the tail. If it was already present, it is moved correctly to the tail.
+        }
     }
 
 
@@ -259,6 +263,19 @@ public class SMSDistributedNetworkDictionary<RV> implements NetworkDictionary<SM
      * @return a random KADAddress in this bucket
      */
     public KADAddress getRandomAddressInBucket(int bucketIndex) {
-        return null;
+        byte[] myAddress = mySelf.getNetworkAddress().getAddress();
+        int byteIndex = KADAddress.BYTE_ADDRESS_LENGTH - 1 - bucketIndex / Byte.SIZE;
+        byte[] randomAddress = new byte[KADAddress.BYTE_ADDRESS_LENGTH];
+        System.arraycopy(myAddress, 0, randomAddress, 0, byteIndex + 1); //copy all the first bytes up to byte n. byteIndex
+        randomAddress[byteIndex] = (byte) (myAddress[byteIndex] ^ 1); //flip least significant bit of byte n. byteIndex
+
+        if(byteIndex < KADAddress.BYTE_ADDRESS_LENGTH - 1){ //add random bytes from byte n. byteIndex + 1 onwards
+            int randomBytesLen = KADAddress.BYTE_ADDRESS_LENGTH - byteIndex - 1;
+            byte[] randomBytes = new byte[randomBytesLen];
+            Random ranGen = new Random();
+            ranGen.nextBytes(randomBytes);
+            System.arraycopy(randomBytes, 0, randomAddress, byteIndex + 1, randomBytesLen);
+        }
+        return new KADAddress(randomAddress);
     }
 }

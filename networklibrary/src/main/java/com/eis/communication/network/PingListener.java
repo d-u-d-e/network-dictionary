@@ -9,4 +9,5 @@ import com.eis.smslibrary.SMSPeer;
  */
 public interface PingListener {
     void onPingReply(SMSPeer peer);
+    void onPingTimedOut(SMSPeer peer);
 }
