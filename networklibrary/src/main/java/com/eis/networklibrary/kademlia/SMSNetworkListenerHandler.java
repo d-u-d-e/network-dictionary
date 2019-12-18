@@ -1,16 +1,13 @@
 package com.eis.networklibrary.kademlia;
 
 
-import android.util.Pair;
 
 import com.eis.communication.network.FindNodeListener;
 import com.eis.communication.network.FindValueListener;
-import com.eis.communication.network.JoinListener;
 import com.eis.communication.network.PingListener;
 import com.eis.communication.network.SerializableObject;
 import com.eis.smslibrary.SMSPeer;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 
 /**
@@ -55,7 +52,7 @@ public class SMSNetworkListenerHandler {
      * @param peers       The peer found
      */
     protected void triggerKNodesFound(KADAddress kadAddress, SMSKADPeer[] peers) {
-        FindNodeListener<SMSKADPeer> listener = removeNodeListener(kadAddress);
+        FindNodeListener<SMSKADPeer> listener = findNodeListenerMap.remove(kadAddress);
         if (listener != null)
             listener.OnKClosestNodesFound(peers);
     }
@@ -89,7 +86,7 @@ public class SMSNetworkListenerHandler {
      * @param value      The peer found
      */
     protected void triggerValueFound(KADAddress kadAddress, SerializableObject value) {
-        FindValueListener<SerializableObject> listener = removeValueListener(kadAddress);
+        FindValueListener<SerializableObject> listener = findValueListenerMap.remove(kadAddress);
         if (listener != null)
             listener.onValueFound(value);
     }
@@ -101,7 +98,7 @@ public class SMSNetworkListenerHandler {
      * @return The ValueListener triggered
      */
     protected void triggerValueNotFound(KADAddress kadAddress) {
-        FindValueListener<SerializableObject> listener = removeValueListener(kadAddress);
+        FindValueListener<SerializableObject> listener = findValueListenerMap.remove(kadAddress);
         if (listener != null)
             listener.onValueNotFound();
     }
