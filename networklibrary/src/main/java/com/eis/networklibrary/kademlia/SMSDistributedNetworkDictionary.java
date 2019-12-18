@@ -41,7 +41,7 @@ public class SMSDistributedNetworkDictionary<RV> implements NetworkDictionary<SM
      * @param newUser new network user. Must not be the current user.
      */
     @Override
-    public void addUser(SMSKADPeer newUser) {
+    public void addUser(SMSKADPeer newUser) { //TODO implement queuing policy
 
         //bucketIndex is the closer bucket of mySelf containing newUser
         int bucketIndex = getBucketContaining(newUser.getNetworkAddress());

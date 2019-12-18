@@ -35,6 +35,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
         JOIN_PROPOSAL,
         PING,
         STORE,
+        DELETE,
         FIND_NODE,
         FIND_VALUE
     }
@@ -142,6 +143,13 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     }
     //*******************************************************************************************
 
+    /**
+     * Sets a new resource. TODO If {@code key} already exists in the network, this method is unsafe to call and leads to security flaws
+     * TODO so we need special permissions in order to change an existing key, for example if we created it
+     *
+     * @param key the resource key
+     * @param value the resource value
+     */
     @Override
     public void setResource(final SerializableObject key, final SerializableObject value) {
         final KADAddress resKadAddress = new KADAddress(key.toString());
@@ -155,13 +163,20 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     }
 
     /**
-     * Calls the setResource method passing to it the {@param key} and a null value
+     * Delete an existing resource. TODO If {@code key} has not been created by mySelf, this method is unsafe to call and leads to security flaws
      *
      * @param key The resource key for which to set the value to null
      */
     @Override
     public void removeResource(SerializableObject key) {
-        //TODO
+        final KADAddress resKadAddress = new KADAddress(key.toString());
+        findNode(resKadAddress, new FindNodeListener<SMSKADPeer>() {
+            @Override
+            public void OnKClosestNodesFound(SMSKADPeer[] peers) {
+                for(SMSKADPeer p: peers)
+                    SMSCommandMapper.sendRequest(RequestType.DELETE, resKadAddress.toString(), p);
+            }
+        });
     }
 
     /**
@@ -233,6 +248,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
         for(int i = 1; i < splitStr.length; i++){ //start from 1 because the first element is address, while the other elements are phone numbers of closer nodes
             SMSKADPeer p = new SMSKADPeer(splitStr[i]);
             currentBestPQ.add(p, false); //if it is already in the queue, this does nothing
+            dict.addUser(p); //might be a new node we don't know about, so we add it to our dict
         }
         int picked = 0;
         for(int i = 0; i < currentBestPQ.size() && picked < KADEMLIA_ALPHA; i++){  //pick other alpha non queried nodes in currentBestPQ
