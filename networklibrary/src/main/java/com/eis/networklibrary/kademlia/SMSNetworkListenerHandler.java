@@ -14,7 +14,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 /**
- * This class handles the FindNode, FindValue, Reply and Join listeners
+ * This class handles the FindNode, FindValue and Ping listeners
  * Uses KADAddress or SMSPeer as key to identify a specific listener
  * When a listener is triggered it is removed from the pending list
  *
@@ -25,9 +25,6 @@ public class SMSNetworkListenerHandler {
     private HashMap<KADAddress, FindNodeListener<SMSKADPeer>> findNodeListenerMap = new HashMap<>();
     private HashMap<KADAddress, FindValueListener<SerializableObject>> findValueListenerMap = new HashMap<>();
     private HashMap<SMSPeer, PingListener> pingListenerMap = new HashMap<>();
-
-    //Only one joinListener for a list of SMSPeer
-    private Pair<ArrayList<KADInvitation>, JoinListener> joinListenerPair;
 
     //*******************************************************************************************
 
@@ -165,50 +162,5 @@ public class SMSNetworkListenerHandler {
             listener.onPingReply(peer);
     }
 
-    //*******************************************************************************************
-
-    /**
-     * Sets the joinListener in use
-     *
-     * @param joinListener The joinListener in use
-     */
-    protected void setJoinListener(JoinListener joinListener) {
-        joinListenerPair = new Pair<>(new ArrayList<KADInvitation>(), joinListener);
-    }
-
-    /**
-     * Adds a new SMSPeer to pending list
-     * Should set the joinListener first
-     *
-     * @param peer The SMSPeer to add
-     */
-    protected void addToInvitedList(SMSPeer peer) {
-        //TODO: Riguardare come sono stati gestiti gli inviti e i listener. @LucaCrema
-        //joinListenerPair.first.add(peer);
-    }
-
-    /**
-     * Searches for the SMSPeer in the pending list
-     * Should set the joinListener first
-     *
-     * @param invitation The invitation to join a network.
-     * @return True if found, false otherwise.
-     */
-    protected boolean isInvitationInJoinProposals(KADInvitation invitation) {
-        return joinListenerPair.first.contains(invitation);
-    }
-
-    /**
-     * Triggers onJoinProposal and removes the SMSPeer from pending list
-     * Should set the joinListener first
-     *
-     * @param invitation The invitation to join a network.
-     * @return The JoinListener triggered.
-     */
-    protected void triggerJoinProposal(KADInvitation invitation) {
-        boolean success = joinListenerPair.first.remove(invitation);
-        if (success)
-            joinListenerPair.second.onJoinProposal(invitation);
-    }
     //*******************************************************************************************
 }
