@@ -47,7 +47,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
         JOIN_AGREED,
         PING_ECHO,
         NODE_FOUND,
-        NODES_FOR_FIND_VALUE,
+        CLOSER_TO_VALUE,
         VALUE_FOUND,
         VALUE_NOT_FOUND
     }
@@ -267,55 +267,32 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
         String[] splitStr = replyContent.split(SMSCommandMapper.SPLIT_CHAR);
         KADAddress address = KADAddress.fromHexString(splitStr[0]); //address which we asked to find
         ClosestPQ currentBestPQ = bestSoFarClosestNodes.get(address); //this SHOULD BE ALWAYS NON NULL
-        int picked;
 
-        //Reply sent by onFindNodeRequest
-        if (flag == SMSNetworkListener.FIND_NODE_FLAG) {
+
             for (int i = 1; i < splitStr.length; i++) { //start from 1 because the first element is address, while the other elements are phone numbers of closer nodes
                 SMSKADPeer p = new SMSKADPeer(splitStr[i]);
                 currentBestPQ.add(p, false); //if it is already in the queue, this does nothing
                 dict.addUser(p); //might be a new node we don't know about, so we add it to our dict
             }
-            picked = SMSNetworkListener.FIND_VALUE_FLAG;
+            int picked = 0;
             for (int i = 0; i < currentBestPQ.size() && picked < KADEMLIA_ALPHA; i++) {  //pick other alpha non queried nodes in currentBestPQ
                 ClosestPQ.MutablePair<SMSKADPeer, Boolean> pair = currentBestPQ.get(i);
                 if (!pair.second) { //if not queried
                     picked++;
                     pair.second = true;
-                    SMSCommandMapper.sendRequest(RequestType.FIND_NODE, splitStr[0], pair.first); //splitStr[0] is address
+                    RequestType reqType = (flag == SMSNetworkListener.FIND_NODE_FLAG)? RequestType.FIND_NODE:RequestType.FIND_VALUE;
+                    SMSCommandMapper.sendRequest(reqType, splitStr[0], pair.first); //splitStr[0] is address
                 }
             }
 
             if (picked == 0) { //our PQ consists only of already queried nodes, which are the closest globally
                 bestSoFarClosestNodes.remove(address);
-                listenerHandler.triggerKNodesFound(address, currentBestPQ.getAllPeers());
+                if(flag == SMSNetworkListener.FIND_NODE_FLAG)
+                    listenerHandler.triggerKNodesFound(address, currentBestPQ.getAllPeers());
+                else
+                    listenerHandler.triggerValueNotFound(address);
             }
         }
-
-        //Reply sent by onFindValueRequest
-        if (flag == 1) {
-            for (int i = 1; i < splitStr.length; i++) {
-                SMSKADPeer p = new SMSKADPeer(splitStr[i]);
-                currentBestPQ.add(p, false);
-                dict.addUser(p);
-            }
-            picked = 0;
-            for (int i = 0; i < currentBestPQ.size() && picked < KADEMLIA_ALPHA; i++) {
-                ClosestPQ.MutablePair<SMSKADPeer, Boolean> pair = currentBestPQ.get(i);
-                if (!pair.second) { //if not queried
-                    picked++;
-                    pair.second = true;
-                    SMSCommandMapper.sendRequest(RequestType.FIND_VALUE, splitStr[0], pair.first);
-                }
-            }
-
-            if (picked == 0) {
-                bestSoFarClosestNodes.remove(address);
-                //I asked all the k-nodes closest to the resource and none of them has it.
-                listenerHandler.triggerValueNotFound(address);
-            }
-        }
-    }
 
     //*******************************************************************************************
 
@@ -387,7 +364,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
                 replyContent.append(SMSCommandMapper.SPLIT_CHAR);
                 replyContent.append(closerNodes.get(i).getAddress());
             }
-            SMSCommandMapper.sendReply(ReplyType.NODES_FOR_FIND_VALUE, replyContent.toString(), sender);
+            SMSCommandMapper.sendReply(ReplyType.CLOSER_TO_VALUE, replyContent.toString(), sender);
         }
     }
 

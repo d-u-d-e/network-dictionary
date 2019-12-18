@@ -99,7 +99,7 @@ class SMSNetworkListener extends SMSReceivedServiceListener {
                 break;
             case NODE_FOUND:
                 manager.onNodeFoundReply(commandContent, FIND_NODE_FLAG);
-            case NODES_FOR_FIND_VALUE:
+            case CLOSER_TO_VALUE:
                 manager.onNodeFoundReply(commandContent, FIND_VALUE_FLAG);
                 break;
             case VALUE_FOUND:
