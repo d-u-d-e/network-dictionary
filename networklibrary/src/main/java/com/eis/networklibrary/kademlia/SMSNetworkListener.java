@@ -16,6 +16,9 @@ import static com.eis.networklibrary.kademlia.SMSCommandMapper.SPLIT_CHAR;
  */
 class SMSNetworkListener extends SMSReceivedServiceListener {
 
+    protected static final int FIND_NODE_FLAG = 0;
+    protected static final int FIND_VALUE_FLAG = 1;
+
     /**
      * Checks if the received message is a command for the kad dictionary, check which command
      * has been received and calls processReply or processRequest.
@@ -50,7 +53,6 @@ class SMSNetworkListener extends SMSReceivedServiceListener {
         //throw new IllegalArgumentException("Unknown command received");
     }
 
-
     /**
      * Calls the appropriate method depending on the received request
      *
@@ -76,6 +78,7 @@ class SMSNetworkListener extends SMSReceivedServiceListener {
             case STORE:
                 manager.onStoreRequest(commandContent);
                 break;
+
         }
     }
 
@@ -95,7 +98,9 @@ class SMSNetworkListener extends SMSReceivedServiceListener {
                 manager.onPingEchoReply(sender);
                 break;
             case NODE_FOUND:
-                manager.onNodeFoundReply(commandContent);
+                manager.onNodeFoundReply(commandContent, FIND_NODE_FLAG);
+            case NODES_FOR_FIND_VALUE:
+                manager.onNodeFoundReply(commandContent, FIND_VALUE_FLAG);
                 break;
             case VALUE_FOUND:
                 manager.onValueFoundReply(commandContent); //sender is useless to pass
