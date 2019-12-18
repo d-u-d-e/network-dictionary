@@ -1,6 +1,8 @@
 package com.eis.networklibrary.kademlia;
 
 import com.eis.communication.network.NetworkDictionary;
+import com.eis.communication.network.PingListener;
+import com.eis.smslibrary.SMSPeer;
 
 import java.util.ArrayList;
 import java.util.Collection;
