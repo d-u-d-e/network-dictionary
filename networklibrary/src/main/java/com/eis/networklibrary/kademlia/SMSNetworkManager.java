@@ -126,7 +126,6 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      */
     void onJoinAgreedReply(SMSPeer peer) {
         dict.addUser(new SMSKADPeer(peer));
-        //TODO: trovare un modo per inviare la lista dei miei contatti al nodo appena entrato (ad esempio un nuovo tipo di comando, SEND_NODES (?))
     }
 
     /**
@@ -140,6 +139,11 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
         joinListener.onJoinProposal(new KADInvitation(kadPeer, requestContent));
     }
 
+    /**
+     * This method sets a JoinProposalListener
+     *
+     * @param listener the listener to be set
+     */
     public void setJoinProposalListener(JoinListener listener) {
         joinListener = listener;
     }

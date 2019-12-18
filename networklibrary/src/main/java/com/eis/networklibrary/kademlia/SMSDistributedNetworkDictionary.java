@@ -55,7 +55,22 @@ public class SMSDistributedNetworkDictionary<RV> implements NetworkDictionary<SM
         else if (buckets[bucketIndex].contains(newUser))
             return;
 
-        //TODO each bucket should contain at most MAX_USER_BUCKET_LENGTH users: use an array? and add politics of queuing
+        //TODO each bucket should contain at most KADEMLIA_K users: use an array? and add politics of queuing
+        final ArrayList<SMSKADPeer> usersInBucket = getUsersInBucket(bucketIndex);
+        //if bucket is full, ping its first node
+        if (usersInBucket.size() == KADEMLIA_K) {
+            PingListener listener = new PingListener() {
+                @Override
+                public void onPingReply(SMSPeer peer) {
+                    // TODO: check this (move peer at the bottom of the bucket, then return without adding the new peer)
+                    usersInBucket.remove(peer);
+                    usersInBucket.add(new SMSKADPeer(peer));
+                }
+            };
+            SMSNetworkManager.getInstance().ping(usersInBucket.get(0), listener);
+            buckets[bucketIndex].add(newUser);
+
+        }
         buckets[bucketIndex].add(newUser);
     }
 
