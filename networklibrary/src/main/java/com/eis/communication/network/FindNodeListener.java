@@ -11,9 +11,9 @@ import com.eis.communication.Peer;
  */
 public interface FindNodeListener<P extends Peer> {
     /**
-     * Called when the peer of a given address is found.
+     * Called when the k-closest peers are received
      *
-     * @param peer The peer reference.
+     * @param peers The k-closest peers received.
      */
-    void OnKClosestNodesFound(P[] peer);
+    void OnKClosestNodesFound(P[] peers);
 }
