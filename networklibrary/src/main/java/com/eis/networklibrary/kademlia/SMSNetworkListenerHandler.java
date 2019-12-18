@@ -30,9 +30,10 @@ public class SMSNetworkListenerHandler {
      *
      * @param kadAddress The address linked to the listener
      * @param listener   The listener to add to the pending list
+     * @return  The previous value corresponding to the key, null otherwise
      */
-    protected void registerNodeListener(KADAddress kadAddress, FindNodeListener listener) {
-        findNodeListenerMap.put(kadAddress, listener);
+    protected FindNodeListener<SMSKADPeer> registerNodeListener(KADAddress kadAddress, FindNodeListener<SMSKADPeer> listener) {
+        return findNodeListenerMap.put(kadAddress, listener);
     }
 
     /**
@@ -48,8 +49,8 @@ public class SMSNetworkListenerHandler {
     /**
      * Triggers onClosestNodeFound and removes the NodeListener
      *
-     * @param kadAddress The address linked to the NodeListener
-     * @param peers       The peer found
+     * @param kadAddress    The address linked to the NodeListener
+     * @param peers         The peers found
      */
     protected void triggerKNodesFound(KADAddress kadAddress, SMSKADPeer[] peers) {
         FindNodeListener<SMSKADPeer> listener = findNodeListenerMap.remove(kadAddress);
@@ -83,7 +84,7 @@ public class SMSNetworkListenerHandler {
      * Triggers onValueFound and removes the ValueListener
      *
      * @param kadAddress The address linked to the ValueListener
-     * @param value      The peer found
+     * @param value      The value found
      */
     protected void triggerValueFound(KADAddress kadAddress, SerializableObject value) {
         FindValueListener<SerializableObject> listener = findValueListenerMap.remove(kadAddress);

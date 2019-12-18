@@ -99,7 +99,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
         SMSCommandMapper.sendRequest(RequestType.JOIN_PROPOSAL, networkName, peer, new SMSSentListener() {
             @Override
             public void onSMSSent(SMSMessage message, SMSMessage.SentState sentState) {
-                listenerHandler.addToInvitedList(peer);
+                //listenerHandler.addToInvitedList(peer);
             }
         });
     }
