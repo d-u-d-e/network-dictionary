@@ -115,22 +115,12 @@ public class SMSDistributedNetworkDictionary<RV> implements NetworkDictionary<SM
     }
 
     /**
-     * @param address {@link KADAddress} of which we seek the corresponding {@link SMSKADPeer}
-     * @return the known peer having this address, otherwise null
-     */
-    SMSKADPeer getPeerFromAddress(KADAddress address) {
-        for (SMSKADPeer peer : buckets[getBucketContaining(address)])
-            if (peer.getNetworkAddress().equals(address))
-                return peer;
-        return null;
-    }
-
-    /**
      * @param address {@link KADAddress} by which all nodes are sorted by their distance to it
-     * @return a list of the known users sorted by increasing distance to address
+     * @return a list of the known users sorted by increasing distance to address, including mySelf
      */
     public ArrayList<SMSKADPeer> getNodesSortedByDistance(KADAddress address) {
         ArrayList<SMSKADPeer> users = getAllUsers();
+        users.add(mySelf);
         Collections.sort(users, new SMSKADPeer.SMSKADComparator(address));
         return users;
     }

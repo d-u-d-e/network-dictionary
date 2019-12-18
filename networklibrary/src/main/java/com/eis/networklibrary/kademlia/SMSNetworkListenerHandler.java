@@ -42,16 +42,6 @@ public class SMSNetworkListenerHandler {
     }
 
     /**
-     * Unregisters a NodeListener
-     *
-     * @param kadAddress The address linked to the NodeListener
-     * @return The NodeListener removed
-     */
-    protected FindNodeListener<SMSKADPeer> removeNodeListener(KADAddress kadAddress) {
-        return findNodeListenerMap.remove(kadAddress);
-    }
-
-    /**
      * Searches for the KADAddress in NodeListeners Map
      *
      * @param kadAddress The address to find
@@ -69,7 +59,7 @@ public class SMSNetworkListenerHandler {
      * @return The NodeListener triggered
      */
     protected void triggerKNodesFound(KADAddress kadAddress, SMSKADPeer[] peer) {
-        FindNodeListener listener = removeNodeListener(kadAddress);
+        FindNodeListener listener = findNodeListenerMap.remove(kadAddress);
         if (listener != null)
             listener.OnKClosestNodesFound(peer);
     }
@@ -84,16 +74,6 @@ public class SMSNetworkListenerHandler {
      */
     protected void registerValueListener(KADAddress kadAddress, FindValueListener listener) {
         findValueListenerMap.put(kadAddress, listener);
-    }
-
-    /**
-     * Unregisters a ValueListener
-     *
-     * @param kadAddress The address linked to the ValueListener
-     * @return The ValueListener removed
-     */
-    protected FindValueListener removeValueListener(KADAddress kadAddress) {
-        return findValueListenerMap.remove(kadAddress);
     }
 
     /**
@@ -114,7 +94,7 @@ public class SMSNetworkListenerHandler {
      * @return The ValueListener triggered
      */
     protected void triggerValueFound(KADAddress kadAddress, SerializableObject value) {
-        FindValueListener listener = removeValueListener(kadAddress);
+        FindValueListener listener = findValueListenerMap.remove(kadAddress);
         if (listener != null)
             listener.onValueFound(value);
     }
@@ -126,7 +106,7 @@ public class SMSNetworkListenerHandler {
      * @return The ValueListener triggered
      */
     protected void triggerValueNotFound(KADAddress kadAddress) {
-        FindValueListener listener = removeValueListener(kadAddress);
+        FindValueListener listener = findValueListenerMap.remove(kadAddress);
         if (listener != null)
             listener.onValueNotFound();
     }
@@ -141,16 +121,6 @@ public class SMSNetworkListenerHandler {
      */
     protected void registerPingListener(SMSPeer peer, PingListener listener) {
         pingListenerMap.put(peer, listener);
-    }
-
-    /**
-     * Searches for the SMSPeer in PingListener Map
-     *
-     * @param peer The SMSPeer to find
-     * @return True if found
-     */
-    protected boolean isPingPeerRegistered(SMSPeer peer) {
-        return pingListenerMap.containsKey(peer);
     }
 
     /**
