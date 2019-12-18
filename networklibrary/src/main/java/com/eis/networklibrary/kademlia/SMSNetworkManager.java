@@ -225,6 +225,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      * @param requestContent contains a kad address that sender wants to know about
      */
     protected void onFindNodeRequest(SMSPeer sender, String requestContent) {
+        dict.addUser(new SMSKADPeer(sender)); //might be a new node we don't know about
         ArrayList<SMSKADPeer> closerNodes = dict.getNodesSortedByDistance(KADAddress.fromHexString(requestContent)); //this includes mySelf
         StringBuilder replyContent = new StringBuilder(requestContent); //this is the address we were asked to look up
         for(int i = 0; i < Math.min(KADEMLIA_K, closerNodes.size()); i++){ //we send up to K closest nodes we know about
