@@ -9,6 +9,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 
 
 /**
@@ -259,6 +260,19 @@ public class SMSDistributedNetworkDictionary<RV> implements NetworkDictionary<SM
      * @return a random KADAddress in this bucket
      */
     public KADAddress getRandomAddressInBucket(int bucketIndex) {
-        return null;
+        byte[] myAddress = mySelf.getNetworkAddress().getAddress();
+        int byteIndex = KADAddress.BYTE_ADDRESS_LENGTH - 1 - bucketIndex / Byte.SIZE;
+        byte[] randomAddress = new byte[KADAddress.BYTE_ADDRESS_LENGTH];
+        System.arraycopy(myAddress, 0, randomAddress, 0, byteIndex + 1); //copy all the first bytes up to byte n. byteIndex
+        randomAddress[byteIndex] = (byte) (myAddress[byteIndex] ^ 1); //flip least significant bit of byte n. byteIndex
+
+        if(byteIndex < KADAddress.BYTE_ADDRESS_LENGTH - 1){ //add random bytes from byte n. byteIndex + 1 onwards
+            int randomBytesLen = KADAddress.BYTE_ADDRESS_LENGTH - byteIndex - 1;
+            byte[] randomBytes = new byte[randomBytesLen];
+            Random ranGen = new Random();
+            ranGen.nextBytes(randomBytes);
+            System.arraycopy(randomBytes, 0, randomAddress, byteIndex + 1, randomBytesLen);
+        }
+        return new KADAddress(randomAddress);
     }
 }
