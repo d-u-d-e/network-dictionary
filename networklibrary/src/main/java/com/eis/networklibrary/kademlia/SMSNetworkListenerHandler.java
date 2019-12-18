@@ -1,13 +1,16 @@
 package com.eis.networklibrary.kademlia;
 
 
+import android.util.Pair;
 
 import com.eis.communication.network.FindNodeListener;
 import com.eis.communication.network.FindValueListener;
+import com.eis.communication.network.JoinListener;
 import com.eis.communication.network.PingListener;
 import com.eis.communication.network.SerializableObject;
 import com.eis.smslibrary.SMSPeer;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 
 /**
@@ -31,18 +34,8 @@ public class SMSNetworkListenerHandler {
      * @param kadAddress The address linked to the listener
      * @param listener   The listener to add to the pending list
      */
-    protected void registerNodeListener(KADAddress kadAddress, FindNodeListener<SMSKADPeer> listener) {
+    protected void registerNodeListener(KADAddress kadAddress, FindNodeListener listener) {
         findNodeListenerMap.put(kadAddress, listener);
-    }
-
-    /**
-     * Unregisters a NodeListener
-     *
-     * @param kadAddress The address linked to the NodeListener
-     * @return The NodeListener removed
-     */
-    protected FindNodeListener<SMSKADPeer> removeNodeListener(KADAddress kadAddress) {
-        return findNodeListenerMap.remove(kadAddress);
     }
 
     /**
@@ -77,16 +70,6 @@ public class SMSNetworkListenerHandler {
      */
     protected void registerValueListener(KADAddress kadAddress, FindValueListener<SerializableObject> listener) {
         findValueListenerMap.put(kadAddress, listener);
-    }
-
-    /**
-     * Unregisters a ValueListener
-     *
-     * @param kadAddress The address linked to the ValueListener
-     * @return The ValueListener removed
-     */
-    protected FindValueListener<SerializableObject> removeValueListener(KADAddress kadAddress) {
-        return findValueListenerMap.remove(kadAddress);
     }
 
     /**
@@ -133,16 +116,6 @@ public class SMSNetworkListenerHandler {
      */
     protected void registerPingListener(SMSPeer peer, PingListener listener) {
         pingListenerMap.put(peer, listener);
-    }
-
-    /**
-     * Searches for the SMSPeer in PingListener Map
-     *
-     * @param peer The SMSPeer to find
-     * @return True if found
-     */
-    protected boolean isPingPeerRegistered(SMSPeer peer) {
-        return pingListenerMap.containsKey(peer);
     }
 
     /**

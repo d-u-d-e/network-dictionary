@@ -20,7 +20,8 @@ public class SMSDistributedNetworkDictionary<RV> implements NetworkDictionary<SM
 
     //Maximum users per bucket
     static final int KADEMLIA_K = 5; //TODO maximum size for SMS-based networks is k = 12 (otherwise a NODE_FOUND reply would contain more than 160 chars)
-    static final int NO_BUCKETS = KADAddress.BYTE_ADDRESS_LENGTH * Byte.SIZE; //we have a bucket for each bit
+    // Number Of Buckets. We have a bucket for each bit
+    static final int NO_BUCKETS = KADAddress.BYTE_ADDRESS_LENGTH * Byte.SIZE;
     SMSKADPeer mySelf; //address of current node holding this dictionary
     private ArrayList<SMSKADPeer>[] buckets;
     private HashMap<KADAddress, RV> resources;
@@ -41,7 +42,7 @@ public class SMSDistributedNetworkDictionary<RV> implements NetworkDictionary<SM
      * @param newUser new network user. Must not be the current user.
      */
     @Override
-    public void addUser(SMSKADPeer newUser) {
+    public void addUser(SMSKADPeer newUser) { //TODO implement queuing policy
 
         //bucketIndex is the closer bucket of mySelf containing newUser
         int bucketIndex = getBucketContaining(newUser.getNetworkAddress());
@@ -115,22 +116,12 @@ public class SMSDistributedNetworkDictionary<RV> implements NetworkDictionary<SM
     }
 
     /**
-     * @param address {@link KADAddress} of which we seek the corresponding {@link SMSKADPeer}
-     * @return the known peer having this address, otherwise null
-     */
-    SMSKADPeer getPeerFromAddress(KADAddress address) {
-        for (SMSKADPeer peer : buckets[getBucketContaining(address)])
-            if (peer.getNetworkAddress().equals(address))
-                return peer;
-        return null;
-    }
-
-    /**
      * @param address {@link KADAddress} by which all nodes are sorted by their distance to it
-     * @return a list of the known users sorted by increasing distance to address
+     * @return a list of the known users sorted by increasing distance to address, including mySelf
      */
     public ArrayList<SMSKADPeer> getNodesSortedByDistance(KADAddress address) {
         ArrayList<SMSKADPeer> users = getAllUsers();
+        users.add(mySelf);
         Collections.sort(users, new SMSKADPeer.SMSKADComparator(address));
         return users;
     }

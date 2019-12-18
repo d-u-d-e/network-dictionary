@@ -1,6 +1,5 @@
 package com.eis.networklibrary.kademlia;
 
-import android.util.Pair;
 import java.util.ArrayList;
 import java.util.Collections;
 
@@ -37,18 +36,22 @@ public class ClosestPQ {
         return  arr.get(index);
     }
 
-    void add(SMSKADPeer peer){
+    void add(MutablePair<SMSKADPeer, Boolean> pair){
         for(int i = 0; i < arr.size(); i++){
-            int comp = cp.compare(peer, arr.get(i).first);
+            int comp = cp.compare(pair.first, arr.get(i).first);
             if(comp == 0) return; //peer is already in the queue
             else if(comp < 0){ //insertion sort
-                arr.add(i, new MutablePair<>(peer, false));
+                arr.add(i, pair);
                 if(arr.size() > KADEMLIA_K) arr.remove(KADEMLIA_K - 1); //delete the last element if this queue has more than KADEMLIA_K elements
                 break;
             }
         }
         if(arr.size() < KADEMLIA_K)
-            arr.add(new MutablePair<>(peer, false));
+            arr.add(pair);
+    }
+
+    void add(SMSKADPeer peer, boolean b){
+        add(new MutablePair<>(peer, b));
     }
 
     int size(){

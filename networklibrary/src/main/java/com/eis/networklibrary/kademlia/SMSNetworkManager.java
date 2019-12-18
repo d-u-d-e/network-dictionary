@@ -35,6 +35,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
         JOIN_PROPOSAL,
         PING,
         STORE,
+        DELETE,
         FIND_NODE,
         FIND_VALUE
     }
@@ -145,6 +146,13 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     }
     //*******************************************************************************************
 
+    /**
+     * Sets a new resource. TODO If {@code key} already exists in the network, this method is unsafe to call and leads to security flaws
+     * TODO so we need special permissions in order to change an existing key, for example if we created it
+     *
+     * @param key the resource key
+     * @param value the resource value
+     */
     @Override
     public void setResource(final SerializableObject key, final SerializableObject value) {
         final KADAddress resKadAddress = new KADAddress(key.toString());
@@ -158,13 +166,20 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     }
 
     /**
-     * Calls the setResource method passing to it the {@param key} and a null value
+     * Delete an existing resource. TODO If {@code key} has not been created by mySelf, this method is unsafe to call and leads to security flaws
      *
      * @param key The resource key for which to set the value to null
      */
     @Override
     public void removeResource(SerializableObject key) {
-        //TODO
+        final KADAddress resKadAddress = new KADAddress(key.toString());
+        findNode(resKadAddress, new FindNodeListener<SMSKADPeer>() {
+            @Override
+            public void OnKClosestNodesFound(SMSKADPeer[] peers) {
+                for(SMSKADPeer p: peers)
+                    SMSCommandMapper.sendRequest(RequestType.DELETE, resKadAddress.toString(), p);
+            }
+        });
     }
 
     /**
@@ -190,30 +205,20 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      */
     private void findNode(KADAddress kadAddress, FindNodeListener<SMSKADPeer> listener) {
 
-        if (listenerHandler.isNodeAddressRegistered(kadAddress))
+        if (listenerHandler.isNodeAddressRegistered(kadAddress)) //TODO we need a timer for this
             throw new IllegalStateException("A find request for this key is already pending");
-        listenerHandler.registerNodeListener(kadAddress, listener); //listener should remove itself from this map; maybe there's a better way to achieve this
-
-
-        //TODO can this comment block be safely deleted? Even if we are finding ourselves, this should work
-/*        //Checks if we are finding ourselves
-        if (kadAddress.equals(mySelf.getNetworkAddress()))
-            listener.OnKClosestNodesFound(mySelf);
-
-        //Checks if we already know the kadAddress
-        SMSKADPeer nodeFoundInLocalDict = dict.getPeerFromAddress(kadAddress);
-        if (nodeFoundInLocalDict != null)
-            listener.OnKClosestNodesFound(nodeFoundInLocalDict);*/
+        listenerHandler.registerNodeListener(kadAddress, listener); //listener takes care of removing itself from the map when the closest nodes are returned
 
         //bestSoFarClosestNodes contains the best so far KADEMLIA_K nodes found closer to kadAddress
         ClosestPQ currentBestPQ = new ClosestPQ(new SMSKADPeer.SMSKADComparator(kadAddress), dict.getAllUsers());
         bestSoFarClosestNodes.put(kadAddress, currentBestPQ);
 
         //Sends a FIND_NODE request to first KADEMLIA_ALPHA nodes in closestNodes
-        for (int i = 0; i < KADEMLIA_ALPHA; i++){
-            currentBestPQ.get(i).second = Boolean.TRUE; //set it to queried
+        for (int i = 0; i < Math.min(KADEMLIA_ALPHA, currentBestPQ.size()); i++){
+            currentBestPQ.get(i).second = true; //set it to queried
             SMSCommandMapper.sendRequest(RequestType.FIND_NODE, kadAddress.toString(), currentBestPQ.get(i).first);
         }
+        currentBestPQ.add(mySelf, true); //adding ourselves as a queried node
     }
 
     /**
@@ -223,7 +228,8 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      * @param requestContent contains a kad address that sender wants to know about
      */
     protected void onFindNodeRequest(SMSPeer sender, String requestContent) {
-        ArrayList<SMSKADPeer> closerNodes = dict.getNodesSortedByDistance(KADAddress.fromHexString(requestContent));
+        dict.addUser(new SMSKADPeer(sender)); //might be a new node we don't know about
+        ArrayList<SMSKADPeer> closerNodes = dict.getNodesSortedByDistance(KADAddress.fromHexString(requestContent)); //this includes mySelf
         StringBuilder replyContent = new StringBuilder(requestContent); //this is the address we were asked to look up
         for(int i = 0; i < Math.min(KADEMLIA_K, closerNodes.size()); i++){ //we send up to K closest nodes we know about
             replyContent.append(SMSCommandMapper.SPLIT_CHAR);
@@ -245,7 +251,8 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
 
         for(int i = 1; i < splitStr.length; i++){ //start from 1 because the first element is address, while the other elements are phone numbers of closer nodes
             SMSKADPeer p = new SMSKADPeer(splitStr[i]);
-            currentBestPQ.add(p);
+            currentBestPQ.add(p, false); //if it is already in the queue, this does nothing
+            dict.addUser(p); //might be a new node we don't know about, so we add it to our dict
         }
         int picked = 0;
         for(int i = 0; i < currentBestPQ.size() && picked < KADEMLIA_ALPHA; i++){  //pick other alpha non queried nodes in currentBestPQ
@@ -258,6 +265,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
         }
 
         if(picked == 0){ //our PQ consists only of already queried nodes, which are the closest globally
+            bestSoFarClosestNodes.remove(address);
             listenerHandler.triggerKNodesFound(address, currentBestPQ.getAllPeers());
         }
     }
