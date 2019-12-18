@@ -15,6 +15,7 @@ import com.eis.smslibrary.listeners.SMSSentListener;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import static com.eis.networklibrary.kademlia.SMSCommandMapper.SPLIT_CHAR;
 import static com.eis.networklibrary.kademlia.SMSDistributedNetworkDictionary.KADEMLIA_K;
 import static com.eis.networklibrary.kademlia.SMSDistributedNetworkDictionary.NO_BUCKETS;
 
@@ -125,7 +126,18 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      * @param peer the peer who accepted to join the network
      */
     void onJoinAgreedReply(SMSPeer peer) {
-        dict.addUser(new SMSKADPeer(peer));
+        SMSKADPeer newUser = new SMSKADPeer(peer);
+        dict.addUser(newUser);
+        //ricavo le mie risorse e per ognuna di esse controllo se la distanza da me è maggiore di quella dal nuovo peer --> se è maggiore mando a lui la richiesta di STORE
+        ArrayList<KADAddress> myResources = dict.getKeys();
+        for(int i = 0;  i < myResources.size(); i++){
+            KADAddress resourceKey = myResources.get(i);
+            KADAddress closer = KADAddress.closerToTarget(mySelf.getNetworkAddress(), newUser.getNetworkAddress(), resourceKey);
+            if(closer.equals(newUser.getNetworkAddress())){
+                //TODO: check the content (in particular the value format)
+                SMSCommandMapper.sendRequest(RequestType.STORE, resourceKey + SPLIT_CHAR + dict.getValue(resourceKey), peer);
+            }
+        }
     }
 
     /**
@@ -163,7 +175,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
             @Override
             public void OnKClosestNodesFound(SMSKADPeer[] peers) {
                 for (SMSKADPeer p : peers)
-                    SMSCommandMapper.sendRequest(RequestType.STORE, resKadAddress + SMSCommandMapper.SPLIT_CHAR + valueParser.serialize(value), p);
+                    SMSCommandMapper.sendRequest(RequestType.STORE, resKadAddress + SPLIT_CHAR + valueParser.serialize(value), p);
             }
         });
     }
@@ -191,7 +203,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      * @param requestContent The information about the (key, value) to store, must be parsed.
      */
     protected void onStoreRequest(String requestContent) {
-        String[] splitStr = requestContent.split(SMSCommandMapper.SPLIT_CHAR);
+        String[] splitStr = requestContent.split(SPLIT_CHAR);
         dict.setResource(KADAddress.fromHexString(splitStr[0]), valueParser.deSerialize(splitStr[1]));
     }
 
@@ -234,7 +246,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
         ArrayList<SMSKADPeer> closerNodes = dict.getNodesSortedByDistance(KADAddress.fromHexString(requestContent)); //this includes mySelf
         StringBuilder replyContent = new StringBuilder(requestContent); //this is the address we were asked to look up
         for (int i = 0; i < Math.min(KADEMLIA_K, closerNodes.size()); i++) { //we send up to K closest nodes we know about
-            replyContent.append(SMSCommandMapper.SPLIT_CHAR);
+            replyContent.append(SPLIT_CHAR);
             replyContent.append(closerNodes.get(i).getAddress()); //phone number
         }
         SMSCommandMapper.sendReply(ReplyType.NODE_FOUND, replyContent.toString(), sender);
@@ -247,7 +259,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      * @param sender       the node who informed us back about closerNode
      */
     protected void onNodeFoundReply(String replyContent, SMSKADPeer sender) {
-        String[] splitStr = replyContent.split(SMSCommandMapper.SPLIT_CHAR);
+        String[] splitStr = replyContent.split(SPLIT_CHAR);
         KADAddress address = KADAddress.fromHexString(splitStr[0]); //address which we asked to find
         ClosestPQ currentBestPQ = bestSoFarClosestNodes.get(address); //this SHOULD BE ALWAYS NON NULL
 
@@ -326,7 +338,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      * @param replyContent a string representing the VALUE_FOUND reply
      */
     protected void onValueFoundReply(String replyContent) {
-        String[] splitStr = replyContent.split(SMSCommandMapper.SPLIT_CHAR);
+        String[] splitStr = replyContent.split(SPLIT_CHAR);
         KADAddress key = KADAddress.fromHexString(splitStr[0]);
         SerializableObject value = valueParser.deSerialize(splitStr[1]);
         listenerHandler.triggerValueFound(key, value);
