@@ -123,6 +123,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      */
     void onJoinAgreedReply(SMSPeer peer) {
         dict.addUser(new SMSKADPeer(peer));
+        //TODO: trovare un modo per inviare la lista dei miei contatti al nodo appena entrato (ad esempio un nuovo tipo di comando, SEND_NODES (?))
     }
 
     /**
@@ -191,11 +192,10 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
 
 
     /**
-     * Finds the peer of the given KADAddress object
-     * If the given KADAddress doesn't exist then finds the peer of the closest (to the one given)
+     * Finds k-closest nodes to the one given
      *
      * @param kadAddress The {@link KADAddress} object for which to find the peer
-     * @param listener   Called when the //TODO
+     * @param listener   Called when the the k-closest nodes are found
      * @throws IllegalStateException if there's already a pending find request fort this address
      */
     private void findNode(KADAddress kadAddress, FindNodeListener<SMSKADPeer> listener) {
@@ -285,15 +285,21 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      * @param listener TODO
      */
     public void findValue(SerializableObject key, FindValueListener listener) {
+
         KADAddress keyAddress = new KADAddress(key.toString());
-        SerializableObject value = dict.getValue(keyAddress);
-        if (value != null) {
-            listenerHandler.triggerValueFound(keyAddress, value);
-            return;
-        }
+
+        if (listenerHandler.isValueAddressRegistered(keyAddress)) //TODO timer
+            throw new IllegalStateException("A find request for this key is already pending");
         listenerHandler.registerValueListener(keyAddress, listener);
 
-        //TODO this is similar to findNode, except that when the value is found it is immediately returned
+        ClosestPQ currentBestPQ = new ClosestPQ(new SMSKADPeer.SMSKADComparator(keyAddress), dict.getAllUsers());
+        bestSoFarClosestNodes.put(keyAddress, currentBestPQ);
+
+        for (int i = 0; i < Math.min(KADEMLIA_ALPHA, currentBestPQ.size()); i++) {
+            currentBestPQ.get(i).second = true; //set it to queried
+            SMSCommandMapper.sendRequest(RequestType.FIND_VALUE, keyAddress.toString(), currentBestPQ.get(i).first);
+        }
+        currentBestPQ.add(mySelf, true);
 
     }
 
