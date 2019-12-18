@@ -9,7 +9,7 @@ import static com.eis.networklibrary.kademlia.SMSDistributedNetworkDictionary.KA
 /**
  * Collection used to keep the first k-nodes closest to a given address
  */
-public class ClosestPQ {
+class ClosestPQ {
 
     static class MutablePair<F, S> {
         F first;
@@ -22,7 +22,7 @@ public class ClosestPQ {
     }
 
     private ArrayList<MutablePair<SMSKADPeer, Boolean>> mutablePairs;
-    SMSKADComparator comparator;
+    private SMSKADComparator comparator;
 
     ClosestPQ(SMSKADComparator comparator, ArrayList<SMSKADPeer> nodes) {
         Collections.sort(nodes, comparator);
