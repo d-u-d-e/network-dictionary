@@ -95,7 +95,7 @@ class SMSNetworkListener extends SMSReceivedServiceListener {
                 manager.onPingEchoReply(sender);
                 break;
             case NODE_FOUND:
-                manager.onNodeFoundReply(commandContent, new SMSKADPeer(sender));
+                manager.onNodeFoundReply(commandContent);
                 break;
             case VALUE_FOUND:
                 manager.onValueFoundReply(commandContent); //sender is useless to pass

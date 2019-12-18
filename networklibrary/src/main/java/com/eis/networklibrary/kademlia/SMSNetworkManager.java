@@ -240,19 +240,20 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      * Method called when a NODE_FOUND reply is received
      *
      * @param replyContent a string representing the NODE_FOUND reply
-     * @param sender       the node who informed us back about closerNode
      */
-    protected void onNodeFoundReply(String replyContent, SMSKADPeer sender) {
+    protected void onNodeFoundReply(String replyContent) {
         String[] splitStr = replyContent.split(SMSCommandMapper.SPLIT_CHAR);
         KADAddress address = KADAddress.fromHexString(splitStr[0]); //address which we asked to find
         ClosestPQ currentBestPQ = bestSoFarClosestNodes.get(address); //this SHOULD BE ALWAYS NON NULL
+        int picked;
 
+        //TODO se è stato chiamato da un findNode
         for (int i = 1; i < splitStr.length; i++) { //start from 1 because the first element is address, while the other elements are phone numbers of closer nodes
             SMSKADPeer p = new SMSKADPeer(splitStr[i]);
             currentBestPQ.add(p, false); //if it is already in the queue, this does nothing
             dict.addUser(p); //might be a new node we don't know about, so we add it to our dict
         }
-        int picked = 0;
+        picked = 0;
         for (int i = 0; i < currentBestPQ.size() && picked < KADEMLIA_ALPHA; i++) {  //pick other alpha non queried nodes in currentBestPQ
             ClosestPQ.MutablePair<SMSKADPeer, Boolean> pair = currentBestPQ.get(i);
             if (!pair.second) { //if not queried
@@ -265,6 +266,28 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
         if (picked == 0) { //our PQ consists only of already queried nodes, which are the closest globally
             bestSoFarClosestNodes.remove(address);
             listenerHandler.triggerKNodesFound(address, currentBestPQ.getAllPeers());
+        }
+
+        //TODO se è stato chiamato da un findValue
+        for (int i = 1; i < splitStr.length; i++) {
+            SMSKADPeer p = new SMSKADPeer(splitStr[i]);
+            currentBestPQ.add(p, false);
+            dict.addUser(p);
+        }
+        picked = 0;
+        for (int i = 0; i < currentBestPQ.size() && picked < KADEMLIA_ALPHA; i++) {
+            ClosestPQ.MutablePair<SMSKADPeer, Boolean> pair = currentBestPQ.get(i);
+            if (!pair.second) { //if not queried
+                picked++;
+                pair.second = true;
+                SMSCommandMapper.sendRequest(RequestType.FIND_VALUE, splitStr[0], pair.first);
+            }
+        }
+
+        if (picked == 0) {
+            bestSoFarClosestNodes.remove(address);
+            //I asked all the k-nodes closest to the resource and none of them has it.
+            listenerHandler.triggerValueNotFound(address);
         }
     }
 
@@ -285,7 +308,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      * Method used to find a value of the given key
      *
      * @param key      The resource key of which we want to find the value
-     * @param listener TODO
+     * @param listener The listener that has to be called when the value has been found
      */
     public void findValue(SerializableObject key, FindValueListener listener) {
 
@@ -295,14 +318,19 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
             throw new IllegalStateException("A find request for this key is already pending");
         listenerHandler.registerValueListener(keyAddress, listener);
 
-        ClosestPQ currentBestPQ = new ClosestPQ(new SMSKADPeer.SMSKADComparator(keyAddress), dict.getAllUsers());
-        bestSoFarClosestNodes.put(keyAddress, currentBestPQ);
+        //Maybe the value we are looking for is in our local dictionary
+        if (dict.getValue(keyAddress) != null)
+            listenerHandler.triggerValueFound(keyAddress, dict.getValue(keyAddress));
+        else {
+            ClosestPQ currentBestPQ = new ClosestPQ(new SMSKADPeer.SMSKADComparator(keyAddress), dict.getAllUsers());
+            bestSoFarClosestNodes.put(keyAddress, currentBestPQ);
 
-        for (int i = 0; i < Math.min(KADEMLIA_ALPHA, currentBestPQ.size()); i++) {
-            currentBestPQ.get(i).second = true; //set it to queried
-            SMSCommandMapper.sendRequest(RequestType.FIND_VALUE, keyAddress.toString(), currentBestPQ.get(i).first);
+            for (int i = 0; i < Math.min(KADEMLIA_ALPHA, currentBestPQ.size()); i++) {
+                currentBestPQ.get(i).second = true; //set it to queried
+                SMSCommandMapper.sendRequest(RequestType.FIND_VALUE, keyAddress.toString(), currentBestPQ.get(i).first);
+            }
+            currentBestPQ.add(mySelf, true);
         }
-        currentBestPQ.add(mySelf, true);
 
     }
 
@@ -313,7 +341,24 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      * @param requestContent contains the key
      */
     protected void onFindValueRequest(SMSPeer sender, String requestContent) {
-        //TODO
+
+        String[] splitStr = requestContent.split(SMSCommandMapper.SPLIT_CHAR);
+        KADAddress keyAddress = KADAddress.fromHexString(splitStr[0]); //value address which we asked to find
+
+        //returns the value to the sender if present in the local dict, otherwise returns the k closest node (for me) to the sender
+        if (dict.getValue(keyAddress) != null)
+            SMSCommandMapper.sendReply(ReplyType.VALUE_FOUND, splitStr[0] + SMSCommandMapper.SPLIT_CHAR + splitStr[1], sender);
+        else {
+            dict.addUser(new SMSKADPeer(sender));
+            ArrayList<SMSKADPeer> closerNodes = dict.getNodesSortedByDistance(KADAddress.fromHexString(requestContent));
+            StringBuilder replyContent = new StringBuilder(requestContent);
+            for (int i = 0; i < Math.min(KADEMLIA_K, closerNodes.size()); i++) {
+                replyContent.append(SMSCommandMapper.SPLIT_CHAR);
+                replyContent.append(closerNodes.get(i).getAddress());
+            }
+            SMSCommandMapper.sendReply(ReplyType.NODE_FOUND, replyContent.toString(), sender);
+        }
+
     }
 
     /**
