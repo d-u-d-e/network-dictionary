@@ -19,9 +19,9 @@ public class SMSDistributedNetworkDictionary<RV> implements NetworkDictionary<SM
 
 
     //Maximum users per bucket
-    static final int KADEMLIA_K = 5; //TODO maximum size for SMS-based networks is k = 12 (otherwise a NODE_FOUND reply would contain more than 160 chars)
+    static final int KADEMLIA_K = 5; //TODO maximum size for SMS-based networks is K = 12 (otherwise a NODE_FOUND reply would contain more than 160 chars)
     // Number Of Buckets. We have a bucket for each bit
-    static final int NO_BUCKETS = KADAddress.BYTE_ADDRESS_LENGTH * Byte.SIZE;
+    static final int NO_BUCKETS = KADAddress.BIT_LENGTH;
     SMSKADPeer mySelf; //address of current node holding this dictionary
     private ArrayList<SMSKADPeer>[] buckets;
     private HashMap<KADAddress, RV> resources;
@@ -237,5 +237,11 @@ public class SMSDistributedNetworkDictionary<RV> implements NetworkDictionary<SM
         return new ArrayList<>(resources.values());
     }
 
-
+    /**
+     * @param bucketIndex identifies each bucket, from 0 to N-1, where N = NO_BUCKETS.
+     * @return a random KADAddress in this bucket
+     */
+    public KADAddress getRandomAddressInBucket(int bucketIndex) {
+        return null;
+    }
 }
