@@ -38,15 +38,14 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
         PING,
         STORE,
         DELETE,
-        FIND_CLOSEST_NODES,
+        FIND_NODES,
         FIND_VALUE
     }
 
     enum ReplyType {
         JOIN_AGREED,
         PING_ECHO,
-        CLOSEST_NODES_FOUND,
-        CLOSEST_NODES_FOR_FIND_VALUE_FOUND,
+        NODES_FOUND,
         VALUE_FOUND,
         VALUE_NOT_FOUND
     }
@@ -223,26 +222,26 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     //NODES
 
     /**
-     * Finds k-closest nodes to the one given
+     * Finds k-closest nodes to {@code address}
      *
-     * @param kadAddress The {@link KADAddress} object for which to find the peer
+     * @param address The {@link KADAddress} object for which to find the peer
      * @param listener   Called when the the k-closest nodes are found
      * @throws IllegalStateException if there's already a pending find request for this address
      */
-    private void findClosestNodes(KADAddress kadAddress, FindNodeListener<SMSKADPeer> listener) throws IllegalStateException {
+    private void findClosestNodes(KADAddress address, FindNodeListener<SMSKADPeer> listener) throws IllegalStateException {
 
-        if (listenerHandler.isNodeAddressRegistered(kadAddress)) //TODO we need a timer for this
+        if (listenerHandler.isNodeAddressRegistered(address)) //TODO we need a timer for this
             throw new IllegalStateException("A find request for this key is already pending");
-        listenerHandler.registerNodeListener(kadAddress, listener); //listener takes care of removing itself from the map when the closest nodes are returned
+        listenerHandler.registerNodeListener(address, listener); //listener takes care of removing itself from the map when the closest nodes are returned
 
         //bestSoFarClosestNodes contains the best so far KADEMLIA_K nodes found closer to kadAddress
-        ClosestPQ currentBestPQ = new ClosestPQ(new SMSKADPeer.SMSKADComparator(kadAddress), dict.getAllUsers());
-        bestSoFarClosestNodes.put(kadAddress, currentBestPQ);
+        ClosestPQ currentBestPQ = new ClosestPQ(new SMSKADPeer.SMSKADComparator(address), dict.getAllUsers());
+        bestSoFarClosestNodes.put(address, currentBestPQ);
 
         //Sends a FIND_CLOSEST_NODES request to first KADEMLIA_ALPHA nodes in closestNodes
         for (int i = 0; i < Math.min(KADEMLIA_ALPHA, currentBestPQ.size()); i++) {
             currentBestPQ.get(i).second = true; //set it to queried
-            SMSCommandMapper.sendRequest(RequestType.FIND_CLOSEST_NODES, kadAddress.toString(), currentBestPQ.get(i).first);
+            SMSCommandMapper.sendRequest(RequestType.FIND_NODES, address.toString(), currentBestPQ.get(i).first);
         }
         //since a queried node may return ourselves among its k-closest nodes, we would end up
         //adding ourselves as a non queried node. So to avoid this, we add ourselves to the PQ with a true flag indicating
@@ -252,12 +251,12 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     }
 
     /**
-     * Method called when a FIND_CLOSEST_NODES request is received. Sends a {@link ReplyType#CLOSEST_NODES_FOUND} command back.
+     * Method called when a {@link RequestType#FIND_NODES} request is received. Sends a {@link ReplyType#NODES_FOUND} command back.
      *
      * @param sender         who requested the node search
      * @param requestContent contains a kad address that sender wants to know about
      */
-    protected void onFindClosestNodesRequest(SMSPeer sender, String requestContent) {
+    protected void onFindCloserNodesRequest(SMSPeer sender, String requestContent) {
         dict.addUser(new SMSKADPeer(sender)); //might be a new node we don't know about
         ArrayList<SMSKADPeer> closerNodes = dict.getNodesSortedByDistance(KADAddress.fromHexString(requestContent)); //this includes mySelf
         StringBuilder replyContent = new StringBuilder(requestContent); //this is the address we were asked to look up
@@ -265,15 +264,15 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
             replyContent.append(SPLIT_CHAR);
             replyContent.append(closerNodes.get(i).getAddress()); //phone number
         }
-        SMSCommandMapper.sendReply(ReplyType.CLOSEST_NODES_FOUND, replyContent.toString(), sender);
+        SMSCommandMapper.sendReply(ReplyType.NODES_FOUND, replyContent.toString(), sender);
     }
 
     /**
-     * Method called when a CLOSEST_NODES_FOUND reply is received
+     * Method called when a {@link ReplyType#NODES_FOUND} reply is received
      *
-     * @param replyContent a string representing the CLOSEST_NODES_FOUND reply
+     * @param replyContent a string representing the reply containing the closer nodes according to the node previously contacted
      */
-    protected void onClosestNodesFoundReply(String replyContent) {
+    protected void onCloserNodesFoundReply(String replyContent) {
         String[] splitStr = replyContent.split(SMSCommandMapper.SPLIT_CHAR);
         KADAddress address = KADAddress.fromHexString(splitStr[0]); //address which we asked to find
         ClosestPQ currentBestPQ = bestSoFarClosestNodes.get(address); //this SHOULD BE ALWAYS NON NULL
@@ -291,38 +290,13 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
             if (!pair.second) { //if not queried
                 picked++;
                 pair.second = true;
-                SMSCommandMapper.sendRequest(RequestType.FIND_CLOSEST_NODES, splitStr[0], pair.first); //splitStr[0] is address
+                SMSCommandMapper.sendRequest(RequestType.FIND_NODES, splitStr[0], pair.first); //splitStr[0] is address
             }
         }
 
         if (picked == 0) { //our PQ consists only of already queried nodes, which are the closest globally
             bestSoFarClosestNodes.remove(address);
             listenerHandler.triggerKNodesFound(address, currentBestPQ.getAllPeers());
-        }
-    }
-
-    //*******************************************************************************************
-    //REPUBLISH
-
-    /**
-     * Republishes all keys of the local dictionary
-     *
-     * @author Alessandra Tonin
-     */
-    public void republishKeys() {
-        ArrayList<KADAddress> myResources = dict.getKeys();
-        for (int i = 0; i < myResources.size(); i++) {
-            final KADAddress resourceKey = myResources.get(i);
-            FindNodeListener listener = new FindNodeListener() {
-                @Override
-                public void OnKClosestNodesFound(Peer[] peers) {
-                    for (int c = 0; c < peers.length; c++) {
-                        SMSKADPeer peer = new SMSKADPeer(peers[c].getAddress().toString());
-                        SMSCommandMapper.sendRequest(RequestType.STORE, resourceKey.toString() + SPLIT_CHAR + dict.getValue(resourceKey).toString(), peer);
-                    }
-                }
-            };
-            findClosestNodes(resourceKey, listener);
         }
     }
 
@@ -339,7 +313,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     public void findValue(SerializableObject key, FindValueListener listener) throws IllegalStateException {
         KADAddress keyAddress = new KADAddress(key.toString());
 
-        if (listenerHandler.isValueAddressRegistered(keyAddress)) //TODO timer
+        if (listenerHandler.isValueAddressRegistered(keyAddress)) //TODO we need a timer for this
             throw new IllegalStateException("A find request for this key is already pending");
         listenerHandler.registerValueListener(keyAddress, listener);
 
@@ -363,7 +337,8 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     }
 
     /**
-     * Method called when a FIND_VALUE request is received. Sends a {@link ReplyType#VALUE_FOUND} command back.
+     *Method called when a {@link RequestType#FIND_VALUE} request is received.
+     * Sends a {@link ReplyType#VALUE_FOUND} or {@link ReplyType#VALUE_NOT_FOUND}command back.
      *
      * @param sender         who requested the value
      * @param requestContent contains the key
@@ -385,16 +360,16 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
                 replyContent.append(SMSCommandMapper.SPLIT_CHAR);
                 replyContent.append(closerNodes.get(i).getAddress());
             }
-            SMSCommandMapper.sendReply(ReplyType.CLOSEST_NODES_FOR_FIND_VALUE_FOUND, replyContent.toString(), sender);
+            SMSCommandMapper.sendReply(ReplyType.VALUE_NOT_FOUND, replyContent.toString(), sender);
         }
     }
 
     /**
-     * Method called when a CLOSEST_NODES_FOR_FIND_VALUE_FOUND reply has been received
+     * Method called when a {@link ReplyType#VALUE_NOT_FOUND} reply has been received
      *
-     * @param replyContent a string representing the CLOSEST_NODES_FOR_FIND_VALUE_FOUND reply
+     * @param replyContent a string representing the reply, containing closer nodes to the key according to the node we previously contacted
      */
-    public void onFindValueNodesFoundReply(String replyContent) {
+    public void onValueNotFoundReply(String replyContent) {
         String[] splitStr = replyContent.split(SMSCommandMapper.SPLIT_CHAR);
         KADAddress address = KADAddress.fromHexString(splitStr[0]); //address which we asked to find
         ClosestPQ currentBestPQ = bestSoFarClosestNodes.get(address); //this SHOULD BE ALWAYS NON NULL
@@ -422,9 +397,9 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     }
 
     /**
-     * Method called when a VALUE_FOUND reply is received
+     * Method called when a {@link ReplyType#VALUE_FOUND} reply is received
      *
-     * @param replyContent a string representing the VALUE_FOUND reply
+     * @param replyContent a string representing the reply, containing the value
      */
     protected void onValueFoundReply(String replyContent) {
         String[] splitStr = replyContent.split(SPLIT_CHAR);
@@ -433,24 +408,15 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
         listenerHandler.triggerValueFound(key, value);
     }
 
-    /**
-     * Method called when a VALUE_NOT_FOUND reply is received
-     *
-     * @param replyContent a string representing the VALUE_NOT_FOUND reply
-     */
-    protected void onValueNotFoundReply(String replyContent) {
-        KADAddress key = KADAddress.fromHexString(replyContent);
-        listenerHandler.triggerValueNotFound(key);
-    }
 
     //*******************************************************************************************
     //PING
 
     /**
-     * Method called to PING a node
+     * Method called to ping a node
      *
      * @param peer     the node we want to ping
-     * @param listener a {@link PingListener} listener
+     * @param listener a {@link PingListener} listener, called when the ping request either times out, or gets a reply
      * @author Alessandra Tonin
      */
     public void ping(SMSPeer peer, PingListener listener) {
@@ -459,7 +425,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     }
 
     /**
-     * Method called when a PING request has been received. Sends a {@link ReplyType#PING_ECHO) command back.
+     *Method called when a {@link RequestType#PING} request has been received. Sends a {@link ReplyType#PING_ECHO) command back.
      *
      * @param peer who requested a ping
      * @author Alessandra Tonin
@@ -470,7 +436,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     }
 
     /**
-     * Method called when a PING_ECHO reply is received. We are sure this node is alive.
+     * Method called when a {@link ReplyType#PING_ECHO) reply is received. We are sure this node is alive
      *
      * @param peer user that replied to the ping
      * @author Alessandra Tonin
@@ -480,7 +446,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     }
 
     //*******************************************************************************************
-    //REFRESH
+    //REFRESH and REPUBLISH
 
     /**
      * Refreshes the specified bucket
@@ -492,5 +458,25 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
         //TODO maybe add a listener so we know when the refresh has completed
         KADAddress randomAddress = dict.getRandomAddressInBucket(bucketIndex);
         findClosestNodes(randomAddress, null); //will trigger the listener handler, but no listener will actually be called
+    }
+
+    /**
+     * Republishes all keys of the local dictionary
+     *
+     * @author Alessandra Tonin
+     */
+    public void republishKeys() {
+        ArrayList<KADAddress> myResources = dict.getKeys();
+        for (int i = 0; i < myResources.size(); i++) {
+            final KADAddress resourceKey = myResources.get(i);
+            FindNodeListener listener = new FindNodeListener() {
+                @Override
+                public void OnKClosestNodesFound(Peer[] peers) {
+                    for (Peer p : peers)
+                        SMSCommandMapper.sendRequest(RequestType.STORE, resourceKey.toString() + SPLIT_CHAR + dict.getValue(resourceKey).toString(), (SMSKADPeer) p);
+                }
+            };
+            findClosestNodes(resourceKey, listener);
+        }
     }
 }

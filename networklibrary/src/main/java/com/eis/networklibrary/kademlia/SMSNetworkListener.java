@@ -68,8 +68,8 @@ class SMSNetworkListener extends SMSReceivedServiceListener {
             case PING:
                 manager.onPingRequest(sender);
                 break;
-            case FIND_CLOSEST_NODES:
-                manager.onFindClosestNodesRequest(sender, commandContent);
+            case FIND_NODES:
+                manager.onFindCloserNodesRequest(sender, commandContent);
                 break;
             case FIND_VALUE:
                 manager.onFindValueRequest(sender, commandContent);
@@ -97,16 +97,13 @@ class SMSNetworkListener extends SMSReceivedServiceListener {
             case PING_ECHO:
                 manager.onPingEchoReply(sender);
                 break;
-            case CLOSEST_NODES_FOUND:
-                manager.onClosestNodesFoundReply(commandContent);
-            case CLOSEST_NODES_FOR_FIND_VALUE_FOUND:
-                manager.onFindValueNodesFoundReply(commandContent);
+            case NODES_FOUND:
+                manager.onCloserNodesFoundReply(commandContent);
+            case VALUE_NOT_FOUND:
+                manager.onValueNotFoundReply(commandContent);
                 break;
             case VALUE_FOUND:
                 manager.onValueFoundReply(commandContent); //sender is useless to pass
-                break;
-            case VALUE_NOT_FOUND:
-                manager.onValueNotFoundReply(commandContent);
                 break;
         }
     }
