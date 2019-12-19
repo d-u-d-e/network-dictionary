@@ -15,19 +15,19 @@ import com.eis.smslibrary.listeners.SMSSentListener;
  * each KADAddress is sent as a hexadecimal string to spare characters
  * <p>
  * SMS REQUESTS FORMATS<p>
- * JOIN proposal:      "JOIN_PROPOSAL-%netName"                netName is the name of the network the user receiving this is asked to join
- * PING request:       "PING"                                  check whether the receiver is alive
- * STORE request:      "STORE-%(KADAddress key)-%(value)"      tell the receiver to store the (key, value) pair
- * DELETE request:     "DELETE-%(KADAddress key)"              tell the receiver to delete the (key, value) pair
- * FIND_CLOSEST_NODES request:  "FIND_CLOSEST_NODES-%(KADAddress address)"       find the K-CLOSEST nodes to this KAD address (we want to know their phone numbers)
- * FIND_VALUE request: "FIND_VALUE-%(KADAddress key)           find the value associated with key
+ * JOIN proposal:        "JOIN_PROPOSAL-%netName"              netName is the name of the network the user receiving this is asked to join
+ * PING request:         "PING"                                check whether the receiver is alive
+ * STORE request:        "STORE-%(KADAddress key)-%(value)"    tell the receiver to store the (key, value) pair
+ * DELETE request:       "DELETE-%(KADAddress key)"            tell the receiver to delete the (key, value) pair
+ * FIND_NODES request:   "FIND_NODES-%(KADAddress address)"    find the K-CLOSEST nodes to this KAD address (we want to know their phone numbers)
+ * FIND_VALUE request:   "FIND_VALUE-%(KADAddress key)         find the value associated with key
  * <p>
  * SMS REPLIES FORMATS
- * JOIN agreed:           "JOIN_AGREED" join confirmation
- * PING reply:            "PING_ECHO"   ping reply
- * CLOSEST_NODES_FOUND reply:      "CLOSEST_NODES_FOUND-%(KADAddress address)-(phoneNumber1)-...-(phoneNumber K)" the receiving user is told other K closer nodes to address
- * VALUE_FOUND reply:     "VALUE_FOUND-%(KADAddress key)-(value)"  the value for key is returned to the querier
- * VALUE_NOT_FOUND reply: "VALUE_NOT_FOUND-%(KADAddress key)       the value for key has not been found
+ * JOIN agreed:            "JOIN_AGREED" join confirmation
+ * PING reply:             "PING_ECHO"   ping reply
+ * NODES_FOUND reply:      "NODES_FOUND-%(KADAddress address)-(phoneNumber1)-...-(phoneNumber K)" the receiving user is told the K closer nodes to address
+ * VALUE_NOT_FOUND reply:  "VALUE_NOT_FOUND-%(KADAddress key)-(phoneNumber1)-...-(phoneNumber K)" the receiving user is told other K closer nodes to the key, if the sender doesn't own the value
+ * VALUE_FOUND reply:      "VALUE_FOUND-%(KADAddress key)-(value)"  the value for key is returned to the querier
  *
  * @author Luca Crema
  * @author Marco Mariotto
