@@ -1,5 +1,6 @@
 package com.eis.networklibrary.kademlia;
 
+import com.eis.communication.Peer;
 import com.eis.communication.network.FindNodeListener;
 import com.eis.communication.network.FindValueListener;
 import com.eis.communication.network.Invitation;
@@ -223,7 +224,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      *
      * @param kadAddress The {@link KADAddress} object for which to find the peer
      * @param listener   Called when the the k-closest nodes are found
-     * @throws IllegalStateException if there's already a pending find request fort this address
+     * @throws IllegalStateException if there's already a pending find request for this address
      */
     private void findClosestNodes(KADAddress kadAddress, FindNodeListener<SMSKADPeer> listener) throws IllegalStateException {
 
@@ -302,21 +303,22 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
 
     /**
      * Republishes all keys of the local dictionary
-     *
      */
     public void republishKeys() {
         ArrayList<KADAddress> myResources = dict.getKeys();
-        for(int i = 0; i < myResources.size(); i++){
-            KADAddress resourceKey = myResources.get(i);
-            findClosestNodes(resourceKey, null);
-            for(int c = 0; c < bestSoFarClosestNodes.size(); c++){
-                //FIXME: I don't know how to get SMSPeer from ClosestPQ
-                //TODO: check if a node has already the resource, so we can save some SMS
-                SMSCommandMapper.sendRequest(RequestType.STORE, resourceKey.toString() + SPLIT_CHAR + dict.getValue(resourceKey).toString(), bestSoFarClosestNodes.get(c));
-            }
-
+        for (int i = 0; i < myResources.size(); i++) {
+            final KADAddress resourceKey = myResources.get(i);
+            FindNodeListener listener = new FindNodeListener() {
+                @Override
+                public void OnKClosestNodesFound(Peer[] peers) {
+                    for (int c = 0; c < peers.length; c++) {
+                        SMSKADPeer peer = new SMSKADPeer(peers[c].getAddress().toString());
+                        SMSCommandMapper.sendRequest(RequestType.STORE, resourceKey.toString() + SPLIT_CHAR + dict.getValue(resourceKey).toString(), peer);
+                    }
+                }
+            };
+            findClosestNodes(resourceKey, listener);
         }
-
     }
 
     //*******************************************************************************************

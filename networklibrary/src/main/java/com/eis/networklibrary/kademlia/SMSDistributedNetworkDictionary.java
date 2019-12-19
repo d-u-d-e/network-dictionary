@@ -16,7 +16,7 @@ import java.util.Random;
  * Distributed network dictionary for peers and resources on the SMS network (Kademlia method)
  *
  * @param <RV> resource value
- * @author Luca Crema, Marco Mariotto
+ * @author Luca Crema, Marco Mariotto, Tonin Alessandra
  */
 public class SMSDistributedNetworkDictionary<RV> implements NetworkDictionary<SMSKADPeer, KADAddress, RV> {
 
