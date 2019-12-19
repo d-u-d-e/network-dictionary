@@ -63,7 +63,7 @@ class SMSNetworkListener extends SMSReceivedServiceListener {
         SMSNetworkManager manager = SMSNetworkManager.getInstance();
         switch (req) {
             case JOIN_PROPOSAL:
-                manager.onJoinProposal(sender, commandContent);
+                manager.onJoinProposal(new KADInvitation(new SMSKADPeer(sender), manager.mySelf, commandContent));
                 break;
             case PING:
                 manager.onPingRequest(sender);

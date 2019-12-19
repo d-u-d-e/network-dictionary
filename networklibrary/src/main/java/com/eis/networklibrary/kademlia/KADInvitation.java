@@ -4,35 +4,25 @@ import com.eis.communication.network.Invitation;
 
 /**
  * Represents an invitation to join a network of KAD
+ * May contain other useful information, such as the time when it was created for the first time
  */
-public class KADInvitation implements Invitation<SMSKADPeer> {
+public class KADInvitation extends Invitation<SMSKADPeer> {
 
-    private SMSKADPeer inviter;
-    private String networkName;
-
+     private String networkName;
     /**
-     * Constructor
+     * //package private constructor
      *
-     * @param inviter     who invited you to join
-     * @param networkName the name of the network you're invited to
+     * @param inviter     who asks guest to join
+     * @param guest       who is asked to join
+     * @param networkName the name of the network guest is asked to join
      */
-    public KADInvitation(SMSKADPeer inviter, String networkName) {
+    KADInvitation(SMSKADPeer inviter, SMSKADPeer guest, String networkName) {
         this.inviter = inviter;
+        this.guest = guest;
         this.networkName = networkName;
     }
 
-    /**
-     * @return the Peer that invited you to the network
-     */
-    @Override
-    public SMSKADPeer getInviter() {
-        return inviter;
-    }
-
-    /**
-     * @return the String identifier of the network this invitation is for
-     */
-    public String getNetworkName() {
-        return networkName;
-    }
+    SMSKADPeer getInviter() {return (SMSKADPeer) inviter;}
+    SMSKADPeer getGuest() {return  (SMSKADPeer) guest;}
+    String getNetworkName() {return networkName;}
 }

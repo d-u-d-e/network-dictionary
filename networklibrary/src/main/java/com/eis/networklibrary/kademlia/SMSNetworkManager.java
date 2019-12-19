@@ -31,7 +31,7 @@ import static com.eis.networklibrary.kademlia.SMSDistributedNetworkDictionary.KA
  * @author Luca Crema
  */
 @SuppressWarnings("WeakerAccess")
-public class SMSNetworkManager implements NetworkManager<SMSKADPeer, SerializableObject, SerializableObject> {
+public class SMSNetworkManager implements NetworkManager<SMSKADPeer, SerializableObject, SerializableObject, KADInvitation> {
 
     enum RequestType {
         JOIN_PROPOSAL,
@@ -95,69 +95,75 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     /**
      * Sends an invitation to the specified peer
      *
-     * @param peer The peer of the user to invite
+     * @param peer who is asked to join the network
      */
     @Override
     public void invite(final SMSKADPeer peer) {
         SMSCommandMapper.sendRequest(RequestType.JOIN_PROPOSAL, networkName, peer, new SMSSentListener() {
             @Override
             public void onSMSSent(SMSMessage message, SMSMessage.SentState sentState) {
-                //TODO use invited list
+                invitationList.add(new KADInvitation(mySelf, peer, networkName));
             }
         });
     }
 
     /**
-     * Inserts the {@link SMSMessage} peer in the network
+     * Join the network
      *
      * @param invitation The invitation message
      * @author Alessandra Tonin
      */
-    public void join(Invitation<SMSKADPeer> invitation) {
+    @Override
+    public void join(KADInvitation invitation) {
+        if(invitation.getGuest() != mySelf)
+            throw new IllegalArgumentException("The invitation is not valid: it is intended for another user");
         SMSKADPeer inviter = invitation.getInviter();
         dict.addUser(inviter);
         SMSCommandMapper.sendReply(ReplyType.JOIN_AGREED, inviter);
-
         findClosestNodes(mySelf.networkAddress, new FindNodeListener<SMSKADPeer>() {
             @Override
             public void OnKClosestNodesFound(SMSKADPeer[] peers) {
-                //when a node lookup for ourselves has been performed
+                //a node lookup for ourselves has been performed
                 //note that peers have already been added to the dict
-                //TODO refresh based on timestamps
+                //TODO refresh
             }
         });
     }
 
     /**
-     * Method called when a join proposal this peer has made has been accepted
+     * Method called when a join proposal from this peer has been accepted
      *
      * @param peer the peer who accepted to join the network
      * @author Alessandra Tonin
      */
     void onJoinAgreedReply(SMSPeer peer) {
-        //TODO has this node received a join proposal? If not, then ignore
         SMSKADPeer newUser = new SMSKADPeer(peer);
-        dict.addUser(newUser);
-        //Get my resources. If the new node is closer to resource x, we send him a STORE request for x (this is an optimization)
-        ArrayList<KADAddress> myResources = dict.getKeys();
-        for (int i = 0; i < myResources.size(); i++) {
-            KADAddress resourceKey = myResources.get(i);
-            KADAddress closer = KADAddress.closerToTarget(mySelf.getNetworkAddress(), newUser.getNetworkAddress(), resourceKey);
-            if (closer.equals(newUser.getNetworkAddress()))
-                SMSCommandMapper.sendRequest(RequestType.STORE, resourceKey.toString() + SPLIT_CHAR + dict.getValue(resourceKey).toString(), peer);
-        }
+        for(KADInvitation inv : invitationList)
+            if(inv.getGuest().equals(newUser)){
+                dict.addUser(newUser);
+                //Get my resources. If the new node is closer to resource x, we send him a STORE request for x (this is an optimization)
+                ArrayList<KADAddress> myResources = dict.getKeys();
+                for (int i = 0; i < myResources.size(); i++) {
+                    KADAddress resourceKey = myResources.get(i);
+                    KADAddress closer = KADAddress.closerToTarget(mySelf.networkAddress, newUser.networkAddress, resourceKey);
+                    if (closer.equals(newUser.networkAddress))
+                        SMSCommandMapper.sendRequest(RequestType.STORE, resourceKey.toString() + SPLIT_CHAR + dict.getValue(resourceKey).toString(), peer);
+                }
+                invitationList.remove(inv);
+                break;
+            }
+        //ignore this fake reply
     }
 
     /**
-     * Method called when we receive a join proposal from someone.
+     * Method called when we receive a join proposal from someone. This calls the listener set up for handling
+     * join proposals. If the user accepts the join request, he MUST call join passing the invitation.
      *
-     * @param peer           Who invited you to join the network.
-     * @param requestContent There should be the name of the network you're invited to
+     * @param invitation received
      * @author Alessandra Tonin
      */
-    void onJoinProposal(SMSPeer peer, String requestContent) {
-        SMSKADPeer kadPeer = new SMSKADPeer(peer);
-        joinListener.onJoinProposal(new KADInvitation(kadPeer, requestContent));
+    void onJoinProposal(KADInvitation invitation) {
+        joinListener.onJoinProposal(invitation);
     }
 
     /**

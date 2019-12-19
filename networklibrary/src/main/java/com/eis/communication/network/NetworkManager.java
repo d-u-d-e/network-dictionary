@@ -11,7 +11,7 @@ import com.eis.communication.Peer;
  * @author Luca Crema
  * @since 10/12/2019
  */
-public interface NetworkManager<U extends Peer, RK extends SerializableObject, RV extends SerializableObject> {
+public interface NetworkManager<U extends Peer, RK extends SerializableObject, RV extends SerializableObject, I extends Invitation> {
 
     /**
      * Sends an invitation to the specified peer.
@@ -25,7 +25,7 @@ public interface NetworkManager<U extends Peer, RK extends SerializableObject, R
      *
      * @param invitation The received invitation to the network.
      */
-    void join(Invitation<U> invitation);
+    void join(I invitation);
 
     /**
      * Sets a (key, value) resource in the local dictionary: this is called only if a STORE message is received

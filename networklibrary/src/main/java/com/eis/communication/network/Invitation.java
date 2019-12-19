@@ -7,11 +7,7 @@ import com.eis.communication.Peer;
  *
  * @param <P> Type of peer of the network.
  */
-public interface Invitation<P extends Peer> {
-
-    /**
-     * @return The peer who invited you to the network
-     */
-    P getInviter();
-
+public class Invitation<P extends Peer> {
+    protected  Peer inviter;
+    protected  Peer guest;
 }
