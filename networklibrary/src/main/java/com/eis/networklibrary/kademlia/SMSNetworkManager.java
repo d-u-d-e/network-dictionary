@@ -301,12 +301,22 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     //REPUBLISH
 
     /**
-     * Republishes a key to be retained in the network
+     * Republishes all keys of the local dictionary
      *
-     * @param key The key to be republished
      */
-    public void republishKey(SerializableObject key) {
-        //TODO
+    public void republishKeys() {
+        ArrayList<KADAddress> myResources = dict.getKeys();
+        for(int i = 0; i < myResources.size(); i++){
+            KADAddress resourceKey = myResources.get(i);
+            findClosestNodes(resourceKey, null);
+            for(int c = 0; c < bestSoFarClosestNodes.size(); c++){
+                //FIXME: I don't know how to get SMSPeer from ClosestPQ
+                //TODO: check if a node has already the resource, so we can save some SMS
+                SMSCommandMapper.sendRequest(RequestType.STORE, resourceKey.toString() + SPLIT_CHAR + dict.getValue(resourceKey).toString(), bestSoFarClosestNodes.get(c));
+            }
+
+        }
+
     }
 
     //*******************************************************************************************
