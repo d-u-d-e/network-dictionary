@@ -112,6 +112,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      * Inserts the {@link SMSMessage} peer in the network
      *
      * @param invitation The invitation message
+     * @author Alessandra Tonin
      */
     public void join(Invitation<SMSKADPeer> invitation) {
         SMSKADPeer inviter = invitation.getInviter();
@@ -132,6 +133,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      * Method called when a join proposal this peer has made has been accepted
      *
      * @param peer the peer who accepted to join the network
+     * @author Alessandra Tonin
      */
     void onJoinAgreedReply(SMSPeer peer) {
         //TODO has this node received a join proposal? If not, then ignore
@@ -152,6 +154,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      *
      * @param peer           Who invited you to join the network.
      * @param requestContent There should be the name of the network you're invited to
+     * @author Alessandra Tonin
      */
     void onJoinProposal(SMSPeer peer, String requestContent) {
         SMSKADPeer kadPeer = new SMSKADPeer(peer);
@@ -303,6 +306,8 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
 
     /**
      * Republishes all keys of the local dictionary
+     *
+     * @author Alessandra Tonin
      */
     public void republishKeys() {
         ArrayList<KADAddress> myResources = dict.getKeys();
@@ -446,6 +451,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      *
      * @param peer     the node we want to ping
      * @param listener a {@link PingListener} listener
+     * @author Alessandra Tonin
      */
     public void ping(SMSPeer peer, PingListener listener) {
         SMSCommandMapper.sendRequest(RequestType.PING, peer);
@@ -456,6 +462,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      * Method called when a PING request has been received. Sends a {@link ReplyType#PING_ECHO) command back.
      *
      * @param peer who requested a ping
+     * @author Alessandra Tonin
      */
     protected void onPingRequest(SMSPeer peer) {
         SMSCommandMapper.sendReply(ReplyType.PING_ECHO, peer);
@@ -466,6 +473,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      * Method called when a PING_ECHO reply is received. We are sure this node is alive.
      *
      * @param peer user that replied to the ping
+     * @author Alessandra Tonin
      */
     protected void onPingEchoReply(SMSPeer peer) {
         listenerHandler.triggerPingReply(peer);
@@ -478,6 +486,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      * Refreshes the specified bucket
      *
      * @param bucketIndex identifies each bucket, from 0 to N-1, where N = NO_BUCKETS.
+     * @author Alessandra Tonin
      */
     private void refreshBucket(int bucketIndex) {
         //TODO maybe add a listener so we know when the refresh has completed

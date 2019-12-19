@@ -43,6 +43,7 @@ public class SMSDistributedNetworkDictionary<RV> implements NetworkDictionary<SM
      * Adds a user at the end of the corresponding bucket to contact.
      *
      * @param newUser new network user. Must not be the current user.
+     * @author Alessandra Tonin
      */
     @Override
     public void addUser(final SMSKADPeer newUser) {
@@ -57,7 +58,7 @@ public class SMSDistributedNetworkDictionary<RV> implements NetworkDictionary<SM
 
         final ArrayList<SMSKADPeer> usersInBucket = buckets[bucketIndex];
 
-        if(usersInBucket.size() == KADEMLIA_K){
+        if (usersInBucket.size() == KADEMLIA_K) {
             PingListener listener = new PingListener() {
                 @Override
                 public void onPingReply(SMSPeer peer) {
@@ -65,6 +66,7 @@ public class SMSDistributedNetworkDictionary<RV> implements NetworkDictionary<SM
                     usersInBucket.remove(peer);
                     usersInBucket.add(new SMSKADPeer(peer));
                 }
+
                 @Override
                 public void onPingTimedOut(SMSPeer peer) {
                     usersInBucket.remove(peer); //peer does not respond, so we remove it
@@ -73,8 +75,7 @@ public class SMSDistributedNetworkDictionary<RV> implements NetworkDictionary<SM
             };
             SMSKADPeer head = usersInBucket.get(0);
             SMSNetworkManager.getInstance().ping(head, listener);
-        }
-        else{
+        } else {
             usersInBucket.remove(newUser); //does nothing if not present
             usersInBucket.add(newUser); //add at the tail. If it was already present, it is moved correctly to the tail.
         }
@@ -269,7 +270,7 @@ public class SMSDistributedNetworkDictionary<RV> implements NetworkDictionary<SM
         System.arraycopy(myAddress, 0, randomAddress, 0, byteIndex + 1); //copy all the first bytes up to byte n. byteIndex
         randomAddress[byteIndex] = (byte) (myAddress[byteIndex] ^ 1); //flip least significant bit of byte n. byteIndex
 
-        if(byteIndex < KADAddress.BYTE_ADDRESS_LENGTH - 1){ //add random bytes from byte n. byteIndex + 1 onwards
+        if (byteIndex < KADAddress.BYTE_ADDRESS_LENGTH - 1) { //add random bytes from byte n. byteIndex + 1 onwards
             int randomBytesLen = KADAddress.BYTE_ADDRESS_LENGTH - byteIndex - 1;
             byte[] randomBytes = new byte[randomBytesLen];
             Random ranGen = new Random();

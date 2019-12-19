@@ -21,6 +21,7 @@ class SMSNetworkListener extends SMSReceivedServiceListener {
      * has been received and calls processReply or processRequest.
      *
      * @param message the received message
+     * @author Alessandra Tonin
      */
     @Override
     public void onMessageReceived(SMSMessage message) {
@@ -56,6 +57,7 @@ class SMSNetworkListener extends SMSReceivedServiceListener {
      * @param req            the request received
      * @param sender         the request sender
      * @param commandContent the content of the command without the command prefix, can be empty
+     * @author Alessandra Tonin
      */
     private void processRequest(SMSNetworkManager.RequestType req, SMSPeer sender, String commandContent) {
         SMSNetworkManager manager = SMSNetworkManager.getInstance();
@@ -84,6 +86,7 @@ class SMSNetworkListener extends SMSReceivedServiceListener {
      *
      * @param reply          the command received
      * @param commandContent the content of the command without the command prefix, can be empty
+     * @author Alessandra Tonin
      */
     private void processReply(SMSNetworkManager.ReplyType reply, SMSPeer sender, String commandContent) {
         SMSNetworkManager manager = SMSNetworkManager.getInstance();
