@@ -82,7 +82,7 @@ public class SMSDistributedNetworkDictionary<RV> implements NetworkDictionary<SM
     }
 
 
-    private int getBucketContaining(KADAddress address) {
+    int getBucketContaining(KADAddress address) {
 
         //The bucket of node X which has index i contains nodes whose xor distance to X is between 2^i inclusive and 2^(i+1) exclusive.
         //For example, if i = 0, then bucket 0 contains the only node whose distance to X is 1 (thus it has the last bit flipped and it is the closer to X
