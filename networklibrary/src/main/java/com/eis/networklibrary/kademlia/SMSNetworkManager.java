@@ -528,9 +528,10 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
             final KADAddress resourceKey = myResources.get(i);
             FindNodeListener listener = new FindNodeListener() {
                 @Override
-                public void OnKClosestNodesFound(Peer[] peers) {
+                public void OnKClosestNodesFound(Peer[] peers){
                     for (Peer p : peers)
-                        SMSCommandMapper.sendRequest(RequestType.STORE, resourceKey.toString() + SPLIT_CHAR + dict.getValue(resourceKey).toString(), (SMSKADPeer) p);
+                        if(p != mySelf)
+                            SMSCommandMapper.sendRequest(RequestType.STORE, resourceKey.toString() + SPLIT_CHAR + dict.getValue(resourceKey).toString(), (SMSKADPeer) p);
                 }
             };
             findClosestNodes(resourceKey, listener);

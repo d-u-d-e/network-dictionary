@@ -22,7 +22,7 @@ public class SMSKADPeerTest {
     KADAddress kadAddress2 = new KADAddress(new byte[]{107, 97, 118, 97, 32, 105, 115, 32, 111, 107});
     KADAddress target = new KADAddress(new byte[]{1, 1, 1, 1, 1, 1, 1, 1, 1, 1});
 
-    SMSKADPeer.KADComparator kadComparator;
+    SMSKADPeer.SMSKADComparator kadComparator;
     SMSKADPeer smsPeerKadPeer, stringKadPeer, string2KadPeer;
 
     @Before
@@ -30,7 +30,7 @@ public class SMSKADPeerTest {
         smsPeerKadPeer = new SMSKADPeer(smsPeer);
         stringKadPeer = new SMSKADPeer(PHONE_NUMBER);
         string2KadPeer = new SMSKADPeer(PHONE_NUMBER2);
-        kadComparator = new SMSKADPeer.KADComparator(target);
+        kadComparator = new SMSKADPeer.SMSKADComparator(target);
     }
 
     @Test

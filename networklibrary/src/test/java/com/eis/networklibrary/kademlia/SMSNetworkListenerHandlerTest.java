@@ -1,7 +1,6 @@
 package com.eis.networklibrary.kademlia;
 
 
-import com.eis.communication.Peer;
 import com.eis.communication.network.FindNodeListener;
 import com.eis.communication.network.FindValueListener;
 import com.eis.communication.network.PingListener;
