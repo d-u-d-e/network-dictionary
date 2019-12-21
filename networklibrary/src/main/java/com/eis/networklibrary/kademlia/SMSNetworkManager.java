@@ -369,12 +369,10 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
             bestSoFarClosestNodes.put(keyAddress, currentBestPQ);
 
             for (int i = 0; i < Math.min(KADEMLIA_ALPHA, currentBestPQ.size()); i++) {
-                currentBestPQ.get(i).second = true; //set it to queried
+                currentBestPQ.get(i).second = true; //Sets it to queried
                 SMSCommandMapper.sendRequest(RequestType.FIND_VALUE, keyAddress.toString(), currentBestPQ.get(i).first);
             }
-            //since a queried node may return ourselves among its k-closest nodes, we would end up
-            //adding ourselves as a non queried node. So to avoid this, we add ourselves to the PQ with a true flag indicating
-            //that a query to it isn't necessary
+            //We have already been queried by checking if we have the resource
             currentBestPQ.add(mySelf, true);
         }
         updateLastLookup(keyAddress);
@@ -382,22 +380,23 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
 
     /**
      * Method called when a {@link RequestType#FIND_VALUE} request is received.
-     * Sends a {@link ReplyType#VALUE_FOUND} or {@link ReplyType#VALUE_NOT_FOUND}command back.
+     * Sends a {@link ReplyType#VALUE_FOUND} or {@link ReplyType#VALUE_NOT_FOUND} command back.
      *
-     * @param sender         who requested the value
-     * @param requestContent contains the key
+     * @param sender         The user who requested the value
+     * @param requestContent String that contains the key
      * @author Alberto Ursino with a lot of help from Marco Mariotto
      */
     synchronized protected void onFindValueRequest(SMSPeer sender, String requestContent) {
-
         String[] splitStr = requestContent.split(SPLIT_CHAR);
-        KADAddress keyAddress = KADAddress.fromHexString(splitStr[0]); //key whose value we are looking for
+        String key = splitStr[0];
+        KADAddress keyAddress = KADAddress.fromHexString(key);
 
-        //returns the value to the sender if present in the local dict, otherwise returns the k closest nodes (for me) to the sender
+        //Returns to the sender the value, if present in the local dict, otherwise returns the k closest nodes (for me)
         SerializableObject localValue = dict.getValue(keyAddress);
         if (localValue != null)
-            SMSCommandMapper.sendReply(ReplyType.VALUE_FOUND, splitStr[0] + SMSCommandMapper.SPLIT_CHAR + localValue.toString(), sender);
+            SMSCommandMapper.sendReply(ReplyType.VALUE_FOUND, key + SMSCommandMapper.SPLIT_CHAR + localValue.toString(), sender);
         else {
+            //We add the sender to our local dictionary
             dict.addUser(new SMSKADPeer(sender));
             ArrayList<SMSKADPeer> closerNodes = dict.getNodesSortedByDistance(keyAddress);
             StringBuilder replyContent = new StringBuilder(requestContent);
@@ -405,41 +404,46 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
                 replyContent.append(SMSCommandMapper.SPLIT_CHAR);
                 replyContent.append(closerNodes.get(i).getAddress());
             }
+            //In the replyContent variable there are all the k-closest nodes (for me) to the value
             SMSCommandMapper.sendReply(ReplyType.VALUE_NOT_FOUND, replyContent.toString(), sender);
         }
-
     }
 
     /**
      * Method called when a {@link ReplyType#VALUE_NOT_FOUND} reply has been received
      *
-     * @param replyContent a string representing the reply, containing closer nodes to the key according to the node we previously contacted
+     * @param replyContent The string representing the reply, containing closer nodes to the key according to the node we previously contacted
      * @author Alberto Ursino with a lot of help from Marco Mariotto
      */
     synchronized public void onValueNotFoundReply(String replyContent) {
         String[] splitStr = replyContent.split(SMSCommandMapper.SPLIT_CHAR);
-        KADAddress address = KADAddress.fromHexString(splitStr[0]); //address which we asked to find
-        ClosestPQ currentBestPQ = bestSoFarClosestNodes.get(address); //this SHOULD BE ALWAYS NON NULL
+        String key = splitStr[0];
+        KADAddress keyAddress = KADAddress.fromHexString(key);
+        ClosestPQ currentBestPQ = bestSoFarClosestNodes.get(keyAddress); //this SHOULD BE ALWAYS NON NULL
 
+        //Updates my list of k-nodes closest to the resource with those just received in the replyContent
         for (int i = 1; i < splitStr.length; i++) {
             SMSKADPeer p = new SMSKADPeer(splitStr[i]);
             currentBestPQ.add(p, false);
             dict.addUser(p);
         }
+
+        //Flag that updates us on how much FIND_VALUE requests we are sending
         int picked = 0;
+
         for (int i = 0; i < currentBestPQ.size() && picked < KADEMLIA_ALPHA; i++) {
             ClosestPQ.MutablePair<SMSKADPeer, Boolean> pair = currentBestPQ.get(i);
-            if (!pair.second) { //if not queried
+            if (!pair.second) { //If the current i-SMSKADPeer is not queried then sends to it a FIND_VALUE request
                 picked++;
                 pair.second = true;
-                SMSCommandMapper.sendRequest(RequestType.FIND_VALUE, splitStr[0], pair.first);
+                SMSCommandMapper.sendRequest(RequestType.FIND_VALUE, key, pair.first);
             }
         }
 
         if (picked == 0) {
-            bestSoFarClosestNodes.remove(address);
+            bestSoFarClosestNodes.remove(keyAddress);
             //I asked all the k-nodes closest to the resource and none of them has it.
-            listenerHandler.triggerValueNotFound(address);
+            listenerHandler.triggerValueNotFound(keyAddress);
         }
     }
 
