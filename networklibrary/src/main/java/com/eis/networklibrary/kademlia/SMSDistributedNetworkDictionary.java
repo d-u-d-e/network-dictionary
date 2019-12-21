@@ -27,7 +27,7 @@ public class SMSDistributedNetworkDictionary<RV> implements NetworkDictionary<SM
     static final int NO_BUCKETS = KADAddress.BIT_LENGTH;
     SMSKADPeer mySelf; //address of current node holding this dictionary
     private ArrayList<SMSKADPeer>[] buckets;
-    private HashMap<KADAddress, RV> resources;
+    private HashMap<KADAddress, RV> resources = new HashMap<>();
 
     /**
      * Constructor for the dictionary

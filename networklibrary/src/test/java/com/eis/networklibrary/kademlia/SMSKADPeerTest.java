@@ -7,6 +7,9 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+/**
+ * @author ALberto Ursino
+ */
 public class SMSKADPeerTest {
 
     final String PHONE_NUMBER = "+391111111111";
