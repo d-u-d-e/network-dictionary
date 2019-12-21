@@ -3,7 +3,6 @@ package com.eis.networklibrary.kademlia;
 import com.eis.communication.Peer;
 import com.eis.communication.network.FindNodeListener;
 import com.eis.communication.network.FindValueListener;
-import com.eis.communication.network.Invitation;
 import com.eis.communication.network.JoinListener;
 import com.eis.communication.network.NetworkManager;
 import com.eis.communication.network.PingListener;
@@ -15,7 +14,6 @@ import com.eis.smslibrary.listeners.SMSSentListener;
 
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.HashMap;
 
 import static com.eis.networklibrary.kademlia.SMSCommandMapper.SPLIT_CHAR;
