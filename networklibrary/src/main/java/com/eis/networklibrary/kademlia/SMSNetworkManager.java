@@ -351,7 +351,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      * @param key      The resource key of which we want to find the value
      * @param listener The listener that has to be called when the value has been found
      * @throws IllegalStateException if there's already a pending find request fort this address
-     * @author Alberto Ursino with a lot of help from Marco Mariotto
+     * @author Alberto Ursino, inspired by Marco Mariotto's code for consistency reasons
      */
     synchronized public void findValue(SerializableObject key, FindValueListener listener) throws IllegalStateException {
         KADAddress keyAddress = new KADAddress(key.toString());
@@ -384,7 +384,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      *
      * @param sender         The user who requested the value
      * @param requestContent String that contains the key
-     * @author Alberto Ursino with a lot of help from Marco Mariotto
+     * @author Alberto Ursino, inspired by Marco Mariotto's code for consistency reasons
      */
     synchronized protected void onFindValueRequest(SMSPeer sender, String requestContent) {
         String[] splitStr = requestContent.split(SPLIT_CHAR);
@@ -413,7 +413,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      * Method called when a {@link ReplyType#VALUE_NOT_FOUND} reply has been received
      *
      * @param replyContent The string representing the reply, containing closer nodes to the key according to the node we previously contacted
-     * @author Alberto Ursino with a lot of help from Marco Mariotto
+     * @author Alberto Ursino, inspired by Marco Mariotto's code for consistency reasons
      */
     synchronized public void onValueNotFoundReply(String replyContent) {
         String[] splitStr = replyContent.split(SMSCommandMapper.SPLIT_CHAR);
