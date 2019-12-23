@@ -65,9 +65,10 @@ public class SMSNetworkListenerHandler {
      *
      * @param kadAddress The address linked to the listener
      * @param listener   The listener to add to the pending list
+     * @return  The previous value corresponding to the key, null otherwise
      */
-    protected void registerValueListener(KADAddress kadAddress, FindValueListener<SerializableObject> listener) {
-        findValueListenerMap.put(kadAddress, listener);
+    protected FindValueListener<SerializableObject> registerValueListener(KADAddress kadAddress, FindValueListener<SerializableObject> listener) {
+        return findValueListenerMap.put(kadAddress, listener);
     }
 
     /**
@@ -111,9 +112,10 @@ public class SMSNetworkListenerHandler {
      *
      * @param peer     The peer linked to the listener
      * @param listener The listener to add to the pending list
+     * @return  The previous value corresponding to the key, null otherwise
      */
-    protected void registerPingListener(SMSPeer peer, PingListener listener) {
-        pingListenerMap.put(peer, listener);
+    protected PingListener registerPingListener(SMSPeer peer, PingListener listener) {
+        return pingListenerMap.put(peer, listener);
     }
 
     /**
