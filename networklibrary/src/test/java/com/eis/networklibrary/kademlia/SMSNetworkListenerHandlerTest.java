@@ -34,61 +34,41 @@ public class SMSNetworkListenerHandlerTest {
         SMSPEER_2 = new SMSPeer(PHONE_NUMBER2);
         NODE_LISTENER_1 = new FindNodeListener<SMSKADPeer>() {
             @Override
-            public void OnKClosestNodesFound(SMSKADPeer[] peer) {
-
-            }
+            public void OnKClosestNodesFound(SMSKADPeer[] peer) { }
         };
         NODE_LISTENER_2 = new FindNodeListener<SMSKADPeer>() {
             @Override
-            public void OnKClosestNodesFound(SMSKADPeer[] peer) {
-
-            }
+            public void OnKClosestNodesFound(SMSKADPeer[] peer) { }
         };
 
         VALUE_LISTENER_1 = new FindValueListener<SerializableObject>() {
             @Override
-            public void onValueFound(SerializableObject value) {
-
-            }
+            public void onValueFound(SerializableObject value) { }
 
             @Override
-            public void onValueNotFound() {
-
-            }
+            public void onValueNotFound() { }
         };
         VALUE_LISTENER_2 = new FindValueListener<SerializableObject>() {
             @Override
-            public void onValueFound(SerializableObject value) {
-
-            }
+            public void onValueFound(SerializableObject value) { }
 
             @Override
-            public void onValueNotFound() {
-
-            }
+            public void onValueNotFound() { }
         };
 
         PING_LISTENER_1 = new PingListener() {
             @Override
-            public void onPingReply(SMSPeer peer) {
-
-            }
+            public void onPingReply(SMSPeer peer) { }
 
             @Override
-            public void onPingTimedOut(SMSPeer peer) {
-
-            }
+            public void onPingTimedOut(SMSPeer peer) { }
         };
         PING_LISTENRE_2 = new PingListener() {
             @Override
-            public void onPingReply(SMSPeer peer) {
-
-            }
+            public void onPingReply(SMSPeer peer) { }
 
             @Override
-            public void onPingTimedOut(SMSPeer peer) {
-
-            }
+            public void onPingTimedOut(SMSPeer peer) { }
         };
     }
 
@@ -183,9 +163,7 @@ public class SMSNetworkListenerHandlerTest {
             }
 
             @Override
-            public void onValueNotFound() {
-
-            }
+            public void onValueNotFound() { }
         };
         listenerHandler.registerValueListener(KAD_ADDRESS_1, VALUE_LISTENER_1);
         listenerHandler.triggerValueFound(KAD_ADDRESS_1, SER_OBJECT);
@@ -196,9 +174,7 @@ public class SMSNetworkListenerHandlerTest {
         reset_instance();
         VALUE_LISTENER_1 = new FindValueListener<SerializableObject>() {
             @Override
-            public void onValueFound(SerializableObject value) {
-
-            }
+            public void onValueFound(SerializableObject value) { }
 
             @Override
             public void onValueNotFound() {
@@ -237,9 +213,7 @@ public class SMSNetworkListenerHandlerTest {
             }
 
             @Override
-            public void onPingTimedOut(SMSPeer peer) {
-
-            }
+            public void onPingTimedOut(SMSPeer peer) { }
         };
         listenerHandler.registerPingListener(SMSPEER_1, PING_LISTENER_1);
         listenerHandler.triggerPingReply(SMSPEER_1);
@@ -260,7 +234,8 @@ public class SMSNetworkListenerHandlerTest {
             }
         };
         listenerHandler.registerPingListener(SMSPEER_1, PING_LISTENER_1);
-        //TODO: triggerOnPingTimeOut
+        //TODO: triggerOnPingTimeOut creating a countdown
+        //TODO: mock CountDownTimer
     }
 
     //*******************************************************************************************

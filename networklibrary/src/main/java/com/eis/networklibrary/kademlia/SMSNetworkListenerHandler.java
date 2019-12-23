@@ -2,6 +2,8 @@ package com.eis.networklibrary.kademlia;
 
 
 
+import android.os.CountDownTimer;
+
 import com.eis.communication.network.FindNodeListener;
 import com.eis.communication.network.FindValueListener;
 import com.eis.communication.network.PingListener;
@@ -22,6 +24,10 @@ public class SMSNetworkListenerHandler {
     private HashMap<KADAddress, FindNodeListener<SMSKADPeer>> findNodeListenerMap = new HashMap<>();
     private HashMap<KADAddress, FindValueListener<SerializableObject>> findValueListenerMap = new HashMap<>();
     private HashMap<SMSPeer, PingListener> pingListenerMap = new HashMap<>();
+
+    private CountDownTimer timer;
+    private final static int SECONDINMILLIS = 1000;
+    private final static int COUNTDOWNINMILLIS = 30*SECONDINMILLIS;
 
     //*******************************************************************************************
 
@@ -52,10 +58,11 @@ public class SMSNetworkListenerHandler {
      * @param kadAddress    The address linked to the NodeListener
      * @param peers         The peers found
      */
-    protected void triggerKNodesFound(KADAddress kadAddress, SMSKADPeer[] peers) {
+    protected FindNodeListener<SMSKADPeer> triggerKNodesFound(KADAddress kadAddress, SMSKADPeer[] peers) {
         FindNodeListener<SMSKADPeer> listener = findNodeListenerMap.remove(kadAddress);
         if (listener != null)
             listener.OnKClosestNodesFound(peers);
+        return listener;
     }
 
     //*******************************************************************************************
@@ -86,11 +93,13 @@ public class SMSNetworkListenerHandler {
      *
      * @param kadAddress The address linked to the ValueListener
      * @param value      The value found
+     * @return The ValueListener triggered
      */
-    protected void triggerValueFound(KADAddress kadAddress, SerializableObject value) {
+    protected FindValueListener<SerializableObject> triggerValueFound(KADAddress kadAddress, SerializableObject value) {
         FindValueListener<SerializableObject> listener = findValueListenerMap.remove(kadAddress);
         if (listener != null)
             listener.onValueFound(value);
+        return listener;
     }
 
     /**
@@ -99,35 +108,65 @@ public class SMSNetworkListenerHandler {
      * @param kadAddress The address linked to the ValueListener
      * @return The ValueListener triggered
      */
-    protected void triggerValueNotFound(KADAddress kadAddress) {
+    protected FindValueListener<SerializableObject> triggerValueNotFound(KADAddress kadAddress) {
         FindValueListener<SerializableObject> listener = findValueListenerMap.remove(kadAddress);
         if (listener != null)
             listener.onValueNotFound();
+        return listener;
     }
 
     //*******************************************************************************************
 
     /**
      * Registers a new PingListener
+     * Starts a countDown that calls onPingTimedOut when finished
      *
      * @param peer     The peer linked to the listener
      * @param listener The listener to add to the pending list
      * @return  The previous value corresponding to the key, null otherwise
      */
-    protected PingListener registerPingListener(SMSPeer peer, PingListener listener) {
+    protected PingListener registerPingListener(final SMSPeer peer, PingListener listener) {
+        timer = new CountDownTimer(COUNTDOWNINMILLIS, SECONDINMILLIS) {
+            @Override
+            public void onTick(long l) { }
+
+            @Override
+            public void onFinish() {
+                triggerPingTimedOut(peer);
+            }
+        }.start();
         return pingListenerMap.put(peer, listener);
     }
 
     /**
      * Triggers onPingReply and removes the PingListener
+     * Finishes the timer if onPingReply is called
      *
      * @param peer The SMSPeer that replied
+     * @return  The PingListener triggered
+     *          Null if there is no listener or the time is up
      */
-    protected void triggerPingReply(SMSPeer peer) {
-        //TODO check if it timed out
+    protected PingListener triggerPingReply(SMSPeer peer) {
+        PingListener listener = pingListenerMap.remove(peer);
+        if (listener != null) {
+            listener.onPingReply(peer);
+            timer.onFinish();
+        }
+        return listener;
+    }
+
+    /**
+     * Triggers onPingTimedOut and removes the PingListener
+     *
+     * @param peer The SMSPeer that did not replied
+     * @return  The PingListener triggered
+     *          Null if there is no listener or onPingReply was called before this
+     */
+    private PingListener triggerPingTimedOut(SMSPeer peer) {
         PingListener listener = pingListenerMap.remove(peer);
         if (listener != null)
-            listener.onPingReply(peer);
+            listener.onPingTimedOut(peer);
+        return listener;
     }
 
     //*******************************************************************************************
