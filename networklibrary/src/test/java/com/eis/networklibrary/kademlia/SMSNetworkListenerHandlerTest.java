@@ -11,18 +11,22 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.Timer;
+import java.util.TimerTask;
+
 public class SMSNetworkListenerHandlerTest {
 
     private SMSNetworkListenerHandler listenerHandler;
     private KADAddress KAD_ADDRESS_1, KAD_ADDRESS_2;
     private SMSKADPeer[] KADPEERS;
     private SerializableObject SER_OBJECT;
-    private SMSPeer SMSPEER_1, SMSPEER_2;
+    private SMSPeer SMSPEER_1;
     final private String PHONE_NUMBER = "+391111111111";
     final private String PHONE_NUMBER2 = "+391111111112";
     private FindNodeListener<SMSKADPeer> NODE_LISTENER_1, NODE_LISTENER_2;
     private FindValueListener<SerializableObject> VALUE_LISTENER_1, VALUE_LISTENER_2;
-    private PingListener PING_LISTENER_1, PING_LISTENRE_2;
+    private PingListener PING_LISTENER_1, PING_LISTENER_2;
+    private int COUNTDOWNINMILLIS = 30*1000;
 
     @Before
     public void init() {
@@ -31,7 +35,6 @@ public class SMSNetworkListenerHandlerTest {
         KAD_ADDRESS_2 = new KADAddress((new byte[]{8, 97, 118, 97, 32, 105, 115, 32, 111, 107}));
         KADPEERS = new SMSKADPeer[]{new SMSKADPeer(PHONE_NUMBER), new SMSKADPeer(PHONE_NUMBER2)};
         SMSPEER_1 = new SMSPeer(PHONE_NUMBER);
-        SMSPEER_2 = new SMSPeer(PHONE_NUMBER2);
         NODE_LISTENER_1 = new FindNodeListener<SMSKADPeer>() {
             @Override
             public void OnKClosestNodesFound(SMSKADPeer[] peer) { }
@@ -63,7 +66,7 @@ public class SMSNetworkListenerHandlerTest {
             @Override
             public void onPingTimedOut(SMSPeer peer) { }
         };
-        PING_LISTENRE_2 = new PingListener() {
+        PING_LISTENER_2 = new PingListener() {
             @Override
             public void onPingReply(SMSPeer peer) { }
 
@@ -200,7 +203,7 @@ public class SMSNetworkListenerHandlerTest {
     public void update_pingListener_test() {
         reset_instance();
         listenerHandler.registerPingListener(SMSPEER_1, PING_LISTENER_1);
-        Assert.assertEquals(listenerHandler.registerPingListener(SMSPEER_1, PING_LISTENRE_2), PING_LISTENER_1);
+        Assert.assertEquals(listenerHandler.registerPingListener(SMSPEER_1, PING_LISTENER_2), PING_LISTENER_1);
     }
 
     @Test
@@ -219,24 +222,21 @@ public class SMSNetworkListenerHandlerTest {
         listenerHandler.triggerPingReply(SMSPEER_1);
     }
 
-    @Test
+    //TODO: how to test a timer?
+    /*@Test
     public void trigger_ping_timeout_test() {
         reset_instance();
         PING_LISTENER_1 = new PingListener() {
             @Override
-            public void onPingReply(SMSPeer peer) {
-
-            }
+            public void onPingReply(SMSPeer peer) { }
 
             @Override
             public void onPingTimedOut(SMSPeer peer) {
-
+                Assert.assertEquals(peer, SMSPEER_1);
             }
         };
         listenerHandler.registerPingListener(SMSPEER_1, PING_LISTENER_1);
-        //TODO: triggerOnPingTimeOut creating a countdown
-        //TODO: mock CountDownTimer
-    }
+    }*/
 
     //*******************************************************************************************
 
