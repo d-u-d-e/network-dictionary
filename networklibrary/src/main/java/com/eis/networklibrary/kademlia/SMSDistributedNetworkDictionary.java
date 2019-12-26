@@ -18,13 +18,13 @@ import java.util.Random;
  * @param <RV> resource value
  * @author Luca Crema, Marco Mariotto, Tonin Alessandra
  */
+
 public class SMSDistributedNetworkDictionary<RV> implements NetworkDictionary<SMSKADPeer, KADAddress, RV> {
 
 
     //Maximum users per bucket
-    static final int KADEMLIA_K = 5; //TODO maximum size for SMS-based networks is K = 12 (otherwise a CLOSEST_NODES_FOUND reply would contain more than 160 chars)
-    // Number Of Buckets. We have a bucket for each bit
-    static final int NO_BUCKETS = KADAddress.BIT_LENGTH;
+    static final int KADEMLIA_K = 5; //TODO note that this K can't be too big, because messages can at most contain 160 chars
+    static final int NO_BUCKETS = KADAddress.BIT_LENGTH; // Number of buckets. We have a bucket for each bit
     SMSKADPeer mySelf; //address of current node holding this dictionary
     private ArrayList<SMSKADPeer>[] buckets;
     private HashMap<KADAddress, RV> resources = new HashMap<>();
@@ -43,7 +43,7 @@ public class SMSDistributedNetworkDictionary<RV> implements NetworkDictionary<SM
      * Adds a user at the end of the corresponding bucket to contact.
      *
      * @param newUser new network user. Must not be the current user.
-     * @author Alessandra Tonin
+     * @author Alessandra Tonin, Marco Mariotto
      */
     @Override
     public void addUser(final SMSKADPeer newUser) {
@@ -82,6 +82,12 @@ public class SMSDistributedNetworkDictionary<RV> implements NetworkDictionary<SM
     }
 
 
+    /**
+     *
+     *
+     * @param address a kad address
+     * @return -1 if {@code address} is equal to {@link #mySelf}, otherwise the index of the bucket that should contain it (between 0 and {@link #NO_BUCKETS}
+     * */
     int getBucketContaining(KADAddress address) {
 
         //The bucket of node X which has index i contains nodes whose xor distance to X is between 2^i inclusive and 2^(i+1) exclusive.
@@ -126,7 +132,7 @@ public class SMSDistributedNetworkDictionary<RV> implements NetworkDictionary<SM
      *                    Note that if bucketIndex = i, for i between 0 and N-1, then buckets[i] contains all known nodes of distance (XOR metric)
      *                    between 2^(i) inclusive and 2^(i+1) exclusive. For instance if i = 0,
      *                    then we get all nodes whose distant d from myself is >= 2^0 = 1 and < 2, that is d = 1.
-     *                    then we get all nodes. The only node satisfying this is the node having all first N-1 significant bits equal to those of mySelf,
+     *                    The only node satisfying this is the node having all first N-1 significant bits equal to those of mySelf,
      *                    except for the last bit which is flipped.
      *                    If otherwise i = N-1, we get all nodes whose distance d from mySelf is >= 2^(N-1) and < 2^(N), meaning that the first significant bit is flipped.
      * @return an ArrayList of users in that particular bucket, empty ArrayList if there is none
@@ -260,8 +266,8 @@ public class SMSDistributedNetworkDictionary<RV> implements NetworkDictionary<SM
     }
 
     /**
-     * @param bucketIndex identifies each bucket, from 0 to N-1, where N = NO_BUCKETS.
-     * @return a random KADAddress in this bucket
+     * @param bucketIndex identifies each bucket, from 0 to N-1, where N = {@link #NO_BUCKETS}.
+     * @return a random KADAddress in this bucket. When bucketIndex == 0, then this address is obviously not random.
      */
     public KADAddress getRandomAddressInBucket(int bucketIndex) {
         byte[] myAddress = mySelf.getNetworkAddress().getAddress();

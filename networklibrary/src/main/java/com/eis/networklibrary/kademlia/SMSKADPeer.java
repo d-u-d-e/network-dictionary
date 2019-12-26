@@ -6,6 +6,9 @@ import com.eis.smslibrary.exceptions.InvalidTelephoneNumberException;
 
 import java.util.Comparator;
 
+/**
+ * @author Luca Crema, Marco Mariotto
+ */
 public class SMSKADPeer extends SMSPeer implements KADPeer {
 
     protected KADAddress networkAddress;

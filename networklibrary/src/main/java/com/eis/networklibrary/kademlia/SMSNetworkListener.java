@@ -8,7 +8,27 @@ import static com.eis.networklibrary.kademlia.SMSCommandMapper.SPLIT_CHAR;
 
 /**
  * This listener receives messages from the broadcast receiver and checks whether it's a message sent by
- * the network, then lets the {@link SMSCommandMapper} do the rest
+ * the network, then lets the {@link SMSCommandMapper} do the rest.
+ *
+ *
+ * SPLIT_CHAR is used to split fields in each request or reply
+ * each KADAddress is sent as a hexadecimal string to spare characters
+ * <p>
+ * SMS REQUESTS FORMATS
+ * JOIN proposal:        "JOIN_PROPOSAL-%netName"              netName is the name of the network the user receiving this is asked to join
+ * PING request:         "PING"                                check whether the receiver is alive
+ * STORE request:        "STORE-%(KADAddress key)-%(value)"    tell the receiver to store the (key, value) pair
+ * DELETE request:       "DELETE-%(KADAddress key)"            tell the receiver to delete the (key, value) pair
+ * FIND_NODES request:   "FIND_NODES-%(KADAddress address)"    find the K-CLOSEST nodes to this KAD address (we want to know their phone numbers)
+ * FIND_VALUE request:   "FIND_VALUE-%(KADAddress key)         find the value associated with key
+ * <p>
+ * SMS REPLIES FORMATS
+ * JOIN agreed:            "JOIN_AGREED" join confirmation
+ * PING reply:             "PING_ECHO"   ping reply
+ * NODES_FOUND reply:      "NODES_FOUND-%(KADAddress address)-(phoneNumber1)-...-(phoneNumber K)" the receiving user is told the K closer nodes to address
+ * VALUE_NOT_FOUND reply:  "VALUE_NOT_FOUND-%(KADAddress key)-(phoneNumber1)-...-(phoneNumber K)" the receiving user is told other K closer nodes to the key, if the sender doesn't own the value
+ * VALUE_FOUND reply:      "VALUE_FOUND-%(KADAddress key)-(value)"  the value for key is returned to the querier
+ *
  *
  * @author Marco Mariotto
  * @author Alessandra Tonin
@@ -17,38 +37,31 @@ import static com.eis.networklibrary.kademlia.SMSCommandMapper.SPLIT_CHAR;
 class SMSNetworkListener extends SMSReceivedServiceListener {
 
     /**
-     * Checks if the received message is a command for the kad dictionary, check which command
+     * Checks if the received message is a command for the kad dictionary, checks which command
      * has been received and calls processReply or processRequest.
      *
      * @param message the received message
-     * @author Alessandra Tonin
      */
     @Override
     public void onMessageReceived(SMSMessage message) {
-        //TODO adjust this to handle requests and replies better
-        String[] splitMessageContent = message.getData().split(SPLIT_CHAR, 2);
-        if (splitMessageContent.length != 2) {
-            //TODO: Throw exception? What if it's a message for another app?
-            return;
-        }
+        String[] splitMessageContent = message.getData().split(SPLIT_CHAR);
         String messagePrefix = splitMessageContent[0];
+        int parts = splitMessageContent.length;
         //Check if it's a reply
         for (SMSNetworkManager.ReplyType replyCommand : SMSNetworkManager.ReplyType.values()) {
             if (replyCommand.toString().equals(messagePrefix)) {
-                processReply(replyCommand, message.getPeer(), splitMessageContent[1]);
+                processReply(replyCommand, message.getPeer(), parts == 1? "":splitMessageContent[1]);
                 return;
             }
         }
         //Check if it's a request
         for (SMSNetworkManager.RequestType requestCommand : SMSNetworkManager.RequestType.values()) {
             if (requestCommand.toString().equals(messagePrefix)) {
-                processRequest(requestCommand, message.getPeer(), splitMessageContent[1]);
+                processRequest(requestCommand, message.getPeer(), parts == 1? "":splitMessageContent[1]);
                 return;
             }
         }
-
-        //TODO: Should we keep the exception? What if a message for another app has arrived and contains no command?
-        //throw new IllegalArgumentException("Unknown command received");
+        //ignore other message formats
     }
 
     /**
@@ -57,7 +70,6 @@ class SMSNetworkListener extends SMSReceivedServiceListener {
      * @param req            the request received
      * @param sender         the request sender
      * @param commandContent the content of the command without the command prefix, can be empty
-     * @author Alessandra Tonin
      */
     private void processRequest(SMSNetworkManager.RequestType req, SMSPeer sender, String commandContent) {
         SMSNetworkManager manager = SMSNetworkManager.getInstance();
@@ -86,7 +98,6 @@ class SMSNetworkListener extends SMSReceivedServiceListener {
      *
      * @param reply          the command received
      * @param commandContent the content of the command without the command prefix, can be empty
-     * @author Alessandra Tonin
      */
     private void processReply(SMSNetworkManager.ReplyType reply, SMSPeer sender, String commandContent) {
         SMSNetworkManager manager = SMSNetworkManager.getInstance();
@@ -103,7 +114,7 @@ class SMSNetworkListener extends SMSReceivedServiceListener {
                 manager.onValueNotFoundReply(commandContent);
                 break;
             case VALUE_FOUND:
-                manager.onValueFoundReply(commandContent); //sender is useless to pass
+                manager.onValueFoundReply(commandContent);
                 break;
         }
     }

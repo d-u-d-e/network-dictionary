@@ -34,6 +34,7 @@ import static com.eis.networklibrary.kademlia.SMSDistributedNetworkDictionary.NO
 @SuppressWarnings("WeakerAccess")
 public class SMSNetworkManager implements NetworkManager<SMSKADPeer, SerializableObject, SerializableObject, KADInvitation> {
 
+    //Requests and replies: for further details, check out SMSCommandMapper
     enum RequestType {
         JOIN_PROPOSAL,
         PING,
@@ -51,7 +52,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
         VALUE_NOT_FOUND
     }
 
-    protected static SMSNetworkManager instance;
+    private static SMSNetworkManager instance;
     protected String networkName;
     protected SMSKADPeer mySelf;
     protected SerializableObjectParser valueParser;
@@ -61,8 +62,8 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     private JoinListener joinListener;
 
     static final int KADEMLIA_ALPHA = 1; //always less than KADEMLIA_K
-    static final int KADEMLIA_REPUBLISH_PERIOD = 60 * 60 * 1000; //1 hour
-    static final int KADEMLIA_REFRESH_PERIOD = 60 * 60 * 1000; //1 hour
+    static final int KADEMLIA_REPUBLISH_PERIOD_MILLIS = 60 * 60 * 1000; //1 hour
+    static final int KADEMLIA_REFRESH_PERIOD_MILLIS = 60 * 60 * 1000; //1 hour
 
     //For each bucket, we store the time of the last lookup of any key belonging to this bucket in milliseconds (from the Unix epoch).
     //Every KADEMLIA_REFRESH_PERIOD / 2 milliseconds a RefreshService checks whether the last lookup
@@ -101,14 +102,15 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     /**
      * Sets up refreshing/republishing services. Schedules them to start after the specified delay.
      * Each service does a periodic check.
+     * @author Marco Mariotto
      */
     private void setupServices() {
         Calendar cal = Calendar.getInstance();
         //next republish starts KADEMLIA_REPUBLISH_PERIOD milliseconds from now
-        cal.setTimeInMillis(System.currentTimeMillis() + KADEMLIA_REPUBLISH_PERIOD);
+        cal.setTimeInMillis(System.currentTimeMillis() + KADEMLIA_REPUBLISH_PERIOD_MILLIS);
         RepublishService.startTask(cal.getTime());
         //next refresh starts KADEMLIA_REFRESH_PERIOD milliseconds from now
-        cal.setTimeInMillis(System.currentTimeMillis() + KADEMLIA_REFRESH_PERIOD);
+        cal.setTimeInMillis(System.currentTimeMillis() + KADEMLIA_REFRESH_PERIOD_MILLIS);
         RefreshService.startTask(cal.getTime());
     }
 
@@ -119,6 +121,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      * Sends an invitation to the specified peer
      *
      * @param peer who is asked to join the network
+     * @author Alberto Ursino, Marco Mariotto
      */
     @Override
     synchronized public void invite(final SMSKADPeer peer) {
@@ -134,7 +137,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      * Join the network
      *
      * @param invitation The invitation message
-     * @author Alessandra Tonin
+     * @author Alessandra Tonin, Marco Mariotto
      */
     @Override
     public void join(KADInvitation invitation) {
@@ -159,7 +162,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      * Method called when a join proposal from this peer has been accepted
      *
      * @param peer the peer who accepted to join the network
-     * @author Alessandra Tonin
+     * @author Alessandra Tonin, Marco Mariotto
      */
     synchronized void onJoinAgreedReply(SMSPeer peer) {
         SMSKADPeer newUser = new SMSKADPeer(peer);
@@ -209,6 +212,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      *
      * @param key   the resource key
      * @param value the resource value
+     * @author Marco Mariotto
      */
     @Override
     synchronized public void setResource(final SerializableObject key, final SerializableObject value) {
@@ -231,6 +235,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      * Delete an existing resource. TODO If {@code key} has not been created by mySelf, this method is unsafe to call and leads to security flaws
      *
      * @param key The resource key for which to set the value to null
+     * @author Marco Mariotto
      */
     @Override
     synchronized public void removeResource(final SerializableObject key) {
@@ -252,6 +257,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      * Method called when a STORE request is received.
      *
      * @param requestContent The information about the (key, value) to store, must be parsed.
+     * @author Marco Mariotto
      */
     synchronized protected void onStoreRequest(String requestContent) {
         String[] splitStr = requestContent.split(SPLIT_CHAR);
@@ -267,6 +273,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      * @param address  The {@link KADAddress} object for which to find the peer
      * @param listener Called when the the k-closest nodes are found
      * @throws IllegalStateException if there's already a pending find request for this address
+     * @author Marco Mariotto
      */
     synchronized private void findClosestNodes(KADAddress address, FindNodeListener<SMSKADPeer> listener) throws IllegalStateException {
 
@@ -295,6 +302,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      *
      * @param sender         who requested the node search
      * @param requestContent contains a kad address that sender wants to know about
+     * @author Marco Mariotto
      */
     synchronized protected void onFindCloserNodesRequest(SMSPeer sender, String requestContent) {
         dict.addUser(new SMSKADPeer(sender)); //might be a new node we don't know about
@@ -311,6 +319,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      * Method called when a {@link ReplyType#NODES_FOUND} reply is received
      *
      * @param replyContent a string representing the reply containing the closer nodes according to the node previously contacted
+     * @author Marco Mariotto
      */
     synchronized protected void onCloserNodesFoundReply(String replyContent) {
         String[] splitStr = replyContent.split(SMSCommandMapper.SPLIT_CHAR);
@@ -326,7 +335,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
         int picked = 0;
 
         for (int i = 0; i < currentBestPQ.size() && picked < KADEMLIA_ALPHA; i++) {  //pick other alpha non queried nodes in currentBestPQ
-            ClosestPQ.MutablePair<SMSKADPeer, Boolean> pair = currentBestPQ.get(i);
+            MutablePair<SMSKADPeer, Boolean> pair = currentBestPQ.get(i);
             if (!pair.second) { //if not queried
                 picked++;
                 pair.second = true;
@@ -430,7 +439,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
         int picked = 0;
 
         for (int i = 0; i < currentBestPQ.size() && picked < KADEMLIA_ALPHA; i++) {
-            ClosestPQ.MutablePair<SMSKADPeer, Boolean> pair = currentBestPQ.get(i);
+            MutablePair<SMSKADPeer, Boolean> pair = currentBestPQ.get(i);
             if (!pair.second) { //If the current i-SMSKADPeer is not queried then sends to it a FIND_VALUE request
                 picked++;
                 pair.second = true;
@@ -501,7 +510,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      * Refreshes the specified bucket. After a join, it is called by the RefreshService only, if needed.
      *
      * @param bucketIndex identifies each bucket, from 0 to N-1, where N = NO_BUCKETS.
-     * @author Alessandra Tonin
+     * @author Alessandra Tonin, Marco Mariotto
      */
     void refreshBucket(int bucketIndex) {
         //TODO maybe add a listener so we know when the refresh has completed
@@ -513,6 +522,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      * Updates the last lookup of {@code address} to current time.
      *
      * @param address a {@link KADAddress}
+     * @author Marco Mariotto
      */
     private void updateLastLookup(KADAddress address) {
         int index = dict.getBucketContaining(address);
@@ -526,7 +536,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     /**
      * Republishes all keys of the local dictionary. Called by the RepublishService only every {@link #KADEMLIA_REPUBLISH_PERIOD} milliseconds.
      *
-     * @author Alessandra Tonin
+     * @author Alessandra Tonin, Marco Mariotto
      */
     synchronized public void republishKeys() {
         ArrayList<KADAddress> myResources = dict.getKeys();

@@ -2,6 +2,11 @@ package com.eis.networklibrary.kademlia;
 
 import com.eis.communication.network.SerializableObject;
 
+/**
+ * A handler which needs to be implemented for specific keys or values in order to build objects from
+ * their string representation.
+ * @author Luca Crema, Marco Mariotto
+ */
 public abstract class SerializableObjectParser {
 
     /**

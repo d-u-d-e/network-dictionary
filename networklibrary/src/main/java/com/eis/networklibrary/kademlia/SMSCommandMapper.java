@@ -11,10 +11,10 @@ import com.eis.smslibrary.SMSPeer;
 import com.eis.smslibrary.listeners.SMSSentListener;
 
 /**
- * SPLIT_CHAR = '-' is used to split fields in each request or reply
+ * SPLIT_CHAR is used to split fields in each request or reply
  * each KADAddress is sent as a hexadecimal string to spare characters
  * <p>
- * SMS REQUESTS FORMATS<p>
+ * SMS REQUESTS FORMATS
  * JOIN proposal:        "JOIN_PROPOSAL-%netName"              netName is the name of the network the user receiving this is asked to join
  * PING request:         "PING"                                check whether the receiver is alive
  * STORE request:        "STORE-%(KADAddress key)-%(value)"    tell the receiver to store the (key, value) pair
@@ -29,8 +29,7 @@ import com.eis.smslibrary.listeners.SMSSentListener;
  * VALUE_NOT_FOUND reply:  "VALUE_NOT_FOUND-%(KADAddress key)-(phoneNumber1)-...-(phoneNumber K)" the receiving user is told other K closer nodes to the key, if the sender doesn't own the value
  * VALUE_FOUND reply:      "VALUE_FOUND-%(KADAddress key)-(value)"  the value for key is returned to the querier
  *
- * @author Luca Crema
- * @author Marco Mariotto
+ * @author Luca Crema, Marco Mariotto
  * @since 10/12/2019
  */
 @SuppressWarnings({"WeakerAccess", "unused"})

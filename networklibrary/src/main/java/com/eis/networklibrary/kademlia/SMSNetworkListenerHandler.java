@@ -13,7 +13,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 /**
- * This class handles the FindNode, FindValue and Ping listeners
+ * This class handles the findNode, findValue and ping listeners
  * Uses KADAddress or SMSPeer as key to identify a specific listener
  * When a listener is triggered it is removed from the pending list
  *
@@ -25,9 +25,8 @@ public class SMSNetworkListenerHandler {
     private HashMap<KADAddress, FindValueListener<SerializableObject>> findValueListenerMap = new HashMap<>();
     private HashMap<SMSPeer, PingListener> pingListenerMap = new HashMap<>();
 
-    private Timer timer = new Timer();
-    //30 seconds
-    private final static int COUNTDOWNINMILLIS = 30*1000;
+    private Timer pingTimeOutTimer = new Timer();
+    private final static int COUNTDOWN_MILLIS = 30*1000;  //30 seconds
 
     //*******************************************************************************************
 
@@ -121,18 +120,18 @@ public class SMSNetworkListenerHandler {
      * @return  The previous value corresponding to the key, null otherwise
      */
     protected PingListener registerPingListener(final SMSPeer peer, PingListener listener) {
-        timer.schedule(new TimerTask() {
+        pingTimeOutTimer.schedule(new TimerTask() {
             @Override
             public void run() {
                 triggerPingTimedOut(peer);
             }
-        }, COUNTDOWNINMILLIS);
+        }, COUNTDOWN_MILLIS);
         return pingListenerMap.put(peer, listener);
     }
 
     /**
      * Triggers onPingReply and removes the PingListener
-     * Finishes the timer if onPingReply is called
+     * Finishes the pingTimeOutTimer if onPingReply is called
      *
      * @param peer The SMSPeer that replied
      */
@@ -140,7 +139,7 @@ public class SMSNetworkListenerHandler {
         PingListener listener = pingListenerMap.remove(peer);
         if (listener != null) {
             listener.onPingReply(peer);
-            timer.cancel();
+            pingTimeOutTimer.cancel();
         }
     }
 

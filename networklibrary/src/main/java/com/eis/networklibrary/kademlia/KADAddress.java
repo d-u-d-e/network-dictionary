@@ -29,7 +29,7 @@ public class KADAddress {
     protected byte[] address;
 
     /**
-     * @param address a big-endian byte array containing the object address
+     * @param address a big-endian byte array containing the object address.
      * @throws IllegalArgumentException if address does not consist of {@link #BYTE_ADDRESS_LENGTH} bytes
      */
     public KADAddress(byte[] address) throws IllegalArgumentException {
@@ -40,13 +40,13 @@ public class KADAddress {
 
     /**
      * @param objectKey A String containing the key identifier for the object. This method creates a hash for the string representation
-     *                  of the object key (serialization). Not to be confused with {@link #fromHexString(String str)} which returns an hexadecimal equivalent
-     *                  representation of this address.
+     *                  of the object key (serialization). Not to be confused with {@link #fromHexString(String str)} which takes an hexadecimal equivalent
+     *                  representation of this address
      */
     public KADAddress(String objectKey) {
         address = new byte[BYTE_ADDRESS_LENGTH];
         try {
-            MessageDigest digestAlgorithm = MessageDigest.getInstance(HASH_ALGORITHM);
+            MessageDigest digestAlgorithm = MessageDigest.getInstance (HASH_ALGORITHM);
             byte[] hashedObject = digestAlgorithm.digest(objectKey.getBytes(StandardCharsets.UTF_8));
             System.arraycopy(hashedObject, 0, address, 0, BYTE_ADDRESS_LENGTH);
         } catch (NoSuchAlgorithmException e) {
@@ -62,10 +62,11 @@ public class KADAddress {
     }
 
     /**
-     * @param a The address to be compared with {@code b}
-     * @param b The address to be compared with {@code a}
+     * @param a The address to be compared with {@code b}.
+     * @param b The address to be compared with {@code a}.
      * @return the index of the first different bit between {@code a} and {@code b}
      * or {@value BIT_LENGTH} if no such index exists (i.e. the two addresses are equal)
+     * @author Marco Mariotto
      */
     public static int firstDifferentBit(KADAddress a, KADAddress b) {
         byte[] aBytes = a.getAddress();
@@ -80,11 +81,12 @@ public class KADAddress {
     /**
      * @param b The byte
      * @return the index of the leftmost bit set, otherwise Byte.SIZE if {@code b} equals to 0
+     * @author Marco Mariotto
      */
     private static short leftMostSetBit(byte b) {
         short pos = 0;
-        int j = 0x80;
-        int byteAsInt = b & 0xFF;
+        int j = 0x80; //represents the byte 10000000
+        int byteAsInt = b & 0xFF; //since bitwise operations aren't defined for bytes, we convert b to an int, without considering extension sign bits
         for (; pos < Byte.SIZE; pos++) {
             if ((j & byteAsInt) != 0) return pos;
             j = j >>> 1;
@@ -93,8 +95,8 @@ public class KADAddress {
     }
 
     /**
-     * @param obj The object being compared to this object
-     * @return true if and only if obj is of {@code KADAddress} type and has the same bytes as this address
+     * @param obj The object being compared to <i>this</i>
+     * @return true if and only if obj is of the {@link KADAddress} type and has the same bytes as this address
      */
     @Override
     public boolean equals(Object obj) {
@@ -110,7 +112,8 @@ public class KADAddress {
      * @param a      1st {@code KADAddress} object to compare
      * @param b      2nd {@code KADAddress} object to compare
      * @param target a KADAddress which is compared to a and b
-     * @return a or b, whichever is closer to target according to XOR metric. If a == b then return a.
+     * @return a or b, whichever is closer to target according toXOR metric
+     * @author Marco Mariotto
      */
     static KADAddress closerToTarget(KADAddress a, KADAddress b, KADAddress target) {
         byte[] aBytes = a.getAddress();
@@ -118,18 +121,17 @@ public class KADAddress {
         byte[] targetBytes = target.getAddress();
 
         for (int i = 0; i < BYTE_ADDRESS_LENGTH; i++) {
-            byte xorA = (byte) (aBytes[i] ^ targetBytes[i]);
-            byte xorB = (byte) (bBytes[i] ^ targetBytes[i]);
+            int xorA = (aBytes[i] ^ targetBytes[i]) & 0xFF; //get rid of extension sign bits
+            int xorB = (bBytes[i] ^ targetBytes[i]) & 0xFF;
             if (xorA < xorB) return a;
             else if (xorA > xorB) return b;
         }
-
-        //a == b
-        return a;
+        return a; //a==b
     }
 
     /**
      * @return the string hexadecimal representation of this address
+     * @author Marco Mariotto
      */
     @NonNull
     public String toString() { //
@@ -145,8 +147,9 @@ public class KADAddress {
     }
 
     /**
-     * @param str a valid hexadecimal representation of a {@code KADAddress}; {@code str.length()} must be {@code BIT_LENGTH/4} bits long and even
+     * @param str a valid hexadecimal representation of a {@code KADAddress}; {@code str.length()} must be {@code BIT_LENGTH/4} chars long and even
      * @return the {@code KADAddress} having {@code str} as its hexadecimal representation
+     * @author Marco Mariotto
      */
     public static KADAddress fromHexString(String str) {
         int len = str.length();
