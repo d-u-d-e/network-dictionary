@@ -12,6 +12,8 @@ import com.eis.smslibrary.SMSMessage;
 import com.eis.smslibrary.SMSPeer;
 import com.eis.smslibrary.listeners.SMSSentListener;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
@@ -63,6 +65,10 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     static final int KADEMLIA_ALPHA = 1; //always less than KADEMLIA_K
     static final int KADEMLIA_REPUBLISH_PERIOD = 60 * 60 * 1000; //1 hour
     static final int KADEMLIA_REFRESH_PERIOD = 60 * 60 * 1000; //1 hour
+
+    private static final String FIND_REQUEST_ALREADY_PENDING = "A find request for this key is already pending";
+    private static final int KEY_POS = 0;
+    private static final int VALUE_POS = 1;
 
     //For each bucket, we store the time of the last lookup of any key belonging to this bucket in milliseconds (from the Unix epoch).
     //Every KADEMLIA_REFRESH_PERIOD / 2 milliseconds a RefreshService checks whether the last lookup
@@ -271,7 +277,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     synchronized private void findClosestNodes(KADAddress address, FindNodeListener<SMSKADPeer> listener) throws IllegalStateException {
 
         if (listenerHandler.isNodeAddressRegistered(address)) //TODO we need a timer for this
-            throw new IllegalStateException("A find request for this key is already pending");
+            throw new IllegalStateException(FIND_REQUEST_ALREADY_PENDING);
         listenerHandler.registerNodeListener(address, listener); //listener takes care of removing itself from the map when the closest nodes are returned
 
         //bestSoFarClosestNodes contains the best so far KADEMLIA_K nodes found closer to kadAddress
@@ -314,7 +320,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      */
     synchronized protected void onCloserNodesFoundReply(String replyContent) {
         String[] splitStr = replyContent.split(SMSCommandMapper.SPLIT_CHAR);
-        KADAddress address = KADAddress.fromHexString(splitStr[0]); //address which we asked to find
+        KADAddress address = KADAddress.fromHexString(splitStr[KEY_POS]); //address which we asked to find
         ClosestPQ currentBestPQ = bestSoFarClosestNodes.get(address); //this SHOULD BE ALWAYS NON NULL
 
         for (int i = 1; i < splitStr.length; i++) { //start from 1 because the first element is address, while the other elements are phone numbers of closer nodes
@@ -330,7 +336,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
             if (!pair.second) { //if not queried
                 picked++;
                 pair.second = true;
-                SMSCommandMapper.sendRequest(RequestType.FIND_NODES, splitStr[0], pair.first); //splitStr[0] is address
+                SMSCommandMapper.sendRequest(RequestType.FIND_NODES, splitStr[KEY_POS], pair.first); //splitStr[0] is address
             }
         }
 
@@ -346,16 +352,16 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     /**
      * Method used to find a value of the given key
      *
-     * @param key      The resource key of which we want to find the value
+     * @param key      The resource key, not null, of which we want to find the value
      * @param listener The listener that has to be called when the value has been found
-     * @throws IllegalStateException if there's already a pending find request fort this address
+     * @throws IllegalStateException If there's already a pending find request for this address
      * @author Alberto Ursino, inspired by Marco Mariotto's code for consistency reasons
      */
-    synchronized public void findValue(SerializableObject key, FindValueListener listener) throws IllegalStateException {
+    synchronized public void findValue(@NotNull SerializableObject key, FindValueListener listener) throws IllegalStateException {
         KADAddress keyAddress = new KADAddress(key.toString());
 
         if (listenerHandler.isValueAddressRegistered(keyAddress)) //TODO we need a timer for this
-            throw new IllegalStateException("A find request for this key is already pending");
+            throw new IllegalStateException(FIND_REQUEST_ALREADY_PENDING);
         listenerHandler.registerValueListener(keyAddress, listener);
 
         //Maybe the value we are looking for is in our local dictionary
@@ -386,7 +392,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      */
     synchronized protected void onFindValueRequest(SMSPeer sender, String requestContent) {
         String[] splitStr = requestContent.split(SPLIT_CHAR);
-        String key = splitStr[0];
+        String key = splitStr[KEY_POS];
         KADAddress keyAddress = KADAddress.fromHexString(key);
 
         //Returns to the sender the value, if present in the local dict, otherwise returns the k closest nodes (for me)
@@ -415,7 +421,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      */
     synchronized public void onValueNotFoundReply(String replyContent) {
         String[] splitStr = replyContent.split(SMSCommandMapper.SPLIT_CHAR);
-        String key = splitStr[0];
+        String key = splitStr[KEY_POS];
         KADAddress keyAddress = KADAddress.fromHexString(key);
         ClosestPQ currentBestPQ = bestSoFarClosestNodes.get(keyAddress); //this SHOULD BE ALWAYS NON NULL
 
@@ -452,8 +458,8 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      */
     synchronized protected void onValueFoundReply(String replyContent) {
         String[] splitStr = replyContent.split(SPLIT_CHAR);
-        KADAddress key = KADAddress.fromHexString(splitStr[0]);
-        SerializableObject value = valueParser.deSerialize(splitStr[1]);
+        KADAddress key = KADAddress.fromHexString(splitStr[KEY_POS]);
+        SerializableObject value = valueParser.deSerialize(splitStr[VALUE_POS]);
         listenerHandler.triggerValueFound(key, value);
     }
 
