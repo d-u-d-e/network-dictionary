@@ -1,8 +1,11 @@
 package com.eis.networklibrary.kademlia;
 
+import androidx.annotation.NonNull;
+
 import com.eis.communication.Peer;
 import com.eis.communication.network.FindNodeListener;
 import com.eis.communication.network.FindValueListener;
+import com.eis.communication.network.Invitation;
 import com.eis.communication.network.JoinListener;
 import com.eis.communication.network.NetworkManager;
 import com.eis.communication.network.PingListener;
@@ -22,9 +25,9 @@ import static com.eis.networklibrary.kademlia.SMSDistributedNetworkDictionary.NO
 
 /**
  * Singleton class that handles the Kademlia network.
- * If you want to join a network you have to
+ * If you want to join a network you have to:
  * 1. Setup the manager with SMSNetworkManager.getInstance().setup(...)
- * 2. Set a callback listener for events like join proposal with SMSNetworkManager.getInstance().setCallbackListener(...)
+ * 2. Set a callback listener for join proposals with SMSNetworkManager.getInstance().setJoinProposalListener(JoinListener listener)
  *
  * @author Marco Mariotto
  * @author Alessandra Tonin
@@ -34,7 +37,7 @@ import static com.eis.networklibrary.kademlia.SMSDistributedNetworkDictionary.NO
 @SuppressWarnings("WeakerAccess")
 public class SMSNetworkManager implements NetworkManager<SMSKADPeer, SerializableObject, SerializableObject, KADInvitation> {
 
-    //Requests and replies: for further details, check out SMSCommandMapper
+    //Requests and replies: for further details, check out SMSNetworkListener
     enum RequestType {
         JOIN_PROPOSAL,
         PING,
@@ -57,9 +60,15 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     protected SMSKADPeer mySelf;
     protected SerializableObjectParser valueParser;
     private SMSDistributedNetworkDictionary<SerializableObject> dict;
+    //maps each key being searched to the corresponding priority queue (of closest nodes known so far) associated with that search
     private HashMap<KADAddress, ClosestPQ> bestSoFarClosestNodes = new HashMap<>();
-    private ArrayList<KADInvitation> invitationList;
-    private JoinListener joinListener;
+    private ArrayList<KADInvitation> invitationList = new ArrayList<>();
+    private JoinListener joinListener = new JoinListener() { //default join listener
+        @Override
+        public void onJoinProposal(Invitation invitation) {
+            //does nothing
+        }
+    };
 
     static final int KADEMLIA_ALPHA = 1; //always less than KADEMLIA_K
     static final int KADEMLIA_REPUBLISH_PERIOD_MILLIS = 60 * 60 * 1000; //1 hour
@@ -70,7 +79,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     //happened more than KADEMLIA_REFRESH_PERIOD / 2 milliseconds before
     final long[] lastRefresh = new long[NO_BUCKETS];
 
-    private SMSNetworkListenerHandler listenerHandler;
+    private SMSNetworkListenerHandler listenerHandler = new SMSNetworkListenerHandler();
 
     private SMSNetworkManager() {
         //Private because of singleton
@@ -94,14 +103,12 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
         dict = new SMSDistributedNetworkDictionary<>(new SMSKADPeer(mySelf));
         SMSHandler.getInstance().setReceivedListener(SMSNetworkListener.class);
         this.valueParser = valueParser;
-        invitationList = new ArrayList<>();
-        listenerHandler = new SMSNetworkListenerHandler();
     }
 
 
     /**
      * Sets up refreshing/republishing services. Schedules them to start after the specified delay.
-     * Each service does a periodic check.
+     * Each service does a periodic check. Check out each class for more details.
      * @author Marco Mariotto
      */
     private void setupServices() {
@@ -170,9 +177,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
             if (inv.getGuest().equals(newUser)) {
                 dict.addUser(newUser);
                 //Get my resources. If the new node is closer to resource x, we send him a STORE request for x (this is an optimization)
-                ArrayList<KADAddress> myResources = dict.getKeys();
-                for (int i = 0; i < myResources.size(); i++) {
-                    KADAddress resourceKey = myResources.get(i);
+                for(KADAddress resourceKey : dict.getKeys()){
                     KADAddress closer = KADAddress.closerToTarget(mySelf.networkAddress, newUser.networkAddress, resourceKey);
                     if (closer.equals(newUser.networkAddress))
                         SMSCommandMapper.sendRequest(RequestType.STORE, resourceKey.toString() + SPLIT_CHAR + dict.getValue(resourceKey).toString(), peer);
@@ -268,20 +273,20 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     //NODES
 
     /**
-     * Finds k-closest nodes to {@code address}
+     * Finds the k-closest nodes to {@code address}
      *
-     * @param address  The {@link KADAddress} object for which to find the peer
-     * @param listener Called when the the k-closest nodes are found
+     * @param address  a {@link KADAddress}
+     * @param listener called when the the k-closest nodes are found
      * @throws IllegalStateException if there's already a pending find request for this address
      * @author Marco Mariotto
      */
     synchronized private void findClosestNodes(KADAddress address, FindNodeListener<SMSKADPeer> listener) throws IllegalStateException {
 
-        if (listenerHandler.isNodeAddressRegistered(address)) //TODO we need a timer for this
+        if (listenerHandler.isNodeAddressRegistered(address)) //TODO
             throw new IllegalStateException("A find request for this key is already pending");
-        listenerHandler.registerNodeListener(address, listener); //listener takes care of removing itself from the map when the closest nodes are returned
+        listenerHandler.registerNodeListener(address, listener); //listener takes care of removing itself from the register when the closest nodes are returned
 
-        //bestSoFarClosestNodes contains the best so far KADEMLIA_K nodes found closer to kadAddress
+        //bestSoFarClosestNodes contains the best so far KADEMLIA_K nodes found closer to address
         ClosestPQ currentBestPQ = new ClosestPQ(new SMSKADPeer.SMSKADComparator(address), dict.getAllUsers());
         bestSoFarClosestNodes.put(address, currentBestPQ);
 
@@ -305,7 +310,8 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      * @author Marco Mariotto
      */
     synchronized protected void onFindCloserNodesRequest(SMSPeer sender, String requestContent) {
-        dict.addUser(new SMSKADPeer(sender)); //might be a new node we don't know about
+        //We add the sender to our local dictionary, might be a new node we don't know about
+        dict.addUser(new SMSKADPeer(sender));
         ArrayList<SMSKADPeer> closerNodes = dict.getNodesSortedByDistance(KADAddress.fromHexString(requestContent)); //this includes mySelf
         StringBuilder replyContent = new StringBuilder(requestContent); //this is the address we were asked to look up
         for (int i = 0; i < Math.min(KADEMLIA_K, closerNodes.size()); i++) { //we send up to K closest nodes we know about
@@ -363,7 +369,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     synchronized public void findValue(SerializableObject key, FindValueListener listener) throws IllegalStateException {
         KADAddress keyAddress = new KADAddress(key.toString());
 
-        if (listenerHandler.isValueAddressRegistered(keyAddress)) //TODO we need a timer for this
+        if (listenerHandler.isValueAddressRegistered(keyAddress)) //TODO
             throw new IllegalStateException("A find request for this key is already pending");
         listenerHandler.registerValueListener(keyAddress, listener);
 
@@ -394,6 +400,9 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      * @author Alberto Ursino, inspired by Marco Mariotto's code for consistency reasons
      */
     synchronized protected void onFindValueRequest(SMSPeer sender, String requestContent) {
+        //We add the sender to our local dictionary, might be a new node we don't know about
+        dict.addUser(new SMSKADPeer(sender));
+
         String[] splitStr = requestContent.split(SPLIT_CHAR);
         String key = splitStr[0];
         KADAddress keyAddress = KADAddress.fromHexString(key);
@@ -403,8 +412,6 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
         if (localValue != null)
             SMSCommandMapper.sendReply(ReplyType.VALUE_FOUND, key + SMSCommandMapper.SPLIT_CHAR + localValue.toString(), sender);
         else {
-            //We add the sender to our local dictionary
-            dict.addUser(new SMSKADPeer(sender));
             ArrayList<SMSKADPeer> closerNodes = dict.getNodesSortedByDistance(keyAddress);
             StringBuilder replyContent = new StringBuilder(requestContent);
             for (int i = 0; i < Math.min(KADEMLIA_K, closerNodes.size()); i++) {
@@ -435,12 +442,12 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
             dict.addUser(p);
         }
 
-        //Flag that updates us on how much FIND_VALUE requests we are sending
+        //Flag that updates us on how many FIND_VALUE requests we are sending
         int picked = 0;
 
         for (int i = 0; i < currentBestPQ.size() && picked < KADEMLIA_ALPHA; i++) {
             MutablePair<SMSKADPeer, Boolean> pair = currentBestPQ.get(i);
-            if (!pair.second) { //If the current i-SMSKADPeer is not queried then sends to it a FIND_VALUE request
+            if (!pair.second) { //If the current has not been queried then sends to it a FIND_VALUE request
                 picked++;
                 pair.second = true;
                 SMSCommandMapper.sendRequest(RequestType.FIND_VALUE, key, pair.first);
@@ -490,7 +497,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      */
     synchronized protected void onPingRequest(SMSPeer peer) {
         SMSCommandMapper.sendReply(ReplyType.PING_ECHO, peer);
-        dict.addUser(new SMSKADPeer(peer));
+        dict.addUser(new SMSKADPeer(peer)); //might be a node we don't know about
     }
 
     /**
@@ -534,14 +541,12 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     }
 
     /**
-     * Republishes all keys of the local dictionary. Called by the RepublishService only every {@link #KADEMLIA_REPUBLISH_PERIOD} milliseconds.
+     * Republishes all keys of the local dictionary. Called by the RepublishService only every {@link #KADEMLIA_REPUBLISH_PERIOD_MILLIS} milliseconds.
      *
      * @author Alessandra Tonin, Marco Mariotto
      */
     synchronized public void republishKeys() {
-        ArrayList<KADAddress> myResources = dict.getKeys();
-        for (int i = 0; i < myResources.size(); i++) {
-            final KADAddress resourceKey = myResources.get(i);
+        for(final KADAddress resourceKey : dict.getKeys()){
             FindNodeListener listener = new FindNodeListener() {
                 @Override
                 public void OnKClosestNodesFound(Peer[] peers) {
