@@ -1,10 +1,10 @@
 package com.eis.networklibrary.kademlia;
 
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.fail;
 
 /**
@@ -35,13 +35,13 @@ public class KADAddressTest {
     @Test(expected = IllegalArgumentException.class)
     public void constructor_address_tooShort() {
         new KADAddress(TOO_SHORT_BYTE_ADDRESS);
-        Assert.fail(EXCEPTION_EXPECTED);
+        fail(EXCEPTION_EXPECTED);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void constructor_address_tooLong() {
         new KADAddress(TOO_LONG_BYTE_ADDRESS);
-        Assert.fail(EXCEPTION_EXPECTED);
+        fail(EXCEPTION_EXPECTED);
     }
 
     @Test
@@ -84,8 +84,8 @@ public class KADAddressTest {
 
     @Test
     public void equals_isOk() {
-        Assert.assertEquals(KAD_ADDRESS_1, KAD_ADDRESS_1);
-        Assert.assertNotEquals(KAD_ADDRESS_1, KAD_ADDRESS_2);
+        assertEquals(KAD_ADDRESS_1, KAD_ADDRESS_1);
+        assertNotEquals(KAD_ADDRESS_1, KAD_ADDRESS_2);
     }
 
     @Test
