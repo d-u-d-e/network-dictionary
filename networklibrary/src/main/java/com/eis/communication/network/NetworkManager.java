@@ -47,8 +47,9 @@ public interface NetworkManager<U extends Peer, RK extends SerializableObject, R
      *
      * @param key      The resource key
      * @param listener The listener used to warn when the value was found
+     * @param maxWaiting Maximum milliseconds to wait before considering this request unsuccessful. If maxWaiting is 0, no time limit is set.
      */
-    void findValue(RK key, FindValueListener listener);
+    void findValue(RK key, FindValueListener listener, int maxWaiting);
 
     void setJoinProposalListener(JoinListener listener);
 }

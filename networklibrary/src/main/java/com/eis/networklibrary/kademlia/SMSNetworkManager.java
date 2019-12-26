@@ -150,9 +150,6 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     public void join(KADInvitation invitation) {
         if (invitation.getGuest() != mySelf)
             throw new IllegalArgumentException("The invitation is not valid: it is intended for another user");
-        SMSKADPeer inviter = invitation.getInviter();
-        dict.addUser(inviter);
-        SMSCommandMapper.sendReply(ReplyType.JOIN_AGREED, inviter);
         findClosestNodes(mySelf.networkAddress, new FindNodeListener<SMSKADPeer>() {
             @Override
             public void OnKClosestNodesFound(SMSKADPeer[] peers) {
@@ -161,7 +158,10 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
                 for (int i = 0; i < NO_BUCKETS; i++)
                     refreshBucket(i);
             }
-        });
+        }, 0);
+        SMSKADPeer inviter = invitation.getInviter();
+        dict.addUser(inviter);
+        SMSCommandMapper.sendReply(ReplyType.JOIN_AGREED, inviter);
         setupServices();
     }
 
@@ -232,7 +232,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
                     else
                         dict.setResource(resKadAddress, value);
             }
-        });
+        }, 0);
 
     }
 
@@ -255,7 +255,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
                     else
                         dict.removeResource(resKadAddress);
             }
-        });
+        }, 0);
     }
 
     /**
@@ -277,14 +277,15 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      *
      * @param address  a {@link KADAddress}
      * @param listener called when the the k-closest nodes are found
+     * @param maxWaiting Maximum milliseconds to wait before considering this request unsuccessful. If maxWaiting is 0, no time limit is set.
      * @throws IllegalStateException if there's already a pending find request for this address
      * @author Marco Mariotto
      */
-    synchronized private void findClosestNodes(KADAddress address, FindNodeListener<SMSKADPeer> listener) throws IllegalStateException {
+    synchronized private void findClosestNodes(KADAddress address, FindNodeListener<SMSKADPeer> listener, int maxWaiting) throws IllegalStateException {
 
-        if (listenerHandler.isNodeAddressRegistered(address)) //TODO
-            throw new IllegalStateException("A find request for this key is already pending");
-        listenerHandler.registerNodeListener(address, listener); //listener takes care of removing itself from the register when the closest nodes are returned
+        if (listenerHandler.isNodeAddressRegistered(address) || listenerHandler.isValueAddressRegistered(address))
+            throw new IllegalStateException("A request for this address is already pending");
+        listenerHandler.registerNodeListener(address, listener, maxWaiting); //listener takes care of removing itself from the register when the closest nodes are returned
 
         //bestSoFarClosestNodes contains the best so far KADEMLIA_K nodes found closer to address
         ClosestPQ currentBestPQ = new ClosestPQ(new SMSKADPeer.SMSKADComparator(address), dict.getAllUsers());
@@ -363,15 +364,15 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      *
      * @param key      The resource key of which we want to find the value
      * @param listener The listener that has to be called when the value has been found
+     * @param maxWaiting Maximum milliseconds to wait before considering this request unsuccessful. If maxWaiting is 0, no time limit is set.
      * @throws IllegalStateException if there's already a pending find request fort this address
      * @author Alberto Ursino, inspired by Marco Mariotto's code for consistency reasons
      */
-    synchronized public void findValue(SerializableObject key, FindValueListener listener) throws IllegalStateException {
+    synchronized public void findValue(SerializableObject key, FindValueListener listener, int maxWaiting) throws IllegalStateException {
         KADAddress keyAddress = new KADAddress(key.toString());
-
-        if (listenerHandler.isValueAddressRegistered(keyAddress)) //TODO
-            throw new IllegalStateException("A find request for this key is already pending");
-        listenerHandler.registerValueListener(keyAddress, listener);
+        if (listenerHandler.isValueAddressRegistered(keyAddress) || listenerHandler.isNodeAddressRegistered(keyAddress))
+            throw new IllegalStateException("A request for this address is already pending");
+        listenerHandler.registerValueListener(keyAddress, listener, maxWaiting);
 
         //Maybe the value we are looking for is in our local dictionary
         SerializableObject localValue = dict.getValue(keyAddress);
@@ -522,7 +523,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     void refreshBucket(int bucketIndex) {
         //TODO maybe add a listener so we know when the refresh has completed
         KADAddress randomAddress = dict.getRandomAddressInBucket(bucketIndex);
-        findClosestNodes(randomAddress, null); //will trigger the listener handler, but no listener will actually be called
+        findClosestNodes(randomAddress, null, 0); //will trigger the listener handler, but no listener will actually be called
     }
 
     /**
@@ -555,7 +556,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
                             SMSCommandMapper.sendRequest(RequestType.STORE, resourceKey.toString() + SPLIT_CHAR + dict.getValue(resourceKey).toString(), (SMSKADPeer) p);
                 }
             };
-            findClosestNodes(resourceKey, listener);
+            findClosestNodes(resourceKey, listener, 0);
         }
     }
 }

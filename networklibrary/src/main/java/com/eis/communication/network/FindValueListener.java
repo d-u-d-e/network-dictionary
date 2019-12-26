@@ -19,4 +19,9 @@ public interface FindValueListener<V extends SerializableObject> {
      * Method called when it was not possible to find the value of the given key.
      */
     void onValueNotFound();
+
+    /**
+     * Method called when the find request timed out.
+     */
+    default void onFindValueTimedOut(){};
 }

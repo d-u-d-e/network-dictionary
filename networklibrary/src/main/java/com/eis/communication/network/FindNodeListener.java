@@ -16,4 +16,6 @@ public interface FindNodeListener<P extends Peer> {
      * @param peers The k-closest peers received.
      */
     void OnKClosestNodesFound(P[] peers);
+
+    default void onFindTimedOut() {}
 }
