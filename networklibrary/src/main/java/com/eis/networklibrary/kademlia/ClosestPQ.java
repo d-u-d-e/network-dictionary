@@ -34,7 +34,6 @@ class ClosestPQ {
 
         if(nodes != null && !nodes.isEmpty()){
             Collections.sort(nodes, comparator);
-
             for (SMSKADPeer p : nodes.subList(0, Math.min(KADEMLIA_K, nodes.size())))
                 pairs.add(new MutablePair<>(p, false));
         }
