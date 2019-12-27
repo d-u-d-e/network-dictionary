@@ -264,25 +264,4 @@ public class SMSDistributedNetworkDictionary<RV> implements NetworkDictionary<SM
     public ArrayList<RV> getValues() {
         return new ArrayList<>(resources.values());
     }
-
-    /**
-     * @param bucketIndex identifies each bucket, from 0 to N-1, where N = {@link #NO_BUCKETS}.
-     * @return a random KADAddress in this bucket. When bucketIndex == 0, then this address is obviously not random.
-     */
-    public KADAddress getRandomAddressInBucket(int bucketIndex) {
-        byte[] myAddress = mySelf.getNetworkAddress().getAddress();
-        int byteIndex = KADAddress.BYTE_ADDRESS_LENGTH - 1 - bucketIndex / Byte.SIZE;
-        byte[] randomAddress = new byte[KADAddress.BYTE_ADDRESS_LENGTH];
-        System.arraycopy(myAddress, 0, randomAddress, 0, byteIndex + 1); //copy all the first bytes up to byte n. byteIndex
-        randomAddress[byteIndex] = (byte) (myAddress[byteIndex] ^ 1); //flip least significant bit of byte n. byteIndex
-
-        if (byteIndex < KADAddress.BYTE_ADDRESS_LENGTH - 1) { //add random bytes from byte n. byteIndex + 1 onwards
-            int randomBytesLen = KADAddress.BYTE_ADDRESS_LENGTH - byteIndex - 1;
-            byte[] randomBytes = new byte[randomBytesLen];
-            Random ranGen = new Random();
-            ranGen.nextBytes(randomBytes);
-            System.arraycopy(randomBytes, 0, randomAddress, byteIndex + 1, randomBytesLen);
-        }
-        return new KADAddress(randomAddress);
-    }
 }

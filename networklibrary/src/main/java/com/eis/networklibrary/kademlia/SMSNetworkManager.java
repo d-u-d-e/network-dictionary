@@ -556,48 +556,5 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     //*******************************************************************************************
     //REFRESH and REPUBLISH
 
-    /**
-     * Refreshes the specified bucket. After a join, it is called by the RefreshService only, if needed
-     *
-     * @param bucketIndex identifies each bucket, from 0 to N-1, where N = NO_BUCKETS
-     * @author Alessandra Tonin, Marco Mariotto
-     */
-    void refreshBucket(int bucketIndex) {
-        KADAddress randomAddress = dict.getRandomAddressInBucket(bucketIndex);
-        findClosestNodes(randomAddress, null, 0); //will trigger the listener handler, but no listener will actually be called
-    }
 
-    /**
-     * Updates the last lookup for the bucket containing {@code address} to the current time
-     *
-     * @param address a {@link KADAddress}
-     * @author Marco Mariotto
-     */
-    private void updateLastLookup(KADAddress address) {
-        int index = dict.getBucketContaining(address);
-        if (index != -1) {
-            synchronized (lastRefresh) {
-                lastRefresh[index] = System.currentTimeMillis();
-            }
-        }
-    }
-
-    /**
-     * Republishes all keys of the local dictionary. Called by the RepublishService only every {@link #KADEMLIA_REPUBLISH_PERIOD_MILLIS} milliseconds
-     *
-     * @author Alessandra Tonin, Marco Mariotto
-     */
-    synchronized public void republishKeys() {
-        for (final KADAddress resourceKey : dict.getKeys()) {
-            FindNodeListener listener = new FindNodeListener() {
-                @Override
-                public void OnKClosestNodesFound(Peer[] peers) {
-                    for (Peer p : peers)
-                        if (p != mySelf)
-                            SMSCommandMapper.sendRequest(RequestType.STORE, resourceKey.toString() + SPLIT_CHAR + dict.getValue(resourceKey).toString(), (SMSKADPeer) p);
-                }
-            };
-            findClosestNodes(resourceKey, listener, 0);
-        }
-    }
 }
