@@ -1,7 +1,5 @@
 package com.eis.networklibrary.kademlia;
 
-import androidx.annotation.NonNull;
-
 import java.util.ArrayList;
 import java.util.Collections;
 
@@ -25,7 +23,7 @@ class ClosestPQ {
 
     /**
      *
-     * @param comparator used to define a order between addresses
+     * @param comparator used to define an order between addresses
      * @param nodes known addresses which are immediately compared and put in the queue.
      */
     ClosestPQ(SMSKADComparator comparator, ArrayList<SMSKADPeer> nodes) {

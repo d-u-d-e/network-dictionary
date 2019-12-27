@@ -64,8 +64,8 @@ public class KADAddress {
     /**
      * @param a The address to be compared with {@code b}.
      * @param b The address to be compared with {@code a}.
-     * @return the index of the first different bit between {@code a} and {@code b}
-     * or {@value BIT_LENGTH} if no such index exists (i.e. the two addresses are equal)
+     * @return the index of the first different bit between {@code a} and {@code b} starting from the left (MSB)
+     * or  <i>BIT_LENGTH</i> if no such index exists (i.e. the two addresses are equal)
      * @author Marco Mariotto
      */
     public static int firstDifferentBit(KADAddress a, KADAddress b) {
@@ -79,8 +79,8 @@ public class KADAddress {
     }
 
     /**
-     * @param b The byte
-     * @return the index of the leftmost bit set, otherwise Byte.SIZE if {@code b} equals to 0
+     * @param b a byte
+     * @return the index of the leftmost bit set, otherwise <i>Byte.SIZE</i> if {@code b} equals to <i>0</i>
      * @author Marco Mariotto
      */
     private static short leftMostSetBit(byte b) {
@@ -95,8 +95,8 @@ public class KADAddress {
     }
 
     /**
-     * @param obj The object being compared to <i>this</i>
-     * @return true if and only if obj is of the {@link KADAddress} type and has the same bytes as this address
+     * @param obj  the object being compared to <i>this</i>
+     * @return     true if and only if {@code obj} is of the {@link KADAddress} type and has the same bytes as this address
      */
     @Override
     public boolean equals(Object obj) {
@@ -109,10 +109,10 @@ public class KADAddress {
     /**
      * Verifies which of the two nodes {@code a} and {@code b} is closer to a given {@code target}
      *
-     * @param a      1st {@code KADAddress} object to compare
-     * @param b      2nd {@code KADAddress} object to compare
-     * @param target a KADAddress which is compared to a and b
-     * @return a or b, whichever is closer to target according toXOR metric
+     * @param a       1st {@link KADAddress} object to compare
+     * @param b       2nd {@link KADAddress} object to compare
+     * @param target  a KADAddress which is compared to a and b
+     * @return       {@code a} or {@code b}, whichever is closer to target according toXOR metric
      * @author Marco Mariotto
      */
     static KADAddress closerToTarget(KADAddress a, KADAddress b, KADAddress target) {
@@ -147,8 +147,8 @@ public class KADAddress {
     }
 
     /**
-     * @param str a valid hexadecimal representation of a {@code KADAddress}; {@code str.length()} must be {@code BIT_LENGTH/4} chars long and even
-     * @return the {@code KADAddress} having {@code str} as its hexadecimal representation
+     * @param str a valid hexadecimal representation of a {@link KADAddress}; <i>str.length()</i> must be <i>BIT_LENGTH/4</i> chars long and even
+     * @return the {@link KADAddress} having {@code str} as its hexadecimal representation
      * @author Marco Mariotto
      */
     public static KADAddress fromHexString(String str) {

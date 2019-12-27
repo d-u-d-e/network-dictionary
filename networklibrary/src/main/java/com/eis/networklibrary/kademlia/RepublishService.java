@@ -5,7 +5,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 /**
- * Republish service: every KADEMLIA_REPUBLISH_PERIOD_MILLIS ms, each key is republished.
+ * Republish service: every <i>KADEMLIA_REPUBLISH_PERIOD_MILLIS</i> ms, each key is republished.
  * @author Marco Mariotto
  */
 public class RepublishService extends TimerTask {
