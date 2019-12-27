@@ -335,7 +335,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
         ClosestPQ currentBestPQ = bestSoFarClosestNodes.get(address); //this SHOULD BE ALWAYS NON NULL
 
         if (!listenerHandler.isNodeAddressRegistered(address))
-            throw new IllegalStateException("There's not a pending find request for that node");
+            throw new IllegalStateException("There's no pending find request for this node");
 
         for (int i = 1; i < splitStr.length; i++) { //start from 1 because the first element is address, while the other elements are phone numbers of closer nodes
             SMSKADPeer p = new SMSKADPeer(splitStr[i]);
