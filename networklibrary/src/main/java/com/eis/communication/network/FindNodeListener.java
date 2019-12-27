@@ -3,11 +3,7 @@ package com.eis.communication.network;
 import com.eis.communication.Peer;
 
 /**
- * Listener used for requests to find a specific node in the network
- *
- * @author ?
- * @author Luca Crema
- * @since 16/12/2019
+ * Listener called to handle findClosestNodes requests
  */
 public interface FindNodeListener<P extends Peer> {
     /**
@@ -17,5 +13,8 @@ public interface FindNodeListener<P extends Peer> {
      */
     void OnKClosestNodesFound(P[] peers);
 
+    /**
+     * Called when the find request has timed out. Default implementation does nothing.
+     */
     default void onFindTimedOut() {}
 }
