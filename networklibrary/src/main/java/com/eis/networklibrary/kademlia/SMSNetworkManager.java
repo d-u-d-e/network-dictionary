@@ -568,7 +568,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     }
 
     /**
-     * Updates the last lookup of {@code address} to current time
+     * Updates the last lookup for the bucket containing {@code address} to the current time
      *
      * @param address a {@link KADAddress}
      * @author Marco Mariotto
