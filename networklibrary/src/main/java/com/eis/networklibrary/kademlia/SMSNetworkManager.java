@@ -109,6 +109,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     /**
      * Sets up refreshing/republishing services. Schedules them to start after the specified delay.
      * Each service does a periodic check. Check out each class for more details.
+     *
      * @author Marco Mariotto
      */
     private void setupServices() {
@@ -177,7 +178,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
             if (inv.getGuest().equals(newUser)) {
                 dict.addUser(newUser);
                 //Get my resources. If the new node is closer to resource x, we send him a STORE request for x (this is an optimization)
-                for(KADAddress resourceKey : dict.getKeys()){
+                for (KADAddress resourceKey : dict.getKeys()) {
                     KADAddress closer = KADAddress.closerToTarget(mySelf.networkAddress, newUser.networkAddress, resourceKey);
                     if (closer.equals(newUser.networkAddress))
                         SMSCommandMapper.sendRequest(RequestType.STORE, resourceKey.toString() + SPLIT_CHAR + dict.getValue(resourceKey).toString(), peer);
@@ -275,8 +276,8 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     /**
      * Finds the k-closest nodes to {@code address}
      *
-     * @param address  a {@link KADAddress}
-     * @param listener called when the the k-closest nodes are found
+     * @param address    a {@link KADAddress}
+     * @param listener   called when the the k-closest nodes are found
      * @param maxWaiting Maximum milliseconds to wait before considering this request unsuccessful. If maxWaiting is 0, no time limit is set.
      * @throws IllegalStateException if there's already a pending find request for this address
      * @author Marco Mariotto
@@ -333,6 +334,9 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
         KADAddress address = KADAddress.fromHexString(splitStr[0]); //address which we asked to find
         ClosestPQ currentBestPQ = bestSoFarClosestNodes.get(address); //this SHOULD BE ALWAYS NON NULL
 
+        if (!listenerHandler.isNodeAddressRegistered(address))
+            throw new IllegalStateException("There's not a pending find request for that node");
+
         for (int i = 1; i < splitStr.length; i++) { //start from 1 because the first element is address, while the other elements are phone numbers of closer nodes
             SMSKADPeer p = new SMSKADPeer(splitStr[i]);
             currentBestPQ.add(p, false); //if it is already in the queue, this does nothing
@@ -362,8 +366,8 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     /**
      * Method used to find a value of the given key
      *
-     * @param key      The resource key of which we want to find the value
-     * @param listener The listener that has to be called when the value has been found
+     * @param key        The resource key of which we want to find the value
+     * @param listener   The listener that has to be called when the value has been found
      * @param maxWaiting Maximum milliseconds to wait before considering this request unsuccessful. If maxWaiting is 0, no time limit is set.
      * @throws IllegalStateException if there's already a pending find request fort this address
      * @author Alberto Ursino, inspired by Marco Mariotto's code for consistency reasons
@@ -435,6 +439,9 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
         String key = splitStr[0];
         KADAddress keyAddress = KADAddress.fromHexString(key);
         ClosestPQ currentBestPQ = bestSoFarClosestNodes.get(keyAddress); //this SHOULD BE ALWAYS NON NULL
+        
+        if (!listenerHandler.isNodeAddressRegistered(keyAddress))
+            throw new IllegalStateException("There's not a pending find request for that value");
 
         //Updates my list of k-nodes closest to the resource with those just received in the replyContent
         for (int i = 1; i < splitStr.length; i++) {
@@ -547,7 +554,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      * @author Alessandra Tonin, Marco Mariotto
      */
     synchronized public void republishKeys() {
-        for(final KADAddress resourceKey : dict.getKeys()){
+        for (final KADAddress resourceKey : dict.getKeys()) {
             FindNodeListener listener = new FindNodeListener() {
                 @Override
                 public void OnKClosestNodesFound(Peer[] peers) {
