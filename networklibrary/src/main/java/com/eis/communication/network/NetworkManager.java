@@ -34,8 +34,7 @@ public interface NetworkManager<U extends Peer, RK extends SerializableObject, R
      * @param value      The resource value
      * @param maxWaiting Maximum milliseconds to wait before considering this request unsuccessful.
      *                   If maxWaiting is 0, no time limit is set.
-     *                   maxWaiting minim value is 60 seconds.
-     * @param listener   The listener that has to be called when maxWaiting time is over
+     * @param listener   The listener called to inform the user whether the operation was successful or not
      */
     void setResource(RK key, RV value, int maxWaiting, ResourceListener listener);
 
@@ -43,8 +42,11 @@ public interface NetworkManager<U extends Peer, RK extends SerializableObject, R
      * Removes a key-value resource from the local dictionary: this is called if a STORE (key, NULL) message is received
      *
      * @param key The resource key
+     * @param maxWaiting Maximum milliseconds to wait before considering this request unsuccessful.
+     *                   If maxWaiting is 0, no time limit is set.
+     * @param listener   The listener called to inform the user whether the operation was successful or not
      */
-    void removeResource(RK key);
+    void removeResource(RK key, int maxWaiting, ResourceListener listener);
 
     /**
      * Method used to find a value of the given key

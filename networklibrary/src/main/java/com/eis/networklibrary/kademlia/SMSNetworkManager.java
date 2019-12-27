@@ -221,8 +221,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      * @param value      the resource value
      * @param maxWaiting Maximum milliseconds to wait before considering this request unsuccessful.
      *                   If maxWaiting is 0, no time limit is set.
-     *                   maxWaiting minim value is 60 seconds.
-     * @param listener   The listener that has to be called when maxWaiting time is over
+     * @param listener   The listener that informs the user whether the operation were successful or not
      * @author Marco Mariotto
      */
     @Override
@@ -237,6 +236,12 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
                         SMSCommandMapper.sendRequest(RequestType.STORE, resKadAddress + SPLIT_CHAR + valueParser.serialize(value), p);
                     else
                         dict.setResource(resKadAddress, value);
+                listener.onOperationSuccessful();
+            }
+
+            @Override
+            public void onFindTimedOut() {
+                listener.onOperationFailed();
             }
         }, maxWaiting);
     }
@@ -244,11 +249,12 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     /**
      * Delete an existing resource. TODO If {@code key} has not been created by mySelf, this method is unsafe to call and leads to security flaws
      *
-     * @param key The resource key for which to set the value to null
-     * @author Marco Mariotto
+     * @param key        The resource key for which to set the value to null
+     * @param maxWaiting Maximum milliseconds to wait before considering this request unsuccessful.
+     *                   If maxWaiting is 0, no time limit is set.
+     * @param listener   The listener that informs the user whether the operation were successful or not
      */
-    @Override
-    synchronized public void removeResource(final SerializableObject key) {
+    synchronized public void removeResource(final SerializableObject key, int maxWaiting, ResourceListener listener) {
         final KADAddress resKadAddress = new KADAddress(key.toString());
         updateLastLookup(resKadAddress);
         findClosestNodes(resKadAddress, new FindNodeListener<SMSKADPeer>() {
@@ -259,8 +265,14 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
                         SMSCommandMapper.sendRequest(RequestType.DELETE, resKadAddress.toString(), p);
                     else
                         dict.removeResource(resKadAddress);
+                listener.onOperationSuccessful();
             }
-        }, 0);
+
+            @Override
+            public void onFindTimedOut() {
+                listener.onOperationFailed();
+            }
+        }, maxWaiting);
     }
 
     /**
@@ -339,10 +351,10 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     synchronized protected void onCloserNodesFoundReply(String replyContent) {
         String[] splitStr = replyContent.split(SMSCommandMapper.SPLIT_CHAR);
         KADAddress address = KADAddress.fromHexString(splitStr[0]); //address which we asked to find
-        ClosestPQ currentBestPQ = bestSoFarClosestNodes.get(address); //this SHOULD BE ALWAYS NON NULL
-
-        if (!listenerHandler.isNodeAddressRegistered(address))
+        if (!listenerHandler.isNodeAddressRegistered(address)) //the listener has been removed, meaning this reply is invalid and didn't arrive in time
             return;
+
+        ClosestPQ currentBestPQ = bestSoFarClosestNodes.get(address); //this SHOULD BE ALWAYS NON NULL
 
         for (int i = 1; i < splitStr.length; i++) { //start from 1 because the first element is address, while the other elements are phone numbers of closer nodes
             SMSKADPeer p = new SMSKADPeer(splitStr[i]);
@@ -449,7 +461,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
         KADAddress keyAddress = KADAddress.fromHexString(key);
         ClosestPQ currentBestPQ = bestSoFarClosestNodes.get(keyAddress); //this SHOULD BE ALWAYS NON NULL
 
-        if (!listenerHandler.isValueAddressRegistered(keyAddress))
+        if (!listenerHandler.isValueAddressRegistered(keyAddress))//the listener has been removed, meaning this reply is invalid and didn't arrive in time
             return;
 
         //Updates my list of k-nodes closest to the resource with those just received in the replyContent
@@ -488,7 +500,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
         String[] splitStr = replyContent.split(SPLIT_CHAR);
         KADAddress keyAddress = KADAddress.fromHexString(splitStr[0]);
 
-        if (!listenerHandler.isValueAddressRegistered(keyAddress))
+        if (!listenerHandler.isValueAddressRegistered(keyAddress)) //the listener has been removed, meaning this reply is invalid and didn't arrive in time
             return;
 
         SerializableObject value = valueParser.deSerialize(splitStr[1]);
