@@ -53,7 +53,7 @@ class ClosestPQ {
      * least priority has no effect. Adding an object already present also has no effect.
      * @param pair to be added
      */
-    void add(@NonNull MutablePair<SMSKADPeer, Boolean> pair) {
+    void add(MutablePair<SMSKADPeer, Boolean> pair) {
         for (int i = 0; i < pairs.size(); i++) { //insertion sort
             int comp = comparator.compare(pair.first, pairs.get(i).first);
             if (comp == 0) return; //peer is already in the queue

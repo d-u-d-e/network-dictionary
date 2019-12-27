@@ -229,7 +229,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      * @author Marco Mariotto, ALberto Ursino
      */
     @Override
-    synchronized public void setResource(@NotNull final SerializableObject key, @NotNull final SerializableObject value,@NotNull int maxWaiting, @NotNull ResourceListener listener) {
+    synchronized public void setResource(@NotNull final SerializableObject key, @NotNull final SerializableObject value, int maxWaiting, @NotNull ResourceListener listener) {
         final KADAddress resKadAddress = new KADAddress(key.toString());
         updateLastLookup(resKadAddress);
         findClosestNodes(resKadAddress, new FindNodeListener<SMSKADPeer>() {
@@ -259,7 +259,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      * @param listener   The listener that informs the user whether the operation were successful or not, it can't be null
      * @author Marco Mariotto, Alberto Ursino
      */
-    synchronized public void removeResource(@NotNull final SerializableObject key,@NotNull int maxWaiting, @NotNull ResourceListener listener) {
+    synchronized public void removeResource(@NotNull final SerializableObject key, int maxWaiting, @NotNull ResourceListener listener) {
         final KADAddress resKadAddress = new KADAddress(key.toString());
         updateLastLookup(resKadAddress);
         findClosestNodes(resKadAddress, new FindNodeListener<SMSKADPeer>() {
@@ -307,13 +307,14 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     synchronized private void findClosestNodes(KADAddress address, FindNodeListener<SMSKADPeer> listener, int maxWaiting) throws IllegalStateException {
         if (listenerHandler.isNodeAddressRegistered(address) || listenerHandler.isValueAddressRegistered(address))
             throw new IllegalStateException("A request for this address is already pending");
-        listenerHandler.registerNodeListener(address, listener, maxWaiting); //listener takes care of removing itself from the register when the closest nodes are returned
+        //listenerHandler takes care of removing this request from the register when the closest nodes are returned or the timer expires
+        listenerHandler.registerFindNodesRequest(address, listener, maxWaiting);
 
         //bestSoFarClosestNodes contains the best so far KADEMLIA_K nodes found closer to address
         ClosestPQ currentBestPQ = new ClosestPQ(new SMSKADPeer.SMSKADComparator(address), dict.getAllUsers());
         bestSoFarClosestNodes.put(address, currentBestPQ);
 
-        //Sends a FIND_CLOSEST_NODES request to first KADEMLIA_ALPHA nodes in closestNodes
+        //Sends a FIND_CLOSEST_NODES request to the first KADEMLIA_ALPHA nodes in closestNodes
         for (int i = 0; i < Math.min(KADEMLIA_ALPHA, currentBestPQ.size()); i++) {
             currentBestPQ.get(i).second = true; //set it to queried
             SMSCommandMapper.sendRequest(RequestType.FIND_NODES, address.toString(), currentBestPQ.get(i).first);
@@ -355,7 +356,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     synchronized void onCloserNodesFoundReply(String replyContent) {
         String[] splitStr = replyContent.split(SMSCommandMapper.SPLIT_CHAR);
         KADAddress address = KADAddress.fromHexString(splitStr[0]); //address which we asked to find
-        if (!listenerHandler.isNodeAddressRegistered(address)) //the listener has been removed, meaning this reply is invalid and didn't arrive in time
+        if (!listenerHandler.isNodeAddressRegistered(address)) //if the listener has been removed, then this reply is invalid and didn't arrive in time
             return;
 
         ClosestPQ currentBestPQ = bestSoFarClosestNodes.get(address); //this SHOULD BE ALWAYS NON NULL
@@ -395,11 +396,14 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      * @throws IllegalStateException if there's already a pending find request fort this address
      * @author Alberto Ursino, inspired by Marco Mariotto's code for consistency reasons
      */
-    synchronized public void findValue(@NotNull SerializableObject key,@NotNull FindValueListener listener,@NotNull int maxWaiting) throws IllegalStateException {
+    synchronized public void findValue(@NotNull SerializableObject key, @NotNull FindValueListener listener, int maxWaiting) throws IllegalStateException {
+        if(maxWaiting < 0)
+            throw new IllegalArgumentException("maxWaiting must be greater than or equal to zero");
+
         KADAddress keyAddress = new KADAddress(key.toString());
         if (listenerHandler.isValueAddressRegistered(keyAddress) || listenerHandler.isNodeAddressRegistered(keyAddress))
             throw new IllegalStateException("A request for this address is already pending");
-        listenerHandler.registerValueListener(keyAddress, listener, maxWaiting);
+        listenerHandler.registerFindValueRequest(keyAddress, listener, maxWaiting);
 
         //Maybe the value we are looking for is in our local dictionary
         SerializableObject localValue = dict.getValue(keyAddress);
@@ -525,7 +529,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      */
     synchronized public void ping(@NotNull SMSPeer peer, PingListener listener) {
         SMSCommandMapper.sendRequest(RequestType.PING, peer);
-        listenerHandler.registerPingListener(peer, listener);
+        listenerHandler.registerPingRequest(peer, listener);
     }
 
     /**
