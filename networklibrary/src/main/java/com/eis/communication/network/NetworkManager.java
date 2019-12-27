@@ -30,10 +30,14 @@ public interface NetworkManager<U extends Peer, RK extends SerializableObject, R
     /**
      * Sets a (key, value) resource in the local dictionary: this is called only if a STORE message is received
      *
-     * @param key   The resource key
-     * @param value The resource value
+     * @param key        The resource key
+     * @param value      The resource value
+     * @param maxWaiting Maximum milliseconds to wait before considering this request unsuccessful.
+     *                   If maxWaiting is 0, no time limit is set.
+     *                   maxWaiting minim value is 60 seconds.
+     * @param listener   The listener that has to be called when maxWaiting time is over
      */
-    void setResource(RK key, RV value);
+    void setResource(RK key, RV value, int maxWaiting, ResourceListener listener);
 
     /**
      * Removes a key-value resource from the local dictionary: this is called if a STORE (key, NULL) message is received
@@ -45,8 +49,8 @@ public interface NetworkManager<U extends Peer, RK extends SerializableObject, R
     /**
      * Method used to find a value of the given key
      *
-     * @param key      The resource key
-     * @param listener The listener used to warn when the value was found
+     * @param key        The resource key
+     * @param listener   The listener used to warn when the value was found
      * @param maxWaiting Maximum milliseconds to wait before considering this request unsuccessful. If maxWaiting is 0, no time limit is set.
      */
     void findValue(RK key, FindValueListener listener, int maxWaiting);

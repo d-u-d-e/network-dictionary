@@ -9,6 +9,7 @@ import com.eis.communication.network.Invitation;
 import com.eis.communication.network.JoinListener;
 import com.eis.communication.network.NetworkManager;
 import com.eis.communication.network.PingListener;
+import com.eis.communication.network.ResourceListener;
 import com.eis.communication.network.SerializableObject;
 import com.eis.smslibrary.SMSHandler;
 import com.eis.smslibrary.SMSMessage;
@@ -216,12 +217,16 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      * Sets a new resource. TODO If {@code key} already exists in the network, this method is unsafe to call and leads to security flaws
      * TODO so we need special permissions in order to change an existing key, for example if we created it
      *
-     * @param key   the resource key
-     * @param value the resource value
+     * @param key        the resource key
+     * @param value      the resource value
+     * @param maxWaiting Maximum milliseconds to wait before considering this request unsuccessful.
+     *                   If maxWaiting is 0, no time limit is set.
+     *                   maxWaiting minim value is 60 seconds.
+     * @param listener   The listener that has to be called when maxWaiting time is over
      * @author Marco Mariotto
      */
     @Override
-    synchronized public void setResource(final SerializableObject key, final SerializableObject value) {
+    synchronized public void setResource(final SerializableObject key, final SerializableObject value, int maxWaiting, ResourceListener listener) {
         final KADAddress resKadAddress = new KADAddress(key.toString());
         updateLastLookup(resKadAddress);
         findClosestNodes(resKadAddress, new FindNodeListener<SMSKADPeer>() {
@@ -233,8 +238,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
                     else
                         dict.setResource(resKadAddress, value);
             }
-        }, 0);
-
+        }, maxWaiting);
     }
 
     /**
@@ -335,7 +339,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
         ClosestPQ currentBestPQ = bestSoFarClosestNodes.get(address); //this SHOULD BE ALWAYS NON NULL
 
         if (!listenerHandler.isNodeAddressRegistered(address))
-            throw new IllegalStateException("There's not a pending find request for that node");
+            return;
 
         for (int i = 1; i < splitStr.length; i++) { //start from 1 because the first element is address, while the other elements are phone numbers of closer nodes
             SMSKADPeer p = new SMSKADPeer(splitStr[i]);
@@ -439,9 +443,9 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
         String key = splitStr[0];
         KADAddress keyAddress = KADAddress.fromHexString(key);
         ClosestPQ currentBestPQ = bestSoFarClosestNodes.get(keyAddress); //this SHOULD BE ALWAYS NON NULL
-        
-        if (!listenerHandler.isNodeAddressRegistered(keyAddress))
-            throw new IllegalStateException("There's not a pending find request for that value");
+
+        if (!listenerHandler.isValueAddressRegistered(keyAddress))
+            return;
 
         //Updates my list of k-nodes closest to the resource with those just received in the replyContent
         for (int i = 1; i < splitStr.length; i++) {
@@ -476,9 +480,13 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      */
     synchronized protected void onValueFoundReply(String replyContent) {
         String[] splitStr = replyContent.split(SPLIT_CHAR);
-        KADAddress key = KADAddress.fromHexString(splitStr[0]);
+        KADAddress keyAddress = KADAddress.fromHexString(splitStr[0]);
+
+        if (!listenerHandler.isValueAddressRegistered(keyAddress))
+            return;
+
         SerializableObject value = valueParser.deSerialize(splitStr[1]);
-        listenerHandler.triggerValueFound(key, value);
+        listenerHandler.triggerValueFound(keyAddress, value);
     }
 
 
