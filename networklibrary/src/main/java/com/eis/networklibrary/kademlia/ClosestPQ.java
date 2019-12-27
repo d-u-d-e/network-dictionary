@@ -54,13 +54,13 @@ class ClosestPQ {
     void add(MutablePair<SMSKADPeer, Boolean> pair) {
         for (int i = 0; i < pairs.size(); i++) { //insertion sort
             int comp = comparator.compare(pair.first, pairs.get(i).first);
-            if (comp == 0) return; //peer is already in the queue
+            if(comp > 0) continue;
             else if (comp < 0) {
                 pairs.add(i, pair);
                 if (pairs.size() > KADEMLIA_K)
                     pairs.remove(KADEMLIA_K - 1); //delete the last element if this queue has more than KADEMLIA_K elements
-                break;
             }
+            return; //if comp == 0 then peer is already in the queue, so it is safe to return
         }
         if (pairs.size() < KADEMLIA_K)
             pairs.add(pair);

@@ -24,6 +24,9 @@ public class RefreshService extends TimerTask {
             }
     }
 
+    /**
+     * @param beginAt date that specifies when to start this task
+     */
     public static void startTask(Date beginAt){
         RefreshService service = new RefreshService();
         Timer timer = new Timer();

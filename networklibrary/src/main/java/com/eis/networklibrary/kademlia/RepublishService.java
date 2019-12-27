@@ -15,6 +15,9 @@ public class RepublishService extends TimerTask {
         manager.republishKeys();
     }
 
+    /**
+     * @param beginAt date that specifies when to start this task
+     */
     public static void startTask(Date beginAt){
         RepublishService service = new RepublishService();
         Timer timer = new Timer();

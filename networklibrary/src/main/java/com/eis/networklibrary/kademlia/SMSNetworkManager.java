@@ -589,12 +589,12 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      */
     synchronized public void republishKeys() {
         for (final KADAddress resourceKey : dict.getKeys()) {
-            FindNodeListener listener = new FindNodeListener() {
+            FindNodeListener listener = new FindNodeListener<SMSKADPeer>() {
                 @Override
-                public void OnKClosestNodesFound(Peer[] peers) {
-                    for (Peer p : peers)
+                public void OnKClosestNodesFound(SMSKADPeer[] peers) {
+                    for (SMSKADPeer p : peers)
                         if (p != mySelf)
-                            SMSCommandMapper.sendRequest(RequestType.STORE, resourceKey.toString() + SPLIT_CHAR + dict.getValue(resourceKey).toString(), (SMSKADPeer) p);
+                            SMSCommandMapper.sendRequest(RequestType.STORE, resourceKey.toString() + SPLIT_CHAR + dict.getValue(resourceKey).toString(), p);
                 }
             };
             findClosestNodes(resourceKey, listener, 0);
