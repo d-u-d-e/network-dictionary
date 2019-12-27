@@ -6,8 +6,6 @@ import androidx.annotation.NonNull;
  * A resource key or value has to be represented by a string in order to be sent by a sms.
  * Thus every user-defined key or value extends this class, which force the user to override equals()
  * and toString().
- *
- * @author Marco Mariotto
  */
 public abstract class SerializableObject {
 

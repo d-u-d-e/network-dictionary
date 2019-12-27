@@ -6,10 +6,7 @@ import com.eis.communication.Peer;
  * @param <U>  Peer for users in the network
  * @param <RK> Key class for the resource
  * @param <RV> Value class for the resource
- * @author Marco Mariotto
- * @author Alberto Ursino
- * @author Luca Crema
- * @since 10/12/2019
+ * @param <I>  Invitation class
  */
 public interface NetworkManager<U extends Peer, RK extends SerializableObject, RV extends SerializableObject, I extends Invitation> {
 
@@ -57,5 +54,8 @@ public interface NetworkManager<U extends Peer, RK extends SerializableObject, R
      */
     void findValue(RK key, FindValueListener listener, int maxWaiting);
 
+    /**
+     * @param listener called when a join proposal is received
+     */
     void setJoinProposalListener(JoinListener listener);
 }

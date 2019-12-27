@@ -1,6 +1,5 @@
 package com.eis.networklibrary.kademlia;
 
-
 import com.eis.communication.Peer;
 import com.eis.communication.network.FindNodeListener;
 import com.eis.communication.network.FindValueListener;
@@ -14,6 +13,9 @@ import com.eis.smslibrary.SMSHandler;
 import com.eis.smslibrary.SMSMessage;
 import com.eis.smslibrary.SMSPeer;
 import com.eis.smslibrary.listeners.SMSSentListener;
+
+import org.jetbrains.annotations.NonNls;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -94,10 +96,12 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     /**
      * Sets up a new network.
      *
-     * @param networkName Name of the network being created
-     * @param mySelf      The current peer executing setup()
+     * @param networkName Name of the network being created, it can't be null
+     * @param mySelf      The current peer executing setup(), it can't be null
+     * @param valueParser {@link SerializableObjectParser} object useful to set {@link #valueParser}
+     * @author Marco Mariotto, Luca Crema
      */
-    public void setup(String networkName, SMSPeer mySelf, SerializableObjectParser valueParser) {
+    public void setup(@NotNull String networkName, @NotNull SMSPeer mySelf, @NotNull SerializableObjectParser valueParser) {
         this.networkName = networkName;
         this.mySelf = new SMSKADPeer(mySelf);
         dict = new SMSDistributedNetworkDictionary<>(new SMSKADPeer(mySelf));
@@ -128,11 +132,11 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     /**
      * Sends an invitation to the specified peer
      *
-     * @param peer who is asked to join the network
+     * @param peer who is asked to join the network, it can't be null
      * @author Alberto Ursino, Marco Mariotto
      */
     @Override
-    synchronized public void invite(final SMSKADPeer peer) {
+    synchronized public void invite(@NotNull final SMSKADPeer peer) {
         SMSCommandMapper.sendRequest(RequestType.JOIN_PROPOSAL, networkName, peer, new SMSSentListener() {
             @Override
             public void onSMSSent(SMSMessage message, SMSMessage.SentState sentState) {
@@ -144,11 +148,11 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     /**
      * Join the network
      *
-     * @param invitation The invitation message
+     * @param invitation The invitation message, it can't be null
      * @author Alessandra Tonin, Marco Mariotto
      */
     @Override
-    public void join(KADInvitation invitation) {
+    public void join(@NotNull KADInvitation invitation) {
         if (invitation.getGuest() != mySelf)
             throw new IllegalArgumentException("The invitation is not valid: it is intended for another user");
         findClosestNodes(mySelf.networkAddress, new FindNodeListener<SMSKADPeer>() {
@@ -203,9 +207,10 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     /**
      * This method sets a JoinProposalListener
      *
-     * @param listener the listener to be set
+     * @param listener the listener to be set, it can't be null
+     * @author Alessandra Tonin
      */
-    synchronized public void setJoinProposalListener(JoinListener listener) {
+    synchronized public void setJoinProposalListener(@NotNull JoinListener listener) {
         joinListener = listener;
     }
 
@@ -216,15 +221,15 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      * Sets a new resource. TODO If {@code key} already exists in the network, this method is unsafe to call and leads to security flaws
      * TODO so we need special permissions in order to change an existing key, for example if we created it
      *
-     * @param key        the resource key
-     * @param value      the resource value
-     * @param maxWaiting Maximum milliseconds to wait before considering this request unsuccessful.
+     * @param key        the resource key, it can't be null
+     * @param value      the resource value, it can't be null
+     * @param maxWaiting Maximum milliseconds to wait before considering this request unsuccessful, it can't be null
      *                   If maxWaiting is 0, no time limit is set.
-     * @param listener   The listener that informs the user whether the operation were successful or not
-     * @author Marco Mariotto
+     * @param listener   The listener that informs the user whether the operation were successful or not, it can't be null
+     * @author Marco Mariotto, ALberto Ursino
      */
     @Override
-    synchronized public void setResource(final SerializableObject key, final SerializableObject value, int maxWaiting, final ResourceListener listener) {
+    synchronized public void setResource(@NotNull final SerializableObject key, @NotNull final SerializableObject value,@NotNull int maxWaiting, @NotNull ResourceListener listener) {
         final KADAddress resKadAddress = new KADAddress(key.toString());
         updateLastLookup(resKadAddress);
         findClosestNodes(resKadAddress, new FindNodeListener<SMSKADPeer>() {
@@ -248,12 +253,13 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     /**
      * Delete an existing resource. TODO If {@code key} has not been created by mySelf, this method is unsafe to call and leads to security flaws
      *
-     * @param key        The resource key for which to set the value to null
-     * @param maxWaiting Maximum milliseconds to wait before considering this request unsuccessful.
-     *                   If maxWaiting is 0, no time limit is set.
-     * @param listener   The listener that informs the user whether the operation were successful or not
+     * @param key        The resource key for which to set the value to null, it can't be null
+     * @param maxWaiting Maximum milliseconds to wait before considering this request unsuccessful, it can't be null
+     *                   If maxWaiting is 0, no time limit is set
+     * @param listener   The listener that informs the user whether the operation were successful or not, it can't be null
+     * @author Marco Mariotto, Alberto Ursino
      */
-    synchronized public void removeResource(final SerializableObject key, int maxWaiting, final ResourceListener listener) {
+    synchronized public void removeResource(@NotNull final SerializableObject key,@NotNull int maxWaiting, @NotNull ResourceListener listener) {
         final KADAddress resKadAddress = new KADAddress(key.toString());
         updateLastLookup(resKadAddress);
         findClosestNodes(resKadAddress, new FindNodeListener<SMSKADPeer>() {
@@ -278,9 +284,10 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      * Method called when a STORE request is received.
      *
      * @param requestContent The information about the (key, value) to store, must be parsed.
+     *                       {@code requestContent} structure is define in {@link SMSCommandMapper} specifications
      * @author Marco Mariotto
      */
-    synchronized protected void onStoreRequest(String requestContent) {
+    synchronized void onStoreRequest(String requestContent) {
         String[] splitStr = requestContent.split(SPLIT_CHAR);
         dict.setResource(KADAddress.fromHexString(splitStr[0]), valueParser.deSerialize(splitStr[1]));
     }
@@ -289,16 +296,15 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     //NODES
 
     /**
-     * Finds the k-closest nodes to {@code address}
+     * Finds the k-closest nodes to the {@code address}
      *
-     * @param address    a {@link KADAddress}
+     * @param address    a {@link KADAddress} object
      * @param listener   called when the the k-closest nodes are found
-     * @param maxWaiting Maximum milliseconds to wait before considering this request unsuccessful. If maxWaiting is 0, no time limit is set.
+     * @param maxWaiting Maximum milliseconds to wait before considering this request unsuccessful. If maxWaiting is 0, no time limit is set
      * @throws IllegalStateException if there's already a pending find request for this address
      * @author Marco Mariotto
      */
     synchronized private void findClosestNodes(KADAddress address, FindNodeListener<SMSKADPeer> listener, int maxWaiting) throws IllegalStateException {
-
         if (listenerHandler.isNodeAddressRegistered(address) || listenerHandler.isValueAddressRegistered(address))
             throw new IllegalStateException("A request for this address is already pending");
         listenerHandler.registerNodeListener(address, listener, maxWaiting); //listener takes care of removing itself from the register when the closest nodes are returned
@@ -324,9 +330,10 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      *
      * @param sender         who requested the node search
      * @param requestContent contains a kad address that sender wants to know about
+     *                       {@code requestContent} structure is define in {@link SMSCommandMapper} specifications
      * @author Marco Mariotto
      */
-    synchronized protected void onFindCloserNodesRequest(SMSPeer sender, String requestContent) {
+    synchronized void onFindCloserNodesRequest(SMSPeer sender, String requestContent) {
         //We add the sender to our local dictionary, might be a new node we don't know about
         dict.addUser(new SMSKADPeer(sender));
         ArrayList<SMSKADPeer> closerNodes = dict.getNodesSortedByDistance(KADAddress.fromHexString(requestContent)); //this includes mySelf
@@ -342,9 +349,10 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      * Method called when a {@link ReplyType#NODES_FOUND} reply is received
      *
      * @param replyContent a string representing the reply containing the closer nodes according to the node previously contacted
+     *                     {@code replyContent} structure is define in {@link SMSCommandMapper} specifications
      * @author Marco Mariotto
      */
-    synchronized protected void onCloserNodesFoundReply(String replyContent) {
+    synchronized void onCloserNodesFoundReply(String replyContent) {
         String[] splitStr = replyContent.split(SMSCommandMapper.SPLIT_CHAR);
         KADAddress address = KADAddress.fromHexString(splitStr[0]); //address which we asked to find
         if (!listenerHandler.isNodeAddressRegistered(address)) //the listener has been removed, meaning this reply is invalid and didn't arrive in time
@@ -381,13 +389,13 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     /**
      * Method used to find a value of the given key
      *
-     * @param key        The resource key of which we want to find the value
-     * @param listener   The listener that has to be called when the value has been found
-     * @param maxWaiting Maximum milliseconds to wait before considering this request unsuccessful. If maxWaiting is 0, no time limit is set.
+     * @param key        The resource key of which we want to find the value, it can't be null
+     * @param listener   The listener that has to be called when the value has been found, it can't be null
+     * @param maxWaiting Maximum milliseconds to wait before considering this request unsuccessful. If maxWaiting is 0, no time limit is set, it can't be null
      * @throws IllegalStateException if there's already a pending find request fort this address
      * @author Alberto Ursino, inspired by Marco Mariotto's code for consistency reasons
      */
-    synchronized public void findValue(SerializableObject key, FindValueListener listener, int maxWaiting) throws IllegalStateException {
+    synchronized public void findValue(@NotNull SerializableObject key,@NotNull FindValueListener listener,@NotNull int maxWaiting) throws IllegalStateException {
         KADAddress keyAddress = new KADAddress(key.toString());
         if (listenerHandler.isValueAddressRegistered(keyAddress) || listenerHandler.isNodeAddressRegistered(keyAddress))
             throw new IllegalStateException("A request for this address is already pending");
@@ -412,14 +420,15 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     }
 
     /**
-     * Method called when a {@link RequestType#FIND_VALUE} request is received.
-     * Sends a {@link ReplyType#VALUE_FOUND} or {@link ReplyType#VALUE_NOT_FOUND} command back.
+     * Method called when a {@link RequestType#FIND_VALUE} request is received
+     * Sends a {@link ReplyType#VALUE_FOUND} or {@link ReplyType#VALUE_NOT_FOUND} command back
      *
      * @param sender         The user who requested the value
      * @param requestContent String that contains the key
+     *                       {@code requestContent} structure is define in {@link SMSCommandMapper} specifications
      * @author Alberto Ursino, inspired by Marco Mariotto's code for consistency reasons
      */
-    synchronized protected void onFindValueRequest(SMSPeer sender, String requestContent) {
+    synchronized void onFindValueRequest(SMSPeer sender, String requestContent) {
         //We add the sender to our local dictionary, might be a new node we don't know about
         dict.addUser(new SMSKADPeer(sender));
 
@@ -447,9 +456,10 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      * Method called when a {@link ReplyType#VALUE_NOT_FOUND} reply has been received
      *
      * @param replyContent The string representing the reply, containing closer nodes to the key according to the node we previously contacted
+     *                     {@code replyContent} structure is define in {@link SMSCommandMapper} specifications
      * @author Alberto Ursino, inspired by Marco Mariotto's code for consistency reasons
      */
-    synchronized public void onValueNotFoundReply(String replyContent) {
+    synchronized void onValueNotFoundReply(String replyContent) {
         String[] splitStr = replyContent.split(SMSCommandMapper.SPLIT_CHAR);
         String key = splitStr[0];
         KADAddress keyAddress = KADAddress.fromHexString(key);
@@ -488,8 +498,10 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      * Method called when a {@link ReplyType#VALUE_FOUND} reply is received
      *
      * @param replyContent a string representing the reply, containing the value
+     *                     {@code replyContent} structure is define in {@link SMSCommandMapper} specifications
+     * @author Marco Mariotto, Alberto Ursino
      */
-    synchronized protected void onValueFoundReply(String replyContent) {
+    synchronized void onValueFoundReply(String replyContent) {
         String[] splitStr = replyContent.split(SPLIT_CHAR);
         KADAddress keyAddress = KADAddress.fromHexString(splitStr[0]);
 
@@ -507,22 +519,22 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     /**
      * Method called to ping a node
      *
-     * @param peer     the node we want to ping
+     * @param peer     the node we want to ping, it can't be null
      * @param listener a {@link PingListener} listener, called when the ping request either times out, or gets a reply
      * @author Alessandra Tonin
      */
-    synchronized public void ping(SMSPeer peer, PingListener listener) {
+    synchronized public void ping(@NotNull SMSPeer peer, PingListener listener) {
         SMSCommandMapper.sendRequest(RequestType.PING, peer);
         listenerHandler.registerPingListener(peer, listener);
     }
 
     /**
-     * Method called when a {@link RequestType#PING} request has been received. Sends a {@link ReplyType#PING_ECHO) command back.
+     * Method called when a {@link RequestType#PING} request has been received. Sends a {@link ReplyType#PING_ECHO) command back
      *
      * @param peer who requested a ping
      * @author Alessandra Tonin
      */
-    synchronized protected void onPingRequest(SMSPeer peer) {
+    synchronized void onPingRequest(SMSPeer peer) {
         SMSCommandMapper.sendReply(ReplyType.PING_ECHO, peer);
         dict.addUser(new SMSKADPeer(peer)); //might be a node we don't know about
     }
@@ -533,7 +545,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      * @param peer user that replied to the ping
      * @author Alessandra Tonin
      */
-    synchronized protected void onPingEchoReply(SMSPeer peer) {
+    synchronized void onPingEchoReply(SMSPeer peer) {
         listenerHandler.triggerPingReply(peer);
     }
 
@@ -541,19 +553,18 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     //REFRESH and REPUBLISH
 
     /**
-     * Refreshes the specified bucket. After a join, it is called by the RefreshService only, if needed.
+     * Refreshes the specified bucket. After a join, it is called by the RefreshService only, if needed
      *
-     * @param bucketIndex identifies each bucket, from 0 to N-1, where N = NO_BUCKETS.
+     * @param bucketIndex identifies each bucket, from 0 to N-1, where N = NO_BUCKETS
      * @author Alessandra Tonin, Marco Mariotto
      */
     void refreshBucket(int bucketIndex) {
-        //TODO maybe add a listener so we know when the refresh has completed
         KADAddress randomAddress = dict.getRandomAddressInBucket(bucketIndex);
         findClosestNodes(randomAddress, null, 0); //will trigger the listener handler, but no listener will actually be called
     }
 
     /**
-     * Updates the last lookup of {@code address} to current time.
+     * Updates the last lookup of {@code address} to current time
      *
      * @param address a {@link KADAddress}
      * @author Marco Mariotto
@@ -568,7 +579,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     }
 
     /**
-     * Republishes all keys of the local dictionary. Called by the RepublishService only every {@link #KADEMLIA_REPUBLISH_PERIOD_MILLIS} milliseconds.
+     * Republishes all keys of the local dictionary. Called by the RepublishService only every {@link #KADEMLIA_REPUBLISH_PERIOD_MILLIS} milliseconds
      *
      * @author Alessandra Tonin, Marco Mariotto
      */
