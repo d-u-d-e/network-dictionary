@@ -74,4 +74,94 @@ public class KADAddress {
         }
         return false;
     }
+
+    /**
+     * @param a The address to be compared with {@code b}.
+     * @param b The address to be compared with {@code a}.
+     * @return the index of the first different bit between {@code a} and {@code b} starting from the left (MSB)
+     * or  <i>BIT_LENGTH</i> if no such index exists (i.e. the two addresses are equal)
+     * @author Marco Mariotto
+     */
+    public static int firstDifferentBit(KADAddress a, KADAddress b) {
+        byte[] aBytes = a.getAddress();
+        byte[] bBytes = b.getAddress();
+        for (int i = 0; i < BYTE_ADDRESS_LENGTH; i++) {
+            byte xor = (byte) (aBytes[i] ^ bBytes[i]);
+            if (xor != 0) return i * Byte.SIZE + leftMostSetBit(xor);
+        }
+        return BIT_LENGTH;
+    }
+
+    /**
+     * @param b a byte
+     * @return the index of the leftmost bit set, otherwise <i>Byte.SIZE</i> if {@code b} equals to <i>0</i>
+     * @author Marco Mariotto
+     */
+    private static short leftMostSetBit(byte b) {
+        short pos = 0;
+        int j = 0x80; //represents the byte 10000000
+        int byteAsInt = b & 0xFF; //since bitwise operations aren't defined for bytes, we convert b to an int,
+        // without considering extension sign bits
+        for (; pos < Byte.SIZE; pos++) {
+            if ((j & byteAsInt) != 0) return pos;
+            j = j >>> 1;
+        }
+        return pos;
+    }
+
+
+    /**
+     * Verifies which of the two nodes {@code a} and {@code b} is closer to a given {@code target}
+     *
+     * @param a       1st {@link KADAddress} object to compare
+     * @param b       2nd {@link KADAddress} object to compare
+     * @param target  a KADAddress which is compared to a and b
+     * @return       {@code a} or {@code b}, whichever is closer to target according to XOR metric
+     * @author Marco Mariotto
+     */
+    static KADAddress closerToTarget(KADAddress a, KADAddress b, KADAddress target) {
+        byte[] aBytes = a.getAddress();
+        byte[] bBytes = b.getAddress();
+        byte[] targetBytes = target.getAddress();
+
+        for (int i = 0; i < BYTE_ADDRESS_LENGTH; i++) {
+            int xorA = (aBytes[i] ^ targetBytes[i]) & 0xFF; //get rid of extension sign bits
+            int xorB = (bBytes[i] ^ targetBytes[i]) & 0xFF;
+            if (xorA < xorB) return a;
+            else if (xorA > xorB) return b;
+        }
+        return a; //a==b
+    }
+
+    /**
+     * @return the string hexadecimal representation of this address
+     * @author Marco Mariotto
+     */
+    @NonNull
+    public String toString() { //
+        char[] hexChars = new char[address.length * 2]; //two hex chars for each byte
+        for (int i = 0; i < address.length; i++) { //for each byte
+            //convert it to a non negative integer: to see why this works,
+            // note that & operator is defined only between integers or long ints (not between bytes)
+            //address[i] is promoted to int (by extending the sign) and 0xFF is just 00 00 00 FF as int
+            int v = address[i] & 0xFF;
+            hexChars[i * 2] = HEX_DIGITS[v >>> 4]; //first hex char is at index v divided by 16
+            hexChars[i * 2 + 1] = HEX_DIGITS[v & 0x0F]; //second hex char is at index specified by the second group of 4 bits
+        }
+        return new String(hexChars);
+    }
+
+    /**
+     * @param str a valid hexadecimal representation of a {@link KADAddress};
+     *            <i>str.length()</i> must be <i>BIT_LENGTH/4</i> chars long and even
+     * @return the {@link KADAddress} having {@code str} as its hexadecimal representation
+     * @author Marco Mariotto
+     */
+    public static KADAddress fromHexString(String str) {
+        int len = str.length();
+        byte[] arr = new byte[len / 2];
+        for (int i = 0; i < len - 1; i += 2)
+            arr[i / 2] = (byte) ((Character.digit(str.charAt(i), 16) << 4) + Character.digit(str.charAt(i + 1), 16));
+        return new KADAddress(arr);
+    }
 }
