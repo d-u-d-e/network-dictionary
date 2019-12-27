@@ -61,8 +61,6 @@ public class KADAddress {
         return address;
     }
 
-
-
     /**
      * @param obj  the object being compared to <i>this</i>
      * @return     true if and only if {@code obj} is of the {@link KADAddress} type and has the same bytes as this address
