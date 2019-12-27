@@ -1,6 +1,5 @@
 package com.eis.networklibrary.kademlia;
 
-import androidx.annotation.NonNull;
 
 import com.eis.communication.Peer;
 import com.eis.communication.network.FindNodeListener;
@@ -225,7 +224,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      * @author Marco Mariotto
      */
     @Override
-    synchronized public void setResource(final SerializableObject key, final SerializableObject value, int maxWaiting, ResourceListener listener) {
+    synchronized public void setResource(final SerializableObject key, final SerializableObject value, int maxWaiting, final ResourceListener listener) {
         final KADAddress resKadAddress = new KADAddress(key.toString());
         updateLastLookup(resKadAddress);
         findClosestNodes(resKadAddress, new FindNodeListener<SMSKADPeer>() {
@@ -254,7 +253,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      *                   If maxWaiting is 0, no time limit is set.
      * @param listener   The listener that informs the user whether the operation were successful or not
      */
-    synchronized public void removeResource(final SerializableObject key, int maxWaiting, ResourceListener listener) {
+    synchronized public void removeResource(final SerializableObject key, int maxWaiting, final ResourceListener listener) {
         final KADAddress resKadAddress = new KADAddress(key.toString());
         updateLastLookup(resKadAddress);
         findClosestNodes(resKadAddress, new FindNodeListener<SMSKADPeer>() {

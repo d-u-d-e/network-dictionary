@@ -26,7 +26,7 @@ public class SMSNetworkListenerHandlerTest {
     private FindNodeListener<SMSKADPeer> NODE_LISTENER_1, NODE_LISTENER_2;
     private FindValueListener<SerializableObject> VALUE_LISTENER_1, VALUE_LISTENER_2;
     private PingListener PING_LISTENER_1, PING_LISTENER_2;
-    private int COUNTDOWNINMILLIS = 30*1000;
+    private int MAXWAITING = 5*1000;
 
     @Before
     public void init() {
@@ -84,7 +84,7 @@ public class SMSNetworkListenerHandlerTest {
     @Test
     public void register_nodeListener_test() {
         reset_instance();
-        Assert.assertNull(listenerHandler.registerNodeListener(KAD_ADDRESS_1, NODE_LISTENER_1));
+        Assert.assertNull(listenerHandler.registerNodeListener(KAD_ADDRESS_1, NODE_LISTENER_1, MAXWAITING));
     }
 
     /**

@@ -41,9 +41,9 @@ public class SMSNetworkListenerHandler {
      * @param maxWaiting Maximum milliseconds to wait before unregistering the listener. After this timeout, listener.onFindNodesTimedOut() is called.
      *                   Note that if maxWaiting is 0, no timeout is set.
      */
-    synchronized protected void registerNodeListener(KADAddress kadAddress, FindNodeListener<SMSKADPeer> listener, int maxWaiting) {
+    synchronized protected void registerNodeListener(final KADAddress kadAddress, FindNodeListener<SMSKADPeer> listener, int maxWaiting) {
         findNodeListenerMap.put(kadAddress, listener);
-        if(maxWaiting != 0){
+        if(maxWaiting > 0){
             Timer t = new Timer();
             requestTimers.put(kadAddress, t);
             t.schedule(new TimerTask() {
@@ -86,11 +86,9 @@ public class SMSNetworkListenerHandler {
         }
         if (listener != null){ //request not timed out
             synchronized (requestTimers){
-                Timer t = requestTimers.get(kadAddress);
-                if(t != null) {
+                Timer t = requestTimers.remove(kadAddress);
+                if(t != null)
                     t.cancel();
-                    requestTimers.remove(kadAddress);
-                };
             }
             listener.OnKClosestNodesFound(peers);
         }
@@ -106,9 +104,9 @@ public class SMSNetworkListenerHandler {
      * @param maxWaiting Maximum milliseconds to wait before unregistering the listener. After this timeout, listener.onFindValueTimedOut() is called.
      *                   Note that if maxWaiting is 0, no timeout is set.
      */
-    synchronized protected void registerValueListener(KADAddress kadAddress, FindValueListener<SerializableObject> listener, int maxWaiting) {
+    synchronized protected void registerValueListener(final KADAddress kadAddress, FindValueListener<SerializableObject> listener, int maxWaiting) {
         findValueListenerMap.put(kadAddress, listener);
-        if(maxWaiting != 0){
+        if(maxWaiting > 0){
             Timer t = new Timer();
             requestTimers.put(kadAddress, t);
             t.schedule(new TimerTask() {
@@ -151,11 +149,9 @@ public class SMSNetworkListenerHandler {
         }
         if (listener != null){ //request not timed out
             synchronized (requestTimers){
-                Timer t = requestTimers.get(kadAddress);
-                if(t != null) {
+                Timer t = requestTimers.remove(kadAddress);
+                if(t != null)
                     t.cancel();
-                    requestTimers.remove(kadAddress);
-                };
             }
             listener.onValueFound(value);
         }
@@ -173,11 +169,9 @@ public class SMSNetworkListenerHandler {
         }
         if (listener != null){ //request not timed out
             synchronized (requestTimers){
-                Timer t = requestTimers.get(kadAddress);
-                if(t != null) {
+                Timer t = requestTimers.remove(kadAddress);
+                if(t != null)
                     t.cancel();
-                    requestTimers.remove(kadAddress);
-                };
             }
             listener.onValueNotFound();
         }
@@ -192,7 +186,7 @@ public class SMSNetworkListenerHandler {
      * @param peer     The peer linked to the listener
      * @param listener The listener to add to the pending list
      */
-    synchronized protected void registerPingListener(final SMSPeer peer, PingListener listener) {
+    synchronized protected void registerPingListener(final SMSPeer peer, final PingListener listener) {
         Timer t = new Timer();
         pingTimers.put(peer, t);
         t.schedule(new TimerTask() {
@@ -226,12 +220,10 @@ public class SMSNetworkListenerHandler {
         if (listener != null) {
             listener.onPingReply(peer);
             synchronized (pingTimers){
-                Timer t = pingTimers.get(peer);
-                if(t != null) {
+                Timer t = pingTimers.remove(peer);
+                if(t != null)
                     t.cancel();
-                    pingTimers.remove(peer);
-                }
-            };
+            }
         }
     }
 }
