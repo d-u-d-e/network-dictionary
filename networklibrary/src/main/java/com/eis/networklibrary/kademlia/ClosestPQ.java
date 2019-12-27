@@ -1,5 +1,7 @@
 package com.eis.networklibrary.kademlia;
 
+import androidx.annotation.NonNull;
+
 import java.util.ArrayList;
 import java.util.Collections;
 
@@ -27,13 +29,15 @@ class ClosestPQ {
      * @param nodes known addresses which are immediately compared and put in the queue.
      */
     ClosestPQ(SMSKADComparator comparator, ArrayList<SMSKADPeer> nodes) {
+        pairs = new ArrayList<>();
+        this.comparator = comparator;
+
         if(nodes != null && !nodes.isEmpty()){
             Collections.sort(nodes, comparator);
-            pairs = new ArrayList<>();
+
             for (SMSKADPeer p : nodes.subList(0, Math.min(KADEMLIA_K, nodes.size())))
                 pairs.add(new MutablePair<>(p, false));
         }
-        this.comparator = comparator;
     }
 
     /**
@@ -50,7 +54,7 @@ class ClosestPQ {
      * least priority has no effect. Adding an object already present also has no effect.
      * @param pair to be added
      */
-    void add(MutablePair<SMSKADPeer, Boolean> pair) {
+    void add(@NonNull MutablePair<SMSKADPeer, Boolean> pair) {
         for (int i = 0; i < pairs.size(); i++) { //insertion sort
             int comp = comparator.compare(pair.first, pairs.get(i).first);
             if (comp == 0) return; //peer is already in the queue
