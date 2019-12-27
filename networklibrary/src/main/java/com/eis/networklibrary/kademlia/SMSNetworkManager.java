@@ -267,6 +267,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      * Method called when a STORE request is received.
      *
      * @param requestContent The information about the (key, value) to store, must be parsed.
+     *                       {@code requestContent} structure is define in {@link SMSCommandMapper} specifications
      * @author Marco Mariotto
      */
     synchronized protected void onStoreRequest(String requestContent) {
@@ -278,9 +279,9 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     //NODES
 
     /**
-     * Finds the k-closest nodes to {@code address}
+     * Finds the k-closest nodes to the {@code address}
      *
-     * @param address    a {@link KADAddress}
+     * @param address    a {@link KADAddress} object
      * @param listener   called when the the k-closest nodes are found
      * @param maxWaiting Maximum milliseconds to wait before considering this request unsuccessful. If maxWaiting is 0, no time limit is set.
      * @throws IllegalStateException if there's already a pending find request for this address
@@ -313,6 +314,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      *
      * @param sender         who requested the node search
      * @param requestContent contains a kad address that sender wants to know about
+     *                       {@code requestContent} structure is define in {@link SMSCommandMapper} specifications
      * @author Marco Mariotto
      */
     synchronized protected void onFindCloserNodesRequest(SMSPeer sender, String requestContent) {
@@ -331,6 +333,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      * Method called when a {@link ReplyType#NODES_FOUND} reply is received
      *
      * @param replyContent a string representing the reply containing the closer nodes according to the node previously contacted
+     *                     {@code replyContent} structure is define in {@link SMSCommandMapper} specifications
      * @author Marco Mariotto
      */
     synchronized protected void onCloserNodesFoundReply(String replyContent) {
@@ -401,11 +404,12 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     }
 
     /**
-     * Method called when a {@link RequestType#FIND_VALUE} request is received.
-     * Sends a {@link ReplyType#VALUE_FOUND} or {@link ReplyType#VALUE_NOT_FOUND} command back.
+     * Method called when a {@link RequestType#FIND_VALUE} request is received
+     * Sends a {@link ReplyType#VALUE_FOUND} or {@link ReplyType#VALUE_NOT_FOUND} command back
      *
      * @param sender         The user who requested the value
      * @param requestContent String that contains the key
+     *                       {@code requestContent} structure is define in {@link SMSCommandMapper} specifications
      * @author Alberto Ursino, inspired by Marco Mariotto's code for consistency reasons
      */
     synchronized protected void onFindValueRequest(SMSPeer sender, String requestContent) {
@@ -436,6 +440,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      * Method called when a {@link ReplyType#VALUE_NOT_FOUND} reply has been received
      *
      * @param replyContent The string representing the reply, containing closer nodes to the key according to the node we previously contacted
+     *                     {@code replyContent} structure is define in {@link SMSCommandMapper} specifications
      * @author Alberto Ursino, inspired by Marco Mariotto's code for consistency reasons
      */
     synchronized public void onValueNotFoundReply(String replyContent) {
@@ -477,6 +482,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      * Method called when a {@link ReplyType#VALUE_FOUND} reply is received
      *
      * @param replyContent a string representing the reply, containing the value
+     *                     {@code replyContent} structure is define in {@link SMSCommandMapper} specifications
      */
     synchronized protected void onValueFoundReply(String replyContent) {
         String[] splitStr = replyContent.split(SPLIT_CHAR);
@@ -506,7 +512,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     }
 
     /**
-     * Method called when a {@link RequestType#PING} request has been received. Sends a {@link ReplyType#PING_ECHO) command back.
+     * Method called when a {@link RequestType#PING} request has been received. Sends a {@link ReplyType#PING_ECHO) command back
      *
      * @param peer who requested a ping
      * @author Alessandra Tonin
@@ -530,9 +536,9 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     //REFRESH and REPUBLISH
 
     /**
-     * Refreshes the specified bucket. After a join, it is called by the RefreshService only, if needed.
+     * Refreshes the specified bucket. After a join, it is called by the RefreshService only, if needed
      *
-     * @param bucketIndex identifies each bucket, from 0 to N-1, where N = NO_BUCKETS.
+     * @param bucketIndex identifies each bucket, from 0 to N-1, where N = NO_BUCKETS
      * @author Alessandra Tonin, Marco Mariotto
      */
     void refreshBucket(int bucketIndex) {
@@ -542,7 +548,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     }
 
     /**
-     * Updates the last lookup of {@code address} to current time.
+     * Updates the last lookup of {@code address} to current time
      *
      * @param address a {@link KADAddress}
      * @author Marco Mariotto
@@ -557,7 +563,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     }
 
     /**
-     * Republishes all keys of the local dictionary. Called by the RepublishService only every {@link #KADEMLIA_REPUBLISH_PERIOD_MILLIS} milliseconds.
+     * Republishes all keys of the local dictionary. Called by the RepublishService only every {@link #KADEMLIA_REPUBLISH_PERIOD_MILLIS} milliseconds
      *
      * @author Alessandra Tonin, Marco Mariotto
      */
