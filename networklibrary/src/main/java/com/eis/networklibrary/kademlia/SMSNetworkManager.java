@@ -353,11 +353,11 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      * Method used to find a value of the given key
      *
      * @param key      The resource key, not null, of which we want to find the value
-     * @param listener The listener that has to be called when the value has been found
+     * @param listener The listener, not null, that has to be called when the value has been found
      * @throws IllegalStateException If there's already a pending find request for this address
      * @author Alberto Ursino, inspired by Marco Mariotto's code for consistency reasons
      */
-    synchronized public void findValue(@NotNull SerializableObject key, FindValueListener listener) throws IllegalStateException {
+    synchronized public void findValue(@NotNull SerializableObject key,@NotNull FindValueListener listener) throws IllegalStateException {
         KADAddress keyAddress = new KADAddress(key.toString());
 
         if (listenerHandler.isValueAddressRegistered(keyAddress)) //TODO we need a timer for this
@@ -390,7 +390,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      * @param requestContent String that contains the key
      * @author Alberto Ursino, inspired by Marco Mariotto's code for consistency reasons
      */
-    synchronized protected void onFindValueRequest(SMSPeer sender, String requestContent) {
+    synchronized void onFindValueRequest(SMSPeer sender, String requestContent) {
         String[] splitStr = requestContent.split(SPLIT_CHAR);
         String key = splitStr[KEY_POS];
         KADAddress keyAddress = KADAddress.fromHexString(key);
