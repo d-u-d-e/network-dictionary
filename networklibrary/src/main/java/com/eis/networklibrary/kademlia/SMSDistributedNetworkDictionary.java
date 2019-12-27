@@ -17,12 +17,18 @@ import java.util.Random;
  *
  * @param <RV> resource value
  * @author Luca Crema, Marco Mariotto, Tonin Alessandra
+ *
+ * CODE REVIEW FOR CROCIANI AND DE ZEN
  */
 
 public class SMSDistributedNetworkDictionary<RV> implements NetworkDictionary<SMSKADPeer, KADAddress, RV> {
 
-
-
+    //Maximum users per bucket
+    static final int KADEMLIA_K = 5; //note that this K can't be too big, because messages can at most contain 160 chars
+    static final int NO_BUCKETS = KADAddress.BIT_LENGTH; // Number of buckets. We have a bucket for each bit
+    SMSKADPeer mySelf; //address of current node holding this dictionary
+    private ArrayList<SMSKADPeer>[] buckets;
+    private HashMap<KADAddress, RV> resources = new HashMap<>();
 
     /**
      * Constructor for the dictionary
@@ -34,15 +40,53 @@ public class SMSDistributedNetworkDictionary<RV> implements NetworkDictionary<SM
         buckets = new ArrayList[NO_BUCKETS];
     }
 
+    /**
+     * Adds a user at the end of the corresponding bucket to contact.
+     *
+     * @param newUser new network user. Must not be the current user.
+     * @author Alessandra Tonin, Marco Mariotto
+     */
+    @Override
+    public void addUser(final SMSKADPeer newUser) {
 
+        //bucketIndex is the closer bucket of mySelf containing newUser
+        int bucketIndex = getBucketContaining(newUser.getNetworkAddress());
+        //If it's actually the current user we don't add himself
+        if (bucketIndex == -1) return;
+
+        if (buckets[bucketIndex] == null)
+            buckets[bucketIndex] = new ArrayList<>();
+
+        final ArrayList<SMSKADPeer> usersInBucket = buckets[bucketIndex];
+
+        if (usersInBucket.size() == KADEMLIA_K) {
+            PingListener listener = new PingListener() {
+                @Override
+                public void onPingReply(SMSPeer peer) {
+                    //move peer at the tail of the bucket, then return without adding the new peer
+                    usersInBucket.remove(peer);
+                    usersInBucket.add(new SMSKADPeer(peer));
+                }
+
+                @Override
+                public void onPingTimedOut(SMSPeer peer) {
+                    usersInBucket.remove(peer); //peer does not respond, so we remove it
+                    usersInBucket.add(newUser); //instead we add the new user at the tail
+                }
+            };
+            SMSKADPeer head = usersInBucket.get(0);
+            SMSNetworkManager.getInstance().ping(head, listener);
+        } else {
+            usersInBucket.remove(newUser); //does nothing if not present
+            usersInBucket.add(newUser); //add at the tail. If it was already present, it is moved correctly to the tail.
+        }
+    }
 
 
     /**
-     *
-     *
      * @param address a kad address
      * @return -1 if {@code address} is equal to {@link #mySelf}, otherwise the index of the bucket that should contain it (between 0 and {@link #NO_BUCKETS}
-     * */
+     */
     int getBucketContaining(KADAddress address) {
 
         //The bucket of node X which has index i contains nodes whose xor distance to X is between 2^i inclusive and 2^(i+1) exclusive.

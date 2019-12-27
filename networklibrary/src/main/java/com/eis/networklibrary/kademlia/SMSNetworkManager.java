@@ -1,7 +1,5 @@
 package com.eis.networklibrary.kademlia;
 
-import androidx.annotation.NonNull;
-
 import com.eis.communication.Peer;
 import com.eis.communication.network.FindNodeListener;
 import com.eis.communication.network.FindValueListener;
@@ -33,11 +31,54 @@ import static com.eis.networklibrary.kademlia.SMSDistributedNetworkDictionary.NO
  * @author Alessandra Tonin
  * @author Alberto Ursino
  * @author Luca Crema
+ *
+ * CODE REVIEW FOR CROCIANI AND DE ZEN
  */
 @SuppressWarnings("WeakerAccess")
 public class SMSNetworkManager implements NetworkManager<SMSKADPeer, SerializableObject, SerializableObject, KADInvitation> {
+    //Requests and replies: for further details, check out SMSNetworkListener
+    enum RequestType {
+        JOIN_PROPOSAL,
+        PING,
+        STORE,
+        DELETE,
+        FIND_NODES,
+        FIND_VALUE
+    }
 
+    enum ReplyType {
+        JOIN_AGREED,
+        PING_ECHO,
+        NODES_FOUND,
+        VALUE_FOUND,
+        VALUE_NOT_FOUND
+    }
 
+    private static SMSNetworkManager instance;
+    protected String networkName;
+    protected SMSKADPeer mySelf;
+    protected SerializableObjectParser valueParser;
+    private SMSDistributedNetworkDictionary<SerializableObject> dict;
+    //maps each key being searched to the corresponding priority queue (of closest nodes known so far) associated with that search
+    private HashMap<KADAddress, ClosestPQ> bestSoFarClosestNodes = new HashMap<>();
+    private ArrayList<KADInvitation> invitationList = new ArrayList<>();
+    private JoinListener joinListener = new JoinListener() { //default join listener
+        @Override
+        public void onJoinProposal(Invitation invitation) {
+            //does nothing
+        }
+    };
+
+    static final int KADEMLIA_ALPHA = 1; //always less than KADEMLIA_K
+    static final int KADEMLIA_REPUBLISH_PERIOD_MILLIS = 60 * 60 * 1000; //1 hour
+    static final int KADEMLIA_REFRESH_PERIOD_MILLIS = 60 * 60 * 1000; //1 hour
+
+    //For each bucket, we store the time of the last lookup of any key belonging to this bucket in milliseconds (from the Unix epoch).
+    //Every KADEMLIA_REFRESH_PERIOD / 2 milliseconds a RefreshService checks whether the last lookup
+    //happened more than KADEMLIA_REFRESH_PERIOD / 2 milliseconds before
+    final long[] lastRefresh = new long[NO_BUCKETS];
+
+    private SMSNetworkListenerHandler listenerHandler = new SMSNetworkListenerHandler();
 
     private SMSNetworkManager() {
         //Private because of singleton
@@ -67,6 +108,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     /**
      * Sets up refreshing/republishing services. Schedules them to start after the specified delay.
      * Each service does a periodic check. Check out each class for more details.
+     *
      * @author Marco Mariotto
      */
     private void setupServices() {
@@ -80,6 +122,8 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     }
 
 
+    //*******************************************************************************************
+    //JOIN
 
     /**
      * Sends an invitation to the specified peer
@@ -97,10 +141,64 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
         });
     }
 
+    /**
+     * Join the network
+     *
+     * @param invitation The invitation message
+     * @author Alessandra Tonin, Marco Mariotto
+     */
+    @Override
+    public void join(KADInvitation invitation) {
+        if (invitation.getGuest() != mySelf)
+            throw new IllegalArgumentException("The invitation is not valid: it is intended for another user");
+        findClosestNodes(mySelf.networkAddress, new FindNodeListener<SMSKADPeer>() {
+            @Override
+            public void OnKClosestNodesFound(SMSKADPeer[] peers) {
+                //a node lookup for ourselves has been performed
+                //note that peers have already been added to the dict
+                for (int i = 0; i < NO_BUCKETS; i++)
+                    refreshBucket(i);
+            }
+        }, 0);
+        SMSKADPeer inviter = invitation.getInviter();
+        dict.addUser(inviter);
+        SMSCommandMapper.sendReply(ReplyType.JOIN_AGREED, inviter);
+        setupServices();
+    }
 
+    /**
+     * Method called when a join proposal from this peer has been accepted
+     *
+     * @param peer the peer who accepted to join the network
+     * @author Alessandra Tonin, Marco Mariotto
+     */
+    synchronized void onJoinAgreedReply(SMSPeer peer) {
+        SMSKADPeer newUser = new SMSKADPeer(peer);
+        for (KADInvitation inv : invitationList)
+            if (inv.getGuest().equals(newUser)) {
+                dict.addUser(newUser);
+                //Get my resources. If the new node is closer to resource x, we send him a STORE request for x (this is an optimization)
+                for (KADAddress resourceKey : dict.getKeys()) {
+                    KADAddress closer = KADAddress.closerToTarget(mySelf.networkAddress, newUser.networkAddress, resourceKey);
+                    if (closer.equals(newUser.networkAddress))
+                        SMSCommandMapper.sendRequest(RequestType.STORE, resourceKey.toString() + SPLIT_CHAR + dict.getValue(resourceKey).toString(), peer);
+                }
+                invitationList.remove(inv);
+                break;
+            }
+        //ignore this fake reply
+    }
 
-
-
+    /**
+     * Method called when we receive a join proposal from someone. This calls the listener set up for handling
+     * join proposals. If the user accepts the join request, he MUST call join passing the invitation.
+     *
+     * @param invitation received
+     * @author Alessandra Tonin
+     */
+    synchronized void onJoinProposal(KADInvitation invitation) {
+        joinListener.onJoinProposal(invitation);
+    }
 
     /**
      * This method sets a JoinProposalListener
@@ -115,8 +213,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     //RESOURCE
 
     /**
-     * Sets a new resource. TODO If {@code key} already exists in the network, this method is unsafe to call and leads to security flaws
-     * TODO so we need special permissions in order to change an existing key, for example if we created it
+     * Sets a new resource.
      *
      * @param key   the resource key
      * @param value the resource value
@@ -140,7 +237,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     }
 
     /**
-     * Delete an existing resource. TODO If {@code key} has not been created by mySelf, this method is unsafe to call and leads to security flaws
+     * Delete an existing resource.
      *
      * @param key The resource key for which to set the value to null
      * @author Marco Mariotto
@@ -178,8 +275,8 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     /**
      * Finds the k-closest nodes to {@code address}
      *
-     * @param address  a {@link KADAddress}
-     * @param listener called when the the k-closest nodes are found
+     * @param address    a {@link KADAddress}
+     * @param listener   called when the the k-closest nodes are found
      * @param maxWaiting Maximum milliseconds to wait before considering this request unsuccessful. If maxWaiting is 0, no time limit is set.
      * @throws IllegalStateException if there's already a pending find request for this address
      * @author Marco Mariotto
@@ -265,8 +362,8 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     /**
      * Method used to find a value of the given key
      *
-     * @param key      The resource key of which we want to find the value
-     * @param listener The listener that has to be called when the value has been found
+     * @param key        The resource key of which we want to find the value
+     * @param listener   The listener that has to be called when the value has been found
      * @param maxWaiting Maximum milliseconds to wait before considering this request unsuccessful. If maxWaiting is 0, no time limit is set.
      * @throws IllegalStateException if there's already a pending find request fort this address
      * @author Alberto Ursino, inspired by Marco Mariotto's code for consistency reasons
@@ -377,10 +474,55 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
         listenerHandler.triggerValueFound(key, value);
     }
 
+    //*******************************************************************************************
+    //PING
 
+    /**
+     * Method called to ping a node
+     *
+     * @param peer     the node we want to ping
+     * @param listener a {@link PingListener} listener, called when the ping request either times out, or gets a reply
+     * @author Alessandra Tonin
+     */
+    synchronized public void ping(SMSPeer peer, PingListener listener) {
+        SMSCommandMapper.sendRequest(RequestType.PING, peer);
+        listenerHandler.registerPingListener(peer, listener);
+    }
 
+    /**
+     * Method called when a {@link RequestType#PING} request has been received. Sends a {@link ReplyType#PING_ECHO) command back.
+     *
+     * @param peer who requested a ping
+     * @author Alessandra Tonin
+     */
+    synchronized protected void onPingRequest(SMSPeer peer) {
+        SMSCommandMapper.sendReply(ReplyType.PING_ECHO, peer);
+        dict.addUser(new SMSKADPeer(peer)); //might be a node we don't know about
+    }
 
+    /**
+     * Method called when a {@link ReplyType#PING_ECHO) reply is received. We are sure this node is alive
+     *
+     * @param peer user that replied to the ping
+     * @author Alessandra Tonin
+     */
+    synchronized protected void onPingEchoReply(SMSPeer peer) {
+        listenerHandler.triggerPingReply(peer);
+    }
 
+    //*******************************************************************************************
+    //REFRESH and REPUBLISH
+
+    /**
+     * Refreshes the specified bucket. After a join, it is called by the RefreshService only, if needed.
+     *
+     * @param bucketIndex identifies each bucket, from 0 to N-1, where N = NO_BUCKETS.
+     * @author Alessandra Tonin, Marco Mariotto
+     */
+    void refreshBucket(int bucketIndex) {
+        KADAddress randomAddress = dict.getRandomAddressInBucket(bucketIndex);
+        findClosestNodes(randomAddress, null, 0); //will trigger the listener handler, but no listener will actually be called
+    }
 
     /**
      * Updates the last lookup of {@code address} to current time.
@@ -397,5 +539,24 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
         }
     }
 
-    
+    /**
+     * Republishes all keys of the local dictionary. Called by the RepublishService only every {@link #KADEMLIA_REPUBLISH_PERIOD_MILLIS} milliseconds.
+     *
+     * @author Alessandra Tonin, Marco Mariotto
+     */
+    synchronized public void republishKeys() {
+        for (final KADAddress resourceKey : dict.getKeys()) {
+            FindNodeListener listener = new FindNodeListener() {
+                @Override
+                public void OnKClosestNodesFound(Peer[] peers) {
+                    for (Peer p : peers)
+                        if (p != mySelf)
+                            SMSCommandMapper.sendRequest(RequestType.STORE, resourceKey.toString() + SPLIT_CHAR + dict.getValue(resourceKey).toString(), (SMSKADPeer) p);
+                }
+            };
+            findClosestNodes(resourceKey, listener, 0);
+        }
+    }
+
+
 }
