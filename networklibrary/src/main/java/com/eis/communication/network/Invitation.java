@@ -8,6 +8,6 @@ import com.eis.communication.Peer;
  * @param <P> Type of peer of the network.
  */
 public class Invitation<P extends Peer> {
-    protected  Peer inviter;
-    protected  Peer guest;
+    protected Peer inviter;
+    protected Peer guest;
 }
