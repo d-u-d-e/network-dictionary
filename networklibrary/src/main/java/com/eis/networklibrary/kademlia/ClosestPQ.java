@@ -11,9 +11,9 @@ import static com.eis.networklibrary.kademlia.SMSDistributedNetworkDictionary.KA
  * a Boolean flag, set to true only if X has been queried (by the network manager class). To accomplish this, it makes use of
  * {@link MutablePair} objects.
  * A comparator for kad addresses must be passed as first argument to the constructor.
- * This queue is bounded, meaning it can keep only KADEMLIA_K objects. When the queue is full, adding an object with
+ * This queue is bounded, meaning it can keep only <i>KADEMLIA_K</i> objects. When the queue is full, adding an object with
  * least priority will have no effect. Adding an object already present also has no effect.
- * size() and getAllPeers() are self-explanatory.
+ * <i>size()</i> and <i>getAllPeers()</i> are self-explanatory.
  * @author Marco Mariotto
  */
 class ClosestPQ {
