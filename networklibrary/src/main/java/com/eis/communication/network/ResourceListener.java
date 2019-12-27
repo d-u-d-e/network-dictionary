@@ -6,5 +6,5 @@ package com.eis.communication.network;
 public interface ResourceListener {
     void onOperationSuccessful();
 
-    void onOperationFail();
+    void onOperationFailed();
 }
