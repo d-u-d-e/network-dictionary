@@ -1,11 +1,7 @@
 package com.eis.communication.network;
 
 /**
- * Listener used for requests to obtain a value given a key in the network
- *
- * @author ?
- * @author Luca Crema
- * @since 16/12/2019
+ * Listener called to handle findValue requests
  */
 public interface FindValueListener<V extends SerializableObject> {
     /**
