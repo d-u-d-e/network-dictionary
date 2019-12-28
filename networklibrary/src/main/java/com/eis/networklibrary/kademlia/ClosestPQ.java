@@ -11,9 +11,9 @@ import static com.eis.networklibrary.kademlia.SMSDistributedNetworkDictionary.KA
  * a Boolean flag, set to true only if X has been queried (by the network manager class). To accomplish this, it makes use of
  * {@link MutablePair} objects.
  * A comparator for kad addresses must be passed as first argument to the constructor.
- * This queue is bounded, meaning it can keep only KADEMLIA_K objects. When the queue is full, adding an object with
+ * This queue is bounded, meaning it can keep only <i>KADEMLIA_K</i> objects. When the queue is full, adding an object with
  * least priority will have no effect. Adding an object already present also has no effect.
- * size() and getAllPeers() are self-explanatory.
+ * <i>size()</i> and <i>getAllPeers()</i> are self-explanatory.
  * @author Marco Mariotto
  */
 class ClosestPQ {
@@ -23,17 +23,18 @@ class ClosestPQ {
 
     /**
      *
-     * @param comparator used to define a order between addresses
+     * @param comparator used to define an order between addresses
      * @param nodes known addresses which are immediately compared and put in the queue.
      */
     ClosestPQ(SMSKADComparator comparator, ArrayList<SMSKADPeer> nodes) {
+        pairs = new ArrayList<>();
+        this.comparator = comparator;
+
         if(nodes != null && !nodes.isEmpty()){
             Collections.sort(nodes, comparator);
-            pairs = new ArrayList<>();
             for (SMSKADPeer p : nodes.subList(0, Math.min(KADEMLIA_K, nodes.size())))
                 pairs.add(new MutablePair<>(p, false));
         }
-        this.comparator = comparator;
     }
 
     /**
@@ -53,13 +54,13 @@ class ClosestPQ {
     void add(MutablePair<SMSKADPeer, Boolean> pair) {
         for (int i = 0; i < pairs.size(); i++) { //insertion sort
             int comp = comparator.compare(pair.first, pairs.get(i).first);
-            if (comp == 0) return; //peer is already in the queue
+            if(comp > 0) continue;
             else if (comp < 0) {
                 pairs.add(i, pair);
                 if (pairs.size() > KADEMLIA_K)
                     pairs.remove(KADEMLIA_K - 1); //delete the last element if this queue has more than KADEMLIA_K elements
-                break;
             }
+            return; //if comp == 0 then peer is already in the queue, so it is safe to return
         }
         if (pairs.size() < KADEMLIA_K)
             pairs.add(pair);

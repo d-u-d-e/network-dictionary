@@ -8,9 +8,9 @@ import static com.eis.networklibrary.kademlia.SMSDistributedNetworkDictionary.NO
 import static com.eis.networklibrary.kademlia.SMSNetworkManager.KADEMLIA_REFRESH_PERIOD_MILLIS;
 
 /**
- * Refresh service: every KADEMLIA_REFRESH_PERIOD_MILLIS/2 ms, it refreshes any bucket to which the node has not
- * performed a node lookup in the past KADEMLIA_REFRESH_PERIOD_MILLIS/2 ms.
- * This guarantees that the last refresh is at most KADEMLIA_REFRESH_PERIOD_MILLIS ms old.
+ * Refresh service: every <i>KADEMLIA_REFRESH_PERIOD_MILLIS/2</i> ms, it refreshes any bucket to which the node has not
+ * performed a node lookup in the past <i>KADEMLIA_REFRESH_PERIOD_MILLIS/2</i> ms.
+ * This guarantees that the last refresh is at most <i>KADEMLIA_REFRESH_PERIOD_MILLIS</i> ms old.
  * @author Marco Mariotto
  */
 public class RefreshService extends TimerTask {
@@ -24,6 +24,9 @@ public class RefreshService extends TimerTask {
             }
     }
 
+    /**
+     * @param beginAt date that specifies when to start this task
+     */
     public static void startTask(Date beginAt){
         RefreshService service = new RefreshService();
         Timer timer = new Timer();
