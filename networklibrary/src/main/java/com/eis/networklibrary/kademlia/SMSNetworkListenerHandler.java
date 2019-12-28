@@ -74,6 +74,15 @@ public class SMSNetworkListenerHandler {
     }
 
     /**
+     * @param kadAddress    The key to search in the map
+     * @return  NodeListener linked to the kadAddress
+     *          null otherwise
+     */
+    protected FindNodeListener<SMSKADPeer> getNodeListener(KADAddress kadAddress) {
+        return findNodeListenerMap.get(kadAddress);
+    }
+
+    /**
      * Triggers onClosestNodeFound and removes the NodeListener
      *
      * @param kadAddress    The address linked to the NodeListener
@@ -137,6 +146,15 @@ public class SMSNetworkListenerHandler {
     }
 
     /**
+     * @param kadAddress    The key to search in the map
+     * @return  ValueListener linked to the kadAddress
+     *          null otherwise
+     */
+    protected FindValueListener<SerializableObject> getValueListener(KADAddress kadAddress) {
+        return findValueListenerMap.get(kadAddress);
+    }
+
+    /**
      * Triggers onValueFound and removes the ValueListener
      *
      * @param kadAddress The address linked to the ValueListener
@@ -187,6 +205,7 @@ public class SMSNetworkListenerHandler {
      * @param listener The listener to add to the pending list
      */
     synchronized protected void registerPingRequest(final SMSPeer peer, PingListener listener) {
+        pingListenerMap.put(peer, listener);
         Timer t = new Timer();
         pingTimers.put(peer, t);
         t.schedule(new TimerTask() {
@@ -203,6 +222,15 @@ public class SMSNetworkListenerHandler {
                 }
             }
         }, PING_TIMEOUT_MILLIS);
+    }
+
+    /**
+     * @param peer    The key to search in the map
+     * @return  PingListener linked to the peer
+     *          null otherwise
+     */
+    protected PingListener getPingListener(SMSPeer peer) {
+        return pingListenerMap.get(peer);
     }
 
     /**

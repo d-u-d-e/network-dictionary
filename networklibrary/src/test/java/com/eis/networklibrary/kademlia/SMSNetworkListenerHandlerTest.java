@@ -1,6 +1,8 @@
 package com.eis.networklibrary.kademlia;
 
 
+import androidx.annotation.NonNull;
+
 import com.eis.communication.network.FindNodeListener;
 import com.eis.communication.network.FindValueListener;
 import com.eis.communication.network.PingListener;
@@ -11,13 +13,10 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.Timer;
-import java.util.TimerTask;
-
 public class SMSNetworkListenerHandlerTest {
 
     private SMSNetworkListenerHandler listenerHandler;
-    private KADAddress KAD_ADDRESS_1, KAD_ADDRESS_2;
+    private KADAddress KAD_ADDRESS_1;
     private SMSKADPeer[] KADPEERS;
     private SerializableObject SER_OBJECT;
     private SMSPeer SMSPEER_1;
@@ -26,23 +25,26 @@ public class SMSNetworkListenerHandlerTest {
     private FindNodeListener<SMSKADPeer> NODE_LISTENER_1, NODE_LISTENER_2;
     private FindValueListener<SerializableObject> VALUE_LISTENER_1, VALUE_LISTENER_2;
     private PingListener PING_LISTENER_1, PING_LISTENER_2;
-    private int MAXWAITING = 5*1000;
+    private int MAXWAITING = 30*1000;
 
     @Before
     public void init() {
         listenerHandler = new SMSNetworkListenerHandler();
         KAD_ADDRESS_1 = new KADAddress((new byte[]{106, 97, 118, 97, 32, 105, 115, 32, 111, 107}));
-        KAD_ADDRESS_2 = new KADAddress((new byte[]{8, 97, 118, 97, 32, 105, 115, 32, 111, 107}));
         KADPEERS = new SMSKADPeer[]{new SMSKADPeer(PHONE_NUMBER), new SMSKADPeer(PHONE_NUMBER2)};
+        SER_OBJECT = new SerializableObject() {
+            @Override
+            public boolean equals(Object other) {
+                return true; //returns always true because in this case we are using only one SerializableObject
+            }
+
+            @NonNull
+            @Override
+            public String toString() { return null; }
+        };
         SMSPEER_1 = new SMSPeer(PHONE_NUMBER);
-        NODE_LISTENER_1 = new FindNodeListener<SMSKADPeer>() {
-            @Override
-            public void OnKClosestNodesFound(SMSKADPeer[] peer) { }
-        };
-        NODE_LISTENER_2 = new FindNodeListener<SMSKADPeer>() {
-            @Override
-            public void OnKClosestNodesFound(SMSKADPeer[] peer) { }
-        };
+        NODE_LISTENER_1 = peer -> { };
+        NODE_LISTENER_2 = peer -> { };
 
         VALUE_LISTENER_1 = new FindValueListener<SerializableObject>() {
             @Override
@@ -84,7 +86,8 @@ public class SMSNetworkListenerHandlerTest {
     @Test
     public void register_nodeListener_test() {
         reset_instance();
-        Assert.assertNull(listenerHandler.registerNodeListener(KAD_ADDRESS_1, NODE_LISTENER_1, MAXWAITING));
+        listenerHandler.registerFindNodesRequest(KAD_ADDRESS_1, NODE_LISTENER_1, MAXWAITING);
+        Assert.assertEquals(listenerHandler.getNodeListener(KAD_ADDRESS_1), NODE_LISTENER_1);
     }
 
     /**
@@ -93,34 +96,17 @@ public class SMSNetworkListenerHandlerTest {
     @Test
     public void update_nodeListener_test() {
         reset_instance();
-        listenerHandler.registerNodeListener(KAD_ADDRESS_1, NODE_LISTENER_1);
-        Assert.assertEquals(listenerHandler.registerNodeListener(KAD_ADDRESS_1, NODE_LISTENER_2), NODE_LISTENER_1);
-    }
+        listenerHandler.registerFindNodesRequest(KAD_ADDRESS_1, NODE_LISTENER_1, MAXWAITING);
+        listenerHandler.registerFindNodesRequest(KAD_ADDRESS_1, NODE_LISTENER_2, MAXWAITING);
+        Assert.assertEquals(listenerHandler.getNodeListener(KAD_ADDRESS_1), NODE_LISTENER_2);
 
-    @Test
-    public void is_nodeAddress_registered_test() {
-        reset_instance();
-        listenerHandler.registerNodeListener(KAD_ADDRESS_1, NODE_LISTENER_1);
-        Assert.assertTrue(listenerHandler.isNodeAddressRegistered(KAD_ADDRESS_1));
-    }
-
-    @Test
-    public void is_nodeAddress_not_registered_test() {
-        reset_instance();
-        listenerHandler.registerNodeListener(KAD_ADDRESS_1, NODE_LISTENER_1);
-        Assert.assertFalse(listenerHandler.isNodeAddressRegistered(KAD_ADDRESS_2));
     }
 
     @Test
     public void trigger_k_nodes_found_test() {
         reset_instance();
-        NODE_LISTENER_1 = new FindNodeListener<SMSKADPeer>() {
-            @Override
-            public void OnKClosestNodesFound(SMSKADPeer[] peer) {
-                Assert.assertArrayEquals(peer, KADPEERS);
-            }
-        };
-        listenerHandler.registerNodeListener(KAD_ADDRESS_1, NODE_LISTENER_1);
+        NODE_LISTENER_1 = peer -> Assert.assertArrayEquals(peer, KADPEERS);
+        listenerHandler.registerFindNodesRequest(KAD_ADDRESS_1, NODE_LISTENER_1, MAXWAITING);
         listenerHandler.triggerKNodesFound(KAD_ADDRESS_1, KADPEERS);
     }
 
@@ -129,7 +115,8 @@ public class SMSNetworkListenerHandlerTest {
     @Test
     public void register_valueListener_test() {
         reset_instance();
-        Assert.assertNull(listenerHandler.registerValueListener(KAD_ADDRESS_1, VALUE_LISTENER_1));
+        listenerHandler.registerFindValueRequest(KAD_ADDRESS_1, VALUE_LISTENER_1, MAXWAITING);
+        Assert.assertEquals(listenerHandler.getValueListener(KAD_ADDRESS_1), VALUE_LISTENER_1);
     }
 
     /**
@@ -138,22 +125,9 @@ public class SMSNetworkListenerHandlerTest {
     @Test
     public void update_valueListener_test() {
         reset_instance();
-        listenerHandler.registerValueListener(KAD_ADDRESS_1, VALUE_LISTENER_1);
-        Assert.assertEquals(listenerHandler.registerValueListener(KAD_ADDRESS_1, VALUE_LISTENER_2), VALUE_LISTENER_1);
-    }
-
-    @Test
-    public void is_valueAddress_registered_test() {
-        reset_instance();
-        listenerHandler.registerValueListener(KAD_ADDRESS_1, VALUE_LISTENER_1);
-        Assert.assertTrue(listenerHandler.isValueAddressRegistered(KAD_ADDRESS_1));
-    }
-
-    @Test
-    public void is_valueAddress_not_registered_test() {
-        reset_instance();
-        listenerHandler.registerValueListener(KAD_ADDRESS_1, VALUE_LISTENER_1);
-        Assert.assertFalse(listenerHandler.isValueAddressRegistered(KAD_ADDRESS_2));
+        listenerHandler.registerFindValueRequest(KAD_ADDRESS_1, VALUE_LISTENER_1, MAXWAITING);
+        listenerHandler.registerFindValueRequest(KAD_ADDRESS_1, VALUE_LISTENER_2, MAXWAITING);
+        Assert.assertEquals(listenerHandler.getValueListener(KAD_ADDRESS_1), VALUE_LISTENER_2);
     }
 
     @Test
@@ -168,7 +142,7 @@ public class SMSNetworkListenerHandlerTest {
             @Override
             public void onValueNotFound() { }
         };
-        listenerHandler.registerValueListener(KAD_ADDRESS_1, VALUE_LISTENER_1);
+        listenerHandler.registerFindValueRequest(KAD_ADDRESS_1, VALUE_LISTENER_1, MAXWAITING);
         listenerHandler.triggerValueFound(KAD_ADDRESS_1, SER_OBJECT);
     }
 
@@ -184,7 +158,7 @@ public class SMSNetworkListenerHandlerTest {
                 Assert.assertTrue(true);
             }
         };
-        listenerHandler.registerValueListener(KAD_ADDRESS_1, VALUE_LISTENER_1);
+        listenerHandler.registerFindValueRequest(KAD_ADDRESS_1, VALUE_LISTENER_1, MAXWAITING);
         listenerHandler.triggerValueNotFound(KAD_ADDRESS_1);
     }
 
@@ -193,7 +167,8 @@ public class SMSNetworkListenerHandlerTest {
     @Test
     public void register_pingListener_test() {
         reset_instance();
-        Assert.assertNull(listenerHandler.registerPingListener(SMSPEER_1, PING_LISTENER_1));
+        listenerHandler.registerPingRequest(SMSPEER_1, PING_LISTENER_1);
+        Assert.assertEquals(listenerHandler.getPingListener(SMSPEER_1), PING_LISTENER_1);
     }
 
     /**
@@ -202,8 +177,9 @@ public class SMSNetworkListenerHandlerTest {
     @Test
     public void update_pingListener_test() {
         reset_instance();
-        listenerHandler.registerPingListener(SMSPEER_1, PING_LISTENER_1);
-        Assert.assertEquals(listenerHandler.registerPingListener(SMSPEER_1, PING_LISTENER_2), PING_LISTENER_1);
+        listenerHandler.registerPingRequest(SMSPEER_1, PING_LISTENER_1);
+        listenerHandler.registerPingRequest(SMSPEER_1, PING_LISTENER_2);
+        Assert.assertEquals(listenerHandler.getPingListener(SMSPEER_1), PING_LISTENER_2);
     }
 
     @Test
@@ -218,25 +194,11 @@ public class SMSNetworkListenerHandlerTest {
             @Override
             public void onPingTimedOut(SMSPeer peer) { }
         };
-        listenerHandler.registerPingListener(SMSPEER_1, PING_LISTENER_1);
+        listenerHandler.registerPingRequest(SMSPEER_1, PING_LISTENER_1);
         listenerHandler.triggerPingReply(SMSPEER_1);
     }
 
-    //TODO: how to test a timer?
-    /*@Test
-    public void trigger_ping_timeout_test() {
-        reset_instance();
-        PING_LISTENER_1 = new PingListener() {
-            @Override
-            public void onPingReply(SMSPeer peer) { }
-
-            @Override
-            public void onPingTimedOut(SMSPeer peer) {
-                Assert.assertEquals(peer, SMSPEER_1);
-            }
-        };
-        listenerHandler.registerPingListener(SMSPEER_1, PING_LISTENER_1);
-    }*/
+    //TODO: use powermock for testing listeners
 
     //*******************************************************************************************
 
