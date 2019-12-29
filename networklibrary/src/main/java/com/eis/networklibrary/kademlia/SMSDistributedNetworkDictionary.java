@@ -269,20 +269,31 @@ public class SMSDistributedNetworkDictionary<RV> implements NetworkDictionary<SM
      * @param bucketIndex identifies each bucket, from 0 to N-1, where N = {@link #NO_BUCKETS}.
      * @return a random KADAddress in this bucket. When bucketIndex == 0, then this address is obviously not random.
      */
-    public KADAddress getRandomAddressInBucket(int bucketIndex) {
+    public KADAddress getRandomAddressInSubtree(int bucketIndex) {
         byte[] myAddress = mySelf.getNetworkAddress().getAddress();
         int byteIndex = KADAddress.BYTE_ADDRESS_LENGTH - 1 - bucketIndex / Byte.SIZE;
         byte[] randomAddress = new byte[KADAddress.BYTE_ADDRESS_LENGTH];
-        System.arraycopy(myAddress, 0, randomAddress, 0, byteIndex + 1); //copy all the first bytes up to byte n. byteIndex
-        randomAddress[byteIndex] = (byte) (myAddress[byteIndex] ^ 1); //flip least significant bit of byte n. byteIndex
+        System.arraycopy(myAddress, 0, randomAddress, 0, byteIndex + 1); //copy all the first bytes up to byte n. byteIndex (included)
 
-        if (byteIndex < KADAddress.BYTE_ADDRESS_LENGTH - 1) { //add random bytes from byte n. byteIndex + 1 onwards
-            int randomBytesLen = KADAddress.BYTE_ADDRESS_LENGTH - byteIndex - 1;
+        int randomBytesLen = KADAddress.BYTE_ADDRESS_LENGTH - byteIndex - 1;
+        if(randomBytesLen > 0){
             byte[] randomBytes = new byte[randomBytesLen];
             Random ranGen = new Random();
             ranGen.nextBytes(randomBytes);
             System.arraycopy(randomBytes, 0, randomAddress, byteIndex + 1, randomBytesLen);
         }
+
+        //now we add randomness to myAddress[byteIndex] and flip the correct bit
+
+        int pos = bucketIndex % Byte.SIZE; //position relative to this byte
+
+        for(int i = 0; i < pos; i++)
+            if(Math.random() > 0.5)
+                randomAddress[byteIndex] ^= (1 << i); //random flip
+
+        //lastly, flip the pos-th bit
+        randomAddress[byteIndex] ^= 1 << pos;
+
         return new KADAddress(randomAddress);
     }
 }

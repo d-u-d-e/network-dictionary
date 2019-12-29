@@ -562,7 +562,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      * @author Alessandra Tonin, Marco Mariotto
      */
     void refreshBucket(int bucketIndex) {
-        KADAddress randomAddress = dict.getRandomAddressInBucket(bucketIndex);
+        KADAddress randomAddress = dict.getRandomAddressInSubtree(bucketIndex);
         findClosestNodes(randomAddress, null, 0); //will trigger the listener handler, but no listener will actually be called
     }
 

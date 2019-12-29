@@ -37,4 +37,11 @@ public class SMSDistributedNetworkDictionaryTest {
         defaultDictionary.removeUser(DEFAULT_USER_ADDRESS);
     }
 
+    @Test
+    public void getRandomAddressInSubtree(){
+        System.out.println(DEFAULT_USER_ADDRESS.getNetworkAddress());
+        for(int i = 0; i < 5; i++)
+            System.out.println(defaultDictionary.getRandomAddressInSubtree(i));
+    }
+
 }
