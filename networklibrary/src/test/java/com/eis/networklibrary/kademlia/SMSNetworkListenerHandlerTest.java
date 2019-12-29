@@ -36,7 +36,7 @@ public class SMSNetworkListenerHandlerTest {
     private SMSPeer SMSPEER_1;
     final private String PHONE_NUMBER = "+391111111111";
     final private String PHONE_NUMBER2 = "+391111111112";
-    private int MAXWAITING = 30*1000;
+    private int MAXWAITING = 30 * 1000;
 
     /**
      * Using Mockito to test listeners' callbacks
@@ -60,11 +60,15 @@ public class SMSNetworkListenerHandlerTest {
         KADPEERS = new SMSKADPeer[]{new SMSKADPeer(PHONE_NUMBER), new SMSKADPeer(PHONE_NUMBER2)};
         SER_OBJECT = new SerializableObject() {
             @Override
-            public boolean equals(Object other) { return false; }
+            public boolean equals(Object other) {
+                return false;
+            }
 
             @NonNull
             @Override
-            public String toString() { return null; }
+            public String toString() {
+                return null;
+            }
         };
         SMSPEER_1 = new SMSPeer(PHONE_NUMBER);
     }

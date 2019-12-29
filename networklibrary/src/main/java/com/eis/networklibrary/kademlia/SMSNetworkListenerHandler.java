@@ -1,7 +1,6 @@
 package com.eis.networklibrary.kademlia;
 
 
-
 import com.eis.communication.network.FindNodeListener;
 import com.eis.communication.network.FindValueListener;
 import com.eis.communication.network.PingListener;
@@ -9,7 +8,6 @@ import com.eis.communication.network.SerializableObject;
 import com.eis.smslibrary.SMSPeer;
 
 import java.util.HashMap;
-import java.util.ListIterator;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -17,7 +15,7 @@ import java.util.TimerTask;
  * This class handles the findNode, findValue and ping listeners
  * Uses KADAddress or SMSPeer as key to identify a specific listener
  * When a listener is triggered it is removed from the pending list
- *
+ * <p>
  * Synchronized methods and operations allow multiple access requests to
  * form a queue and perform one at a time
  *
@@ -33,7 +31,7 @@ public class SMSNetworkListenerHandler {
     final private HashMap<KADAddress, Timer> requestTimers = new HashMap<>();
     final private HashMap<SMSPeer, Timer> pingTimers = new HashMap<>();
 
-    private final static int PING_TIMEOUT_MILLIS = 30*1000;  //30 seconds
+    private final static int PING_TIMEOUT_MILLIS = 30 * 1000;  //30 seconds
 
     //*******************************************************************************************
 
@@ -47,19 +45,19 @@ public class SMSNetworkListenerHandler {
      */
     synchronized protected void registerFindNodesRequest(KADAddress kadAddress, FindNodeListener<SMSKADPeer> listener, int maxWaiting) {
         findNodeListenerMap.put(kadAddress, listener);
-        if(maxWaiting > 0){
+        if (maxWaiting > 0) {
             Timer t = new Timer();
             requestTimers.put(kadAddress, t);
             t.schedule(new TimerTask() {
                 @Override
                 public void run() {
                     FindNodeListener<SMSKADPeer> l;
-                    synchronized (findNodeListenerMap){
+                    synchronized (findNodeListenerMap) {
                         l = findNodeListenerMap.remove(kadAddress);
                     }
-                    if(l != null)
+                    if (l != null)
                         l.onFindTimedOut(); //l == listener
-                    synchronized (requestTimers){
+                    synchronized (requestTimers) {
                         requestTimers.remove(kadAddress);
                     }
                 }
@@ -78,9 +76,9 @@ public class SMSNetworkListenerHandler {
     }
 
     /**
-     * @param kadAddress    The key to search in the map
-     * @return  NodeListener linked to the kadAddress
-     *          null otherwise
+     * @param kadAddress The key to search in the map
+     * @return NodeListener linked to the kadAddress
+     * null otherwise
      */
     protected FindNodeListener<SMSKADPeer> getNodeListener(KADAddress kadAddress) {
         return findNodeListenerMap.get(kadAddress);
@@ -89,18 +87,18 @@ public class SMSNetworkListenerHandler {
     /**
      * Triggers onClosestNodeFound and removes the NodeListener
      *
-     * @param kadAddress    The address linked to the NodeListener
-     * @param peers         The peers found
+     * @param kadAddress The address linked to the NodeListener
+     * @param peers      The peers found
      */
     protected void triggerKNodesFound(KADAddress kadAddress, SMSKADPeer[] peers) {
         FindNodeListener<SMSKADPeer> listener;
-        synchronized (findNodeListenerMap){
+        synchronized (findNodeListenerMap) {
             listener = findNodeListenerMap.remove(kadAddress);
         }
-        if (listener != null){ //request not timed out
-            synchronized (requestTimers){
+        if (listener != null) { //request not timed out
+            synchronized (requestTimers) {
                 Timer t = requestTimers.remove(kadAddress);
-                if(t != null)
+                if (t != null)
                     t.cancel();
             }
             listener.OnKClosestNodesFound(peers);
@@ -119,19 +117,19 @@ public class SMSNetworkListenerHandler {
      */
     synchronized protected void registerFindValueRequest(KADAddress kadAddress, FindValueListener<SerializableObject> listener, int maxWaiting) {
         findValueListenerMap.put(kadAddress, listener);
-        if(maxWaiting > 0){
+        if (maxWaiting > 0) {
             Timer t = new Timer();
             requestTimers.put(kadAddress, t);
             t.schedule(new TimerTask() {
                 @Override
                 public void run() {
                     FindValueListener<SerializableObject> l;
-                    synchronized (findValueListenerMap){
+                    synchronized (findValueListenerMap) {
                         l = findValueListenerMap.remove(kadAddress);
                     }
-                    if(l != null)
+                    if (l != null)
                         l.onFindValueTimedOut(); //l == listener
-                    synchronized (requestTimers){
+                    synchronized (requestTimers) {
                         requestTimers.remove(kadAddress);
                     }
                 }
@@ -150,9 +148,9 @@ public class SMSNetworkListenerHandler {
     }
 
     /**
-     * @param kadAddress    The key to search in the map
-     * @return  ValueListener linked to the kadAddress
-     *          null otherwise
+     * @param kadAddress The key to search in the map
+     * @return ValueListener linked to the kadAddress
+     * null otherwise
      */
     protected FindValueListener<SerializableObject> getValueListener(KADAddress kadAddress) {
         return findValueListenerMap.get(kadAddress);
@@ -166,13 +164,13 @@ public class SMSNetworkListenerHandler {
      */
     protected void triggerValueFound(KADAddress kadAddress, SerializableObject value) {
         FindValueListener<SerializableObject> listener;
-        synchronized (findValueListenerMap){
+        synchronized (findValueListenerMap) {
             listener = findValueListenerMap.remove(kadAddress);
         }
-        if (listener != null){ //request not timed out
-            synchronized (requestTimers){
+        if (listener != null) { //request not timed out
+            synchronized (requestTimers) {
                 Timer t = requestTimers.remove(kadAddress);
-                if(t != null)
+                if (t != null)
                     t.cancel();
             }
             listener.onValueFound(value);
@@ -186,13 +184,13 @@ public class SMSNetworkListenerHandler {
      */
     protected void triggerValueNotFound(KADAddress kadAddress) {
         FindValueListener<SerializableObject> listener;
-        synchronized (findValueListenerMap){
+        synchronized (findValueListenerMap) {
             listener = findValueListenerMap.remove(kadAddress);
         }
-        if (listener != null){ //request not timed out
-            synchronized (requestTimers){
+        if (listener != null) { //request not timed out
+            synchronized (requestTimers) {
                 Timer t = requestTimers.remove(kadAddress);
-                if(t != null)
+                if (t != null)
                     t.cancel();
             }
             listener.onValueNotFound();
@@ -216,12 +214,12 @@ public class SMSNetworkListenerHandler {
             @Override
             public void run() {
                 PingListener l;
-                synchronized (pingListenerMap){
+                synchronized (pingListenerMap) {
                     l = pingListenerMap.remove(peer);
                 }
-                if(l != null)
+                if (l != null)
                     listener.onPingTimedOut(peer);
-                synchronized (pingTimers){
+                synchronized (pingTimers) {
                     pingTimers.remove(peer);
                 }
             }
@@ -229,9 +227,9 @@ public class SMSNetworkListenerHandler {
     }
 
     /**
-     * @param peer    The key to search in the map
-     * @return  PingListener linked to the peer
-     *          null otherwise
+     * @param peer The key to search in the map
+     * @return PingListener linked to the peer
+     * null otherwise
      */
     protected PingListener getPingListener(SMSPeer peer) {
         return pingListenerMap.get(peer);
@@ -245,15 +243,15 @@ public class SMSNetworkListenerHandler {
      */
     protected void triggerPingReply(SMSPeer peer) {
         PingListener listener;
-        synchronized (pingListenerMap){
+        synchronized (pingListenerMap) {
             listener = pingListenerMap.remove(peer);
         }
 
         if (listener != null) {
             listener.onPingReply(peer);
-            synchronized (pingTimers){
+            synchronized (pingTimers) {
                 Timer t = pingTimers.remove(peer);
-                if(t != null)
+                if (t != null)
                     t.cancel();
             }
         }
