@@ -18,7 +18,11 @@ import java.util.TimerTask;
  * Uses KADAddress or SMSPeer as key to identify a specific listener
  * When a listener is triggered it is removed from the pending list
  *
+ * Synchronized methods and operations allow multiple access requests to
+ * form a queue and perform one at a time
+ *
  * @author Marco Tommasini
+ * @author Marco Mariotto
  */
 public class SMSNetworkListenerHandler {
 
