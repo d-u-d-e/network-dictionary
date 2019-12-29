@@ -21,6 +21,8 @@ import java.util.TimerTask;
  *
  * @author Marco Tommasini
  * @author Marco Mariotto
+ * <p>
+ * Ready for code review from Barca and Bortoletti
  */
 public class SMSNetworkListenerHandler {
 

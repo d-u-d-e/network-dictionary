@@ -26,6 +26,8 @@ import static org.mockito.Mockito.verify;
  * I choose not to test timeout callbacks because I think it is not UnitTest's duty
  *
  * @author Marco Tommasini
+ * <p>
+ * Ready for code review from Barca and Bortoletti
  */
 
 public class SMSNetworkListenerHandlerTest {
