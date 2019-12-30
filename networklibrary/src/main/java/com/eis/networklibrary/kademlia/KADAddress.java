@@ -20,7 +20,7 @@ public class KADAddress {
 
     public static final String HASH_ALGORITHM = "SHA-256";
     public static final int BYTE_ADDRESS_LENGTH = 10;
-    public static final int BIT_LENGTH = Byte.SIZE * BYTE_ADDRESS_LENGTH;
+    public static final int BIT_ADDRESS_LENGTH = Byte.SIZE * BYTE_ADDRESS_LENGTH;
     private static final char[] HEX_DIGITS = "0123456789ABCDEF".toCharArray();
 
     /**
@@ -61,6 +61,8 @@ public class KADAddress {
         return address;
     }
 
+
+
     /**
      * @param obj  the object being compared to <i>this</i>
      * @return     true if and only if {@code obj} is of the {@link KADAddress} type and has the same bytes as this address
@@ -77,7 +79,7 @@ public class KADAddress {
      * @param a The address to be compared with {@code b}.
      * @param b The address to be compared with {@code a}.
      * @return the index of the first different bit between {@code a} and {@code b} starting from the left (MSB)
-     * or  <i>BIT_LENGTH</i> if no such index exists (i.e. the two addresses are equal)
+     * or  <i>BIT_ADDRESS_LENGTH</i> if no such index exists (i.e. the two addresses are equal)
      * @author Marco Mariotto
      */
     public static int firstDifferentBit(KADAddress a, KADAddress b) {
@@ -87,7 +89,7 @@ public class KADAddress {
             byte xor = (byte) (aBytes[i] ^ bBytes[i]);
             if (xor != 0) return i * Byte.SIZE + leftMostSetBit(xor);
         }
-        return BIT_LENGTH;
+        return BIT_ADDRESS_LENGTH;
     }
 
     /**
@@ -97,11 +99,10 @@ public class KADAddress {
      */
     private static short leftMostSetBit(byte b) {
         short pos = 0;
-        int j = 0x80; //represents the byte 10000000
-        int byteAsInt = b & 0xFF; //since bitwise operations aren't defined for bytes, we convert b to an int,
+        int j = 0b10000000;
         // without considering extension sign bits
         for (; pos < Byte.SIZE; pos++) {
-            if ((j & byteAsInt) != 0) return pos;
+            if ((j & b) != 0) return pos;
             j = j >>> 1;
         }
         return pos;
@@ -142,16 +143,16 @@ public class KADAddress {
             //convert it to a non negative integer: to see why this works,
             // note that & operator is defined only between integers or long ints (not between bytes)
             //address[i] is promoted to int (by extending the sign) and 0xFF is just 00 00 00 FF as int
-            int v = address[i] & 0xFF;
-            hexChars[i * 2] = HEX_DIGITS[v >>> 4]; //first hex char is at index v divided by 16
-            hexChars[i * 2 + 1] = HEX_DIGITS[v & 0x0F]; //second hex char is at index specified by the second group of 4 bits
+            int lsb = address[i] & 0xFF; //least significant byte
+            hexChars[i * 2] = HEX_DIGITS[lsb >>> 4]; //first hex char is at index v divided by 16
+            hexChars[i * 2 + 1] = HEX_DIGITS[lsb & 0x0F]; //second hex char is at index specified by the second group of 4 bits
         }
         return new String(hexChars);
     }
 
     /**
      * @param str a valid hexadecimal representation of a {@link KADAddress};
-     *            <i>str.length()</i> must be <i>BIT_LENGTH/4</i> chars long and even
+     *            <i>str.length()</i> must be <i>BIT_ADDRESS_LENGTH/4</i> chars long and even
      * @return the {@link KADAddress} having {@code str} as its hexadecimal representation
      * @author Marco Mariotto
      */
@@ -162,5 +163,4 @@ public class KADAddress {
             arr[i / 2] = (byte) ((Character.digit(str.charAt(i), 16) << 4) + Character.digit(str.charAt(i + 1), 16));
         return new KADAddress(arr);
     }
-
 }

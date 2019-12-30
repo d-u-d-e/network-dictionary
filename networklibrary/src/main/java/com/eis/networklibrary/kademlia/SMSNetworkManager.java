@@ -1,6 +1,5 @@
 package com.eis.networklibrary.kademlia;
 
-import com.eis.communication.Peer;
 import com.eis.communication.network.FindNodeListener;
 import com.eis.communication.network.FindValueListener;
 import com.eis.communication.network.Invitation;
@@ -21,7 +20,7 @@ import java.util.Calendar;
 import java.util.HashMap;
 
 import static com.eis.networklibrary.kademlia.SMSCommandMapper.SPLIT_CHAR;
-import static com.eis.networklibrary.kademlia.SMSDistributedNetworkDictionary.KADEMLIA_K;
+import static com.eis.networklibrary.kademlia.SMSDistributedNetworkDictionary.BUCKET_SIZE;
 import static com.eis.networklibrary.kademlia.SMSDistributedNetworkDictionary.NO_BUCKETS;
 
 /**
@@ -310,7 +309,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
         listenerHandler.registerFindNodesRequest(address, listener, maxWaiting);
 
         //bestSoFarClosestNodes contains the best so far KADEMLIA_K nodes found closer to address
-        ClosestPQ currentBestPQ = new ClosestPQ(new SMSKADPeer.SMSKADComparator(address), dict.getAllUsers());
+        ClosestPQ currentBestPQ = new ClosestPQ(address, dict.getAllUsers());
         bestSoFarClosestNodes.put(address, currentBestPQ);
 
         //Sends a FIND_CLOSEST_NODES request to the first KADEMLIA_ALPHA nodes in closestNodes
@@ -338,7 +337,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
         dict.addUser(new SMSKADPeer(sender));
         ArrayList<SMSKADPeer> closerNodes = dict.getNodesSortedByDistance(KADAddress.fromHexString(requestContent)); //this includes mySelf
         StringBuilder replyContent = new StringBuilder(requestContent); //this is the address we were asked to look up
-        for (int i = 0; i < Math.min(KADEMLIA_K, closerNodes.size()); i++) { //we send up to K closest nodes we know about
+        for (int i = 0; i < Math.min(BUCKET_SIZE, closerNodes.size()); i++) { //we send up to K closest nodes we know about
             replyContent.append(SPLIT_CHAR);
             replyContent.append(closerNodes.get(i).getAddress()); //phone number
         }
@@ -409,7 +408,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
         if (localValue != null)
             listenerHandler.triggerValueFound(keyAddress, localValue);
         else {
-            ClosestPQ currentBestPQ = new ClosestPQ(new SMSKADPeer.SMSKADComparator(keyAddress), dict.getAllUsers());
+            ClosestPQ currentBestPQ = new ClosestPQ(keyAddress, dict.getAllUsers());
             bestSoFarClosestNodes.put(keyAddress, currentBestPQ);
 
             for (int i = 0; i < Math.min(KADEMLIA_ALPHA, currentBestPQ.size()); i++) {
@@ -446,7 +445,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
         else {
             ArrayList<SMSKADPeer> closerNodes = dict.getNodesSortedByDistance(keyAddress);
             StringBuilder replyContent = new StringBuilder(requestContent);
-            for (int i = 0; i < Math.min(KADEMLIA_K, closerNodes.size()); i++) {
+            for (int i = 0; i < Math.min(BUCKET_SIZE, closerNodes.size()); i++) {
                 replyContent.append(SMSCommandMapper.SPLIT_CHAR);
                 replyContent.append(closerNodes.get(i).getAddress());
             }
@@ -562,7 +561,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      * @author Alessandra Tonin, Marco Mariotto
      */
     void refreshBucket(int bucketIndex) {
-        KADAddress randomAddress = dict.getRandomAddressInSubtree(bucketIndex);
+        KADAddress randomAddress = dict.generateRandomAddressInSubtree(bucketIndex);
         findClosestNodes(randomAddress, null, 0); //will trigger the listener handler, but no listener will actually be called
     }
 
@@ -588,7 +587,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      */
     synchronized public void republishKeys() {
         for (final KADAddress resourceKey : dict.getKeys()) {
-            FindNodeListener listener = new FindNodeListener<SMSKADPeer>() {
+            FindNodeListener<SMSKADPeer> listener = new FindNodeListener<SMSKADPeer>() {
                 @Override
                 public void OnKClosestNodesFound(SMSKADPeer[] peers) {
                     for (SMSKADPeer p : peers)

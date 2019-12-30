@@ -9,6 +9,7 @@ import java.util.TimerTask;
  * @author Marco Mariotto
  */
 public class RepublishService extends TimerTask {
+    static final String DATE_INVALID = "Must pass a valid date: this task can't be started before the current time";
     @Override
     public void run() {
         SMSNetworkManager manager = SMSNetworkManager.getInstance();
@@ -16,9 +17,13 @@ public class RepublishService extends TimerTask {
     }
 
     /**
-     * @param beginAt date that specifies when to start this task
+     * Creates a RepublishService and schedules it at the specified date {@code beginAt}
+     * @param beginAt date that specifies when to start this task; must be after the current time
+     * @throws IllegalArgumentException when {@code beginAt} isn't a valid date
      */
-    public static void startTask(Date beginAt){
+    static void startTask(Date beginAt) {
+        if(beginAt.getTime() < System.currentTimeMillis())
+            throw new IllegalArgumentException(DATE_INVALID);
         RepublishService service = new RepublishService();
         Timer timer = new Timer();
         timer.scheduleAtFixedRate(service, beginAt, SMSNetworkManager.KADEMLIA_REPUBLISH_PERIOD_MILLIS);

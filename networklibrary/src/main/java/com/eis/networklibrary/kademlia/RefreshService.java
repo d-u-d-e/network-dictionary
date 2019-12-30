@@ -14,6 +14,8 @@ import static com.eis.networklibrary.kademlia.SMSNetworkManager.KADEMLIA_REFRESH
  * @author Marco Mariotto
  */
 public class RefreshService extends TimerTask {
+    static final String DATE_INVALID = "Must pass a valid date: this task can't be started before the current time";
+
     @Override
     public void run() {
         SMSNetworkManager manager = SMSNetworkManager.getInstance();
@@ -25,9 +27,13 @@ public class RefreshService extends TimerTask {
     }
 
     /**
-     * @param beginAt date that specifies when to start this task
+     * Creates a RefreshService and schedules it at the specified date {@code beginAt}
+     * @param beginAt date that specifies when to start this task; must be after the current time
+     * @throws IllegalArgumentException when {@code beginAt} isn't a valid date
      */
-    public static void startTask(Date beginAt){
+    static void startTask(Date beginAt){
+        if(beginAt.getTime() < System.currentTimeMillis())
+            throw new IllegalArgumentException(DATE_INVALID);
         RefreshService service = new RefreshService();
         Timer timer = new Timer();
         timer.scheduleAtFixedRate(service, beginAt, KADEMLIA_REFRESH_PERIOD_MILLIS / 2);
