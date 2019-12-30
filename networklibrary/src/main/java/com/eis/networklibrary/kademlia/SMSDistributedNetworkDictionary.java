@@ -17,7 +17,7 @@ import java.util.Random;
  *
  * @param <RV> resource value
  * @author Luca Crema, Marco Mariotto, Tonin Alessandra
- *
+ * <p>
  * CODE REVIEW FOR CROCIANI AND DE ZEN
  */
 

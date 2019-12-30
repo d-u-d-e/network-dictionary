@@ -32,10 +32,13 @@ import static com.eis.networklibrary.kademlia.SMSCommandMapper.SPLIT_CHAR;
  * @author Marco Mariotto
  * @author Alessandra Tonin
  * @author Luca Crema
- *
+ * <p>
  * CODE REVIEW FOR CROCIANI AND DE ZEN
  */
 class SMSNetworkListener extends SMSReceivedServiceListener {
+
+    private static final int PREFIX = 0;
+    private static final String EMPTY_STRING = "";
 
     /**
      * Checks if the received message is a command for the kad dictionary, checks which command
@@ -46,19 +49,19 @@ class SMSNetworkListener extends SMSReceivedServiceListener {
     @Override
     public void onMessageReceived(SMSMessage message) {
         String[] splitMessageContent = message.getData().split(SPLIT_CHAR);
-        String messagePrefix = splitMessageContent[0];
+        String messagePrefix = splitMessageContent[PREFIX];
         int parts = splitMessageContent.length;
         //Check if it's a reply
         for (SMSNetworkManager.ReplyType replyCommand : SMSNetworkManager.ReplyType.values()) {
             if (replyCommand.toString().equals(messagePrefix)) {
-                processReply(replyCommand, message.getPeer(), parts == 1 ? "" : splitMessageContent[1]);
+                processReply(replyCommand, message.getPeer(), parts == 1 ? EMPTY_STRING : splitMessageContent[1]);
                 return;
             }
         }
         //Check if it's a request
         for (SMSNetworkManager.RequestType requestCommand : SMSNetworkManager.RequestType.values()) {
             if (requestCommand.toString().equals(messagePrefix)) {
-                processRequest(requestCommand, message.getPeer(), parts == 1 ? "" : splitMessageContent[1]);
+                processRequest(requestCommand, message.getPeer(), parts == 1 ? EMPTY_STRING : splitMessageContent[1]);
                 return;
             }
         }
