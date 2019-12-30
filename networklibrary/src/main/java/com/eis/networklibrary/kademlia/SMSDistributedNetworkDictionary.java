@@ -22,12 +22,19 @@ import java.util.Random;
 public class SMSDistributedNetworkDictionary<RV> implements NetworkDictionary<SMSKADPeer, KADAddress, RV> {
 
 
-    //Maximum users per bucket
-    static final int KADEMLIA_K = 5; //TODO note that this K can't be too big, because messages can at most contain 160 chars
-    static final int NO_BUCKETS = KADAddress.BIT_LENGTH; // Number of buckets. We have a bucket for each bit
-    SMSKADPeer mySelf; //address of current node holding this dictionary
+    // Maximum users per bucket. In kademlia it's often called the K constant
+    static final int BUCKET_SIZE = 5; // TODO note that this K can't be too big, because messages can at most contain 160 chars
+    static final int NO_BUCKETS = KADAddress.BIT_ADDRESS_LENGTH; // Number of buckets. We have a bucket for each bit
+    SMSKADPeer mySelf; // address of current node holding this dictionary
+
+    // Buckets may contain up to BUCKET_SIZE elements. Bucket with index i, where 0 <= i < NO_BUCKETS, contains nodes
+    // whose xor distance to X is between 2^i inclusive and 2^(i+1) exclusive.
+    // For example, if i = 0, then bucket 0 contains the only node whose distance to X is 1 (thus it has the last bit flipped and it is the closer to X
+    // even from a geometric point of view in the tree)
+
     private ArrayList<SMSKADPeer>[] buckets;
     private HashMap<KADAddress, RV> resources = new HashMap<>();
+
 
     /**
      * Constructor for the dictionary
@@ -58,7 +65,7 @@ public class SMSDistributedNetworkDictionary<RV> implements NetworkDictionary<SM
 
         final ArrayList<SMSKADPeer> usersInBucket = buckets[bucketIndex];
 
-        if (usersInBucket.size() == KADEMLIA_K) {
+        if (usersInBucket.size() == BUCKET_SIZE) {
             PingListener listener = new PingListener() {
                 @Override
                 public void onPingReply(SMSPeer peer) {
@@ -266,23 +273,42 @@ public class SMSDistributedNetworkDictionary<RV> implements NetworkDictionary<SM
     }
 
     /**
-     * @param bucketIndex identifies each bucket, from 0 to N-1, where N = {@link #NO_BUCKETS}.
-     * @return a random KADAddress in this bucket. When bucketIndex == 0, then this address is obviously not random.
+     * Bucket with index i, where 0 <= i < NO_BUCKETS, contains nodes
+     * whose xor distance to {@link #mySelf} is between 2^i inclusive and 2^(i+1) exclusive.
+     * For example, if i = 0, then bucket 0 contains the only node whose distance to X is 1 (thus it has the last bit flipped and it is the closer to X
+     * even from a geometric point of view in the tree).
+     * We can generalize this concept to subtrees, which contain both keys and nodes. All the subtrees taken together span the whole address space.
+     * So subtree index i contains all addresses whose xor distance to {@link #mySelf} is between 2^i inclusive and 2^(i+1) exclusive.
+     *
+     * @param subtreeIndex identifies each subtree, from 0 to N-1, where N = {@link #NO_BUCKETS}.
+     * @return a random KADAddress in this subtree. When subtreeIndex == 0, then this address is obviously not random.
+     *
      */
-    public KADAddress getRandomAddressInBucket(int bucketIndex) {
+    KADAddress generateRandomAddressInSubtree(int subtreeIndex) {
         byte[] myAddress = mySelf.getNetworkAddress().getAddress();
-        int byteIndex = KADAddress.BYTE_ADDRESS_LENGTH - 1 - bucketIndex / Byte.SIZE;
+        int byteIndex = KADAddress.BYTE_ADDRESS_LENGTH - 1 - subtreeIndex / Byte.SIZE;
         byte[] randomAddress = new byte[KADAddress.BYTE_ADDRESS_LENGTH];
-        System.arraycopy(myAddress, 0, randomAddress, 0, byteIndex + 1); //copy all the first bytes up to byte n. byteIndex
-        randomAddress[byteIndex] = (byte) (myAddress[byteIndex] ^ 1); //flip least significant bit of byte n. byteIndex
+        System.arraycopy(myAddress, 0, randomAddress, 0, byteIndex + 1); //copy all the first bytes up to byte n. byteIndex (included)
 
-        if (byteIndex < KADAddress.BYTE_ADDRESS_LENGTH - 1) { //add random bytes from byte n. byteIndex + 1 onwards
-            int randomBytesLen = KADAddress.BYTE_ADDRESS_LENGTH - byteIndex - 1;
+        int randomBytesLen = KADAddress.BYTE_ADDRESS_LENGTH - byteIndex - 1;
+        if(randomBytesLen > 0){
             byte[] randomBytes = new byte[randomBytesLen];
             Random ranGen = new Random();
             ranGen.nextBytes(randomBytes);
             System.arraycopy(randomBytes, 0, randomAddress, byteIndex + 1, randomBytesLen);
         }
+
+        //now we add randomness to myAddress[byteIndex] and flip the correct bit
+
+        int pos = subtreeIndex % Byte.SIZE; //position relative to this byte
+
+        for(int i = 0; i < pos; i++)
+            if(Math.random() > 0.5)
+                randomAddress[byteIndex] ^= (1 << i); //random flip
+
+        //lastly, flip the pos-th bit
+        randomAddress[byteIndex] ^= 1 << pos;
+
         return new KADAddress(randomAddress);
     }
 }
