@@ -84,7 +84,7 @@ public class KADAddressTest {
     @Test
     public void firstDifferentBit_isOk() {
         //Return BIT_LENGTH if addresses are equals
-        Assert.assertEquals(KADAddress.BIT_LENGTH, KADAddress.firstDifferentBit(KAD_ADDRESS_1, KAD_ADDRESS_1));
+        Assert.assertEquals(KADAddress.BIT_ADDRESS_LENGTH, KADAddress.firstDifferentBit(KAD_ADDRESS_1, KAD_ADDRESS_1));
 
         Assert.assertEquals(FIRST_DIFF_BIT_INDEX_EXPECTED, KADAddress.firstDifferentBit(KAD_ADDRESS_2, KAD_ADDRESS_3));
     }

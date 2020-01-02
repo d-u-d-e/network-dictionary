@@ -11,17 +11,16 @@ import java.util.HashSet;
 public class ClosestPQTest {
 
     private ClosestPQ closestPQ;
-    private static KADAddress TARGET = new KADAddress("+393457090735");
-    private static final SMSKADPeer.SMSKADComparator DEFAULT_COMPARATOR = new SMSKADPeer.SMSKADComparator(TARGET);
+    private static final KADAddress TARGET = new KADAddress("+393457090735");
     private final ArrayList<SMSKADPeer> knownNodes = new ArrayList<>();
     private static final ArrayList<MutablePair<SMSKADPeer, Boolean>> DEFAULT_PAIRS = new ArrayList<>();
 
     /**
      * Compares the elements of two arrays as a set (doesn't care about position)
      *
-     * @param array1
-     * @param array2
-     * @return
+     * @param array1 First array in comparison
+     * @param array2 Second array in comparison
+     * @return true if the arrays contain same elements, false otherwise
      */
     private boolean compareArray(Object[] array1, Object[] array2) {
         HashSet<Object> set1 = new HashSet<>(Arrays.asList(array1));
@@ -42,19 +41,27 @@ public class ClosestPQTest {
     }
 
     @Before
-    public void setUp() throws Exception {
-        closestPQ = new ClosestPQ(DEFAULT_COMPARATOR, knownNodes);
+    public void setUp() {
+        closestPQ = new ClosestPQ(TARGET, knownNodes);
     }
 
-    private void fillKnownNodes(){
-        knownNodes.add(new SMSKADPeer("+393489685222"));
-        knownNodes.add(new SMSKADPeer("+393589685772"));
-        knownNodes.add(new SMSKADPeer("+393500685222"));
-        knownNodes.add(new SMSKADPeer("+393589897522"));
-        closestPQ.add(new SMSKADPeer("+393489685222"), false);
-        closestPQ.add(new SMSKADPeer("+393589685772"), false);
-        closestPQ.add(new SMSKADPeer("+393500685222"), false);
-        closestPQ.add(new SMSKADPeer("+393589897522"), false);
+    private void fill() {
+        SMSKADPeer peer1 = new SMSKADPeer("+393489685222");
+        SMSKADPeer peer2 = new SMSKADPeer("+393589685772");
+        SMSKADPeer peer3 = new SMSKADPeer("+393500685222");
+        SMSKADPeer peer4 = new SMSKADPeer("+393589897522");
+        knownNodes.add(peer1);
+        knownNodes.add(peer2);
+        knownNodes.add(peer3);
+        knownNodes.add(peer4);
+        closestPQ.add(peer1, false);
+        closestPQ.add(peer2, false);
+        closestPQ.add(peer3, false);
+        closestPQ.add(peer4, false);
+        DEFAULT_PAIRS.add(new MutablePair<>(peer1, false));
+        DEFAULT_PAIRS.add(new MutablePair<>(peer2, false));
+        DEFAULT_PAIRS.add(new MutablePair<>(peer3, false));
+        DEFAULT_PAIRS.add(new MutablePair<>(peer4, false));
     }
 
     @Test
@@ -66,11 +73,13 @@ public class ClosestPQTest {
 
     @Test
     public void sizeTest() {
+        fill();
+        Assert.assertEquals(4, DEFAULT_PAIRS.size());
     }
 
     @Test
     public void getAllPeersTest() {
-        fillKnownNodes();
+        fill();
         Assert.assertTrue(compareArray(closestPQ.getAllPeers(), knownNodes));
     }
 }
