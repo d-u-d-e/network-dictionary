@@ -8,6 +8,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 
+/**
+ * @author Alessandra Tonin, Luca Crema
+ */
 public class ClosestPQTest {
 
     private ClosestPQ closestPQ;
