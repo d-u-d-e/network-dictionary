@@ -130,7 +130,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     /**
      * Sends an invitation to the specified peer
      *
-     * @param peer who is asked to join the network, it can't be null
+     * @param peer The peer who is asked to join the network, it can't be null
      * @author Alberto Ursino, Marco Mariotto
      */
     @Override
@@ -144,7 +144,8 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     }
 
     /**
-     * Join the network
+     * Method called to join the network.
+     * Performs a lookup for the new node's address and refreshes buckets. Also sends a JOIN_AGREED reply to the inviter.
      *
      * @param invitation The invitation message, it can't be null
      * @author Alessandra Tonin, Marco Mariotto
@@ -169,9 +170,10 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     }
 
     /**
-     * Method called when a join proposal from this peer has been accepted
+     * Method called when a join proposal from this peer has been accepted.
+     * Adds the new user to the inviter's dictionary and sends him a STORE for local resources he's closest to.
      *
-     * @param peer the peer who accepted to join the network
+     * @param peer The peer who accepted to join the network
      * @author Alessandra Tonin, Marco Mariotto
      */
     synchronized void onJoinAgreedReply(SMSPeer peer) {
@@ -195,7 +197,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      * Method called when we receive a join proposal from someone. This calls the listener set up for handling
      * join proposals. If the user accepts the join request, he MUST call join passing the invitation.
      *
-     * @param invitation received
+     * @param invitation The invitation received
      * @author Alessandra Tonin
      */
     synchronized void onJoinProposal(KADInvitation invitation) {
@@ -205,7 +207,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     /**
      * This method sets a JoinProposalListener
      *
-     * @param listener the listener to be set, it can't be null
+     * @param listener The listener to be set, it can't be null
      * @author Alessandra Tonin
      */
     synchronized public void setJoinProposalListener(@NotNull JoinListener listener) {
@@ -395,7 +397,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
      * @author Alberto Ursino, inspired by Marco Mariotto's code for consistency reasons
      */
     synchronized public void findValue(@NotNull SerializableObject key, @NotNull FindValueListener listener, int maxWaiting) throws IllegalStateException {
-        if(maxWaiting < 0)
+        if (maxWaiting < 0)
             throw new IllegalArgumentException("maxWaiting must be greater than or equal to zero");
 
         KADAddress keyAddress = new KADAddress(key.toString());
@@ -521,8 +523,8 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     /**
      * Method called to ping a node
      *
-     * @param peer     the node we want to ping, it can't be null
-     * @param listener a {@link PingListener} listener, called when the ping request either times out, or gets a reply
+     * @param peer     The node we want to ping, it can't be null
+     * @param listener A {@link PingListener} listener, called when the ping request either times out, or gets a reply
      * @author Alessandra Tonin
      */
     synchronized public void ping(@NotNull SMSPeer peer, PingListener listener) {
@@ -533,7 +535,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     /**
      * Method called when a {@link RequestType#PING} request has been received. Sends a {@link ReplyType#PING_ECHO) command back
      *
-     * @param peer who requested a ping
+     * @param peer The peer who requested a ping
      * @author Alessandra Tonin
      */
     synchronized void onPingRequest(SMSPeer peer) {
@@ -544,7 +546,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     /**
      * Method called when a {@link ReplyType#PING_ECHO) reply is received. We are sure this node is alive
      *
-     * @param peer user that replied to the ping
+     * @param peer User that replied to the ping
      * @author Alessandra Tonin
      */
     synchronized void onPingEchoReply(SMSPeer peer) {
@@ -557,7 +559,7 @@ public class SMSNetworkManager implements NetworkManager<SMSKADPeer, Serializabl
     /**
      * Refreshes the specified bucket. After a join, it is called by the RefreshService only, if needed
      *
-     * @param bucketIndex identifies each bucket, from 0 to N-1, where N = NO_BUCKETS
+     * @param bucketIndex Identifies each bucket, from 0 to N-1, where N = NO_BUCKETS
      * @author Alessandra Tonin, Marco Mariotto
      */
     void refreshBucket(int bucketIndex) {

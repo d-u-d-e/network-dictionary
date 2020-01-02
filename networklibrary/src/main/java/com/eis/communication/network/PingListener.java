@@ -7,12 +7,16 @@ import com.eis.smslibrary.SMSPeer;
  */
 public interface PingListener {
     /**
-     * @param peer to which the ping request was sent
+     * Method called when a PingReply is received
+     *
+     * @param peer The peer who replied to a ping
      */
     void onPingReply(SMSPeer peer);
 
     /**
-     * @param peer to which the ping request was sent
+     * Method called when the timeout is expired, so a node didn't answer in time
+     *
+     * @param peer The peer who not replied to a ping
      */
     void onPingTimedOut(SMSPeer peer);
 }
