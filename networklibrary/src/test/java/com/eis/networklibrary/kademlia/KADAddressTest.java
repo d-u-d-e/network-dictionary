@@ -8,17 +8,19 @@ import org.junit.Test;
 /**
  * @author Marco Mariotto
  * @author Alberto Ursino
+ * @author Code reviewed by Fanan and Kumar: https://github.com/d-u-d-e/network-dictionary/pull/1
  */
 public class KADAddressTest {
 
-    KADAddress KAD_ADDRESS_1, KAD_ADDRESS_2, KAD_ADDRESS_3, KAD_ADDRESS_4, KAD_ADDRESS_5, KAD_ADDRESS_4_2;
-    final String ADDRESS_1_TO_STRING = "6A617661206973206F6B";
-    final String DEFAULT_STRING = "ciao";
-    final String EMPTY_STRING = "";
-    final String ASSERT_FAIL_EXCEPTION_MESSAGE = "Should have thrown an exception";
-    final int FIRST_DIFF_BIT_INDEX_EXPECTED = 12;
-    final byte[] TOO_SHORT_BYTE_ADDRESS = new byte[]{106, 97, 118};
-    final byte[] TOO_LONG_BYTE_ADDRESS = new byte[]{106, 97, 118, 97, 32, 105, 115, 32, 111, 107, 0, 1, 2, 3, 4, 5};
+    private KADAddress KAD_ADDRESS_1, KAD_ADDRESS_2, KAD_ADDRESS_3, KAD_ADDRESS_4, KAD_ADDRESS_5, KAD_ADDRESS_4_2;
+    private final String ADDRESS_1_TO_STRING = "6A617661206973206F6B";
+    private final String DEFAULT_STRING = "ciao";
+    private final String EMPTY_STRING = "";
+    private final String EXCEPTION_EXPECTED = "Should have thrown an exception";
+    private final String EXCEPTION_NOT_EXPECTED = "Should have not thrown an exception";
+    private final int FIRST_DIFF_BIT_INDEX_EXPECTED = 12;
+    private final byte[] TOO_SHORT_BYTE_ADDRESS = new byte[]{106, 97, 118};
+    private final byte[] TOO_LONG_BYTE_ADDRESS = new byte[]{106, 97, 118, 97, 32, 105, 115, 32, 111, 107, 0, 1, 2, 3, 4, 5};
 
     @Before
     public void init() {
@@ -26,28 +28,19 @@ public class KADAddressTest {
         KAD_ADDRESS_2 = new KADAddress(new byte[]{12, 3, 118, 97, 32, 105, 115, 32, 111, 107});
         KAD_ADDRESS_3 = new KADAddress(new byte[]{12, 8, 118, 97, 32, 105, 115, 32, 111, 107});
         KAD_ADDRESS_4 = new KADAddress(new byte[]{106, 97, 118, 97, 32, 85, 115, 32, 111, 107});
-        KAD_ADDRESS_4_2 = new KADAddress(new byte[]{106, 97, 118, 97, 32, 85, 115, 32, 111, 107});
         KAD_ADDRESS_5 = new KADAddress(new byte[]{106, 97, 118, 97, 32, 99, 115, 32, 111, 107});
     }
 
-    @Test
+    @Test(expected = IllegalArgumentException.class)
     public void constructor_address_tooShort() {
-        try {
-            new KADAddress(TOO_SHORT_BYTE_ADDRESS);
-            Assert.fail(ASSERT_FAIL_EXCEPTION_MESSAGE);
-        } catch (IllegalArgumentException e) {
-            //Success
-        }
+        new KADAddress(TOO_SHORT_BYTE_ADDRESS);
+        Assert.fail(EXCEPTION_EXPECTED);
     }
 
-    @Test
+    @Test(expected = IllegalArgumentException.class)
     public void constructor_address_tooLong() {
-        try {
-            new KADAddress(TOO_LONG_BYTE_ADDRESS);
-            Assert.fail(ASSERT_FAIL_EXCEPTION_MESSAGE);
-        } catch (IllegalArgumentException e) {
-            //Success
-        }
+        new KADAddress(TOO_LONG_BYTE_ADDRESS);
+        Assert.fail(EXCEPTION_EXPECTED);
     }
 
     @Test
@@ -56,7 +49,7 @@ public class KADAddressTest {
             new KADAddress(EMPTY_STRING);
             //Success
         } catch (Exception e) {
-            Assert.fail();
+            Assert.fail(EXCEPTION_NOT_EXPECTED);
         }
     }
 
@@ -66,7 +59,7 @@ public class KADAddressTest {
             new KADAddress(DEFAULT_STRING);
             //Success
         } catch (Exception e) {
-            Assert.fail();
+            Assert.fail(EXCEPTION_NOT_EXPECTED);
         }
     }
 
@@ -85,14 +78,13 @@ public class KADAddressTest {
     public void firstDifferentBit_isOk() {
         //Return BIT_LENGTH if addresses are equals
         Assert.assertEquals(KADAddress.BIT_ADDRESS_LENGTH, KADAddress.firstDifferentBit(KAD_ADDRESS_1, KAD_ADDRESS_1));
-
         Assert.assertEquals(FIRST_DIFF_BIT_INDEX_EXPECTED, KADAddress.firstDifferentBit(KAD_ADDRESS_2, KAD_ADDRESS_3));
     }
 
     @Test
     public void equals_isOk() {
-        Assert.assertTrue(KAD_ADDRESS_1.equals(KAD_ADDRESS_1));
-        Assert.assertFalse(KAD_ADDRESS_1.equals(KAD_ADDRESS_2));
+        Assert.assertEquals(KAD_ADDRESS_1, KAD_ADDRESS_1);
+        Assert.assertNotEquals(KAD_ADDRESS_1, KAD_ADDRESS_2);
     }
 
     @Test
@@ -100,6 +92,7 @@ public class KADAddressTest {
         Assert.assertEquals(KAD_ADDRESS_5, KADAddress.closerToTarget(KAD_ADDRESS_4, KAD_ADDRESS_5, KAD_ADDRESS_1));
 
         //Returns the first KADAddress param passed
+        KAD_ADDRESS_4_2 = KAD_ADDRESS_4;
         Assert.assertEquals(KAD_ADDRESS_4, KADAddress.closerToTarget(KAD_ADDRESS_4, KAD_ADDRESS_4_2, KAD_ADDRESS_1));
     }
 

@@ -49,7 +49,7 @@ public class SMSDistributedNetworkDictionary<RV> implements NetworkDictionary<SM
     /**
      * Adds a user at the end of the corresponding bucket to contact.
      *
-     * @param newUser new network user. Must not be the current user.
+     * @param newUser new network user address. Must not be the current user.
      * @author Alessandra Tonin, Marco Mariotto
      */
     @Override
@@ -90,11 +90,9 @@ public class SMSDistributedNetworkDictionary<RV> implements NetworkDictionary<SM
 
 
     /**
-     *
-     *
-     * @param address a kad address
+     * @param address a {@link KADAddress} object
      * @return -1 if {@code address} is equal to {@link #mySelf}, otherwise the index of the bucket that should contain it (between 0 and {@link #NO_BUCKETS}
-     * */
+     */
     int getBucketContaining(KADAddress address) {
 
         //The bucket of node X which has index i contains nodes whose xor distance to X is between 2^i inclusive and 2^(i+1) exclusive.
@@ -108,7 +106,7 @@ public class SMSDistributedNetworkDictionary<RV> implements NetworkDictionary<SM
     /**
      * Adds the collection of users to the end of the user list
      *
-     * @param users new network users
+     * @param users new network users addresses
      */
     @Override
     public void addAllUsers(Collection<SMSKADPeer> users) {
@@ -172,7 +170,7 @@ public class SMSDistributedNetworkDictionary<RV> implements NetworkDictionary<SM
         if (bucketIndex == -1)
             throw new IllegalArgumentException("Cannot remove itself");
         if (buckets[bucketIndex] == null)
-            throw new IllegalArgumentException("User is not actually present in the list");
+            throw new IllegalArgumentException("User is not actually present in the list because his bucket index doesn't exist");
         if (!buckets[bucketIndex].remove(user))
             throw new IllegalArgumentException("User is not actually present in the user list");
     }
@@ -282,7 +280,6 @@ public class SMSDistributedNetworkDictionary<RV> implements NetworkDictionary<SM
      *
      * @param subtreeIndex identifies each subtree, from 0 to N-1, where N = {@link #NO_BUCKETS}.
      * @return a random KADAddress in this subtree. When subtreeIndex == 0, then this address is obviously not random.
-     *
      */
     KADAddress generateRandomAddressInSubtree(int subtreeIndex) {
         byte[] myAddress = mySelf.getNetworkAddress().getAddress();
@@ -291,7 +288,7 @@ public class SMSDistributedNetworkDictionary<RV> implements NetworkDictionary<SM
         System.arraycopy(myAddress, 0, randomAddress, 0, byteIndex + 1); //copy all the first bytes up to byte n. byteIndex (included)
 
         int randomBytesLen = KADAddress.BYTE_ADDRESS_LENGTH - byteIndex - 1;
-        if(randomBytesLen > 0){
+        if (randomBytesLen > 0) {
             byte[] randomBytes = new byte[randomBytesLen];
             Random ranGen = new Random();
             ranGen.nextBytes(randomBytes);
@@ -302,8 +299,8 @@ public class SMSDistributedNetworkDictionary<RV> implements NetworkDictionary<SM
 
         int pos = subtreeIndex % Byte.SIZE; //position relative to this byte
 
-        for(int i = 0; i < pos; i++)
-            if(Math.random() > 0.5)
+        for (int i = 0; i < pos; i++)
+            if (Math.random() > 0.5)
                 randomAddress[byteIndex] ^= (1 << i); //random flip
 
         //lastly, flip the pos-th bit

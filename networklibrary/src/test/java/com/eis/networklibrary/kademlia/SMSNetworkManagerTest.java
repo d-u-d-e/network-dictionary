@@ -18,8 +18,8 @@ public class SMSNetworkManagerTest {
         }
     };
 
-
     private SMSNetworkManager testNetMan;
+
     @Before
     private void setup(){
         testNetMan = SMSNetworkManager.getInstance();
@@ -43,10 +43,6 @@ public class SMSNetworkManagerTest {
         public String toString() {
             return mString;
         }
-    }
-
-    public void onJoinProposalTest(){
-
     }
 
 }
